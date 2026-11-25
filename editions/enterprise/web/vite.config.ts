@@ -1,0 +1,83 @@
+import { defineConfig, loadEnv, type Plugin } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
+import { sliceLanguage, type LangCode } from './src/i18n/slice';
+
+/** Serves `bundleNN.ts?lang=xx` / `patchNN.ts?lang=xx` as a flat dictionary of that one language (see src/i18n/index.ts). */
+function i18nLanguageSlices(): Plugin {
+  return {
+    name: 'i18n-language-slices',
+    enforce: 'pre',
+    load(id) {
+      const m = /^(.*[\\/](?:bundle|patch)\d+[a-z]*\.ts)\?(?:.*&)?lang=(en|fr|rw|sw)(?:&|$)/.exec(id);
+      if (!m) return null;
+      const slice = sliceLanguage(readFileSync(m[1], 'utf8'), m[2] as LangCode);
+      if (slice === null) this.error(`i18n: no "${m[2]}" block found in ${m[1]}`);
+      this.addWatchFile(m[1]);
+      return `export default ${slice};`;
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const api = env.VITE_API_URL || 'http://cops-web.test';
+
+  return {
+    resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+    server: {
+      port: 5173,
+      // Same-origin in dev so Sanctum's cookie (SPA) authentication works without CORS.
+      proxy: {
+        '/api': { target: api, changeOrigin: true, cookieDomainRewrite: 'localhost' },
+        '/sanctum': { target: api, changeOrigin: true, cookieDomainRewrite: 'localhost' },
+        '/broadcasting': { target: api, changeOrigin: true, cookieDomainRewrite: 'localhost' },
+      },
+    },
+    build: {
+      outDir: 'dist', sourcemap: false, chunkSizeWarningLimit: 700,
+      rollupOptions: { output: { manualChunks(id: string) {
+        if (!id.includes('node_modules')) return undefined;
+        if (/recharts|d3-|victory-vendor|@mantine[\\/]charts/.test(id)) return undefined;   // let Rollup split charts naturally: only the lazy pages that draw charts load them
+        if (/@tiptap|prosemirror|@mantine\/tiptap/.test(id)) return 'editor';
+        if (/@mantine/.test(id)) return 'mantine';
+        if (/@tabler/.test(id)) return 'icons';
+        if (/react|scheduler|i18next|@tanstack|axios/.test(id)) return 'vendor';
+        return undefined;
+      } } },
+    },
+    plugins: [
+      i18nLanguageSlices(),
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+        manifest: {
+          name: 'Company Operations Platform',
+          short_name: 'OpsPlatform',
+          description: 'Archive, IT infrastructure and operations management',
+          theme_color: '#3773b8',
+          background_color: '#ffffff',
+          display: 'standalone',
+          orientation: 'any',
+          start_url: '/',
+          scope: '/',
+          icons: [
+            { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+            { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+        },
+        workbox: {
+          // App shell only. Authenticated API data is never cached by the service worker.
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//, /^\/sanctum\//],
+          globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        },
+      }),
+    ],
+  };
+});

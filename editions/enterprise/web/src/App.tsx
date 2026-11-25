@@ -1,0 +1,242 @@
+import { Center, Loader } from '@mantine/core';
+import type { ReactElement } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
+import { AppLayout } from './layouts/AppLayout';
+import { RequirePermission } from './components/RequirePermission';
+import { RouteBoundary } from './components/RouteBoundary';
+import { page } from './lib/lazyPage';
+import { ActivatePage, ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordPages';
+
+const pg = page;   // route-level code splitting: each screen is its own chunk, fetched on first visit
+const LoginPage = pg(() => import('./pages/LoginPage'), 'LoginPage');
+const DashboardPage = pg(() => import('./pages/DashboardPage'), 'DashboardPage');
+const UsersPage = pg(() => import('./pages/UsersPage'), 'UsersPage');
+const RolesPage = pg(() => import('./pages/RolesPage'), 'RolesPage');
+const DepartmentsPage = pg(() => import('./pages/DepartmentsPage'), 'DepartmentsPage');
+const LocationsPage = pg(() => import('./pages/LocationsPage'), 'LocationsPage');
+const LookupsPage = pg(() => import('./pages/LookupsPage'), 'LookupsPage');
+const AuditLogPage = pg(() => import('./pages/AuditLogPage'), 'AuditLogPage');
+const OrganizationPage = pg(() => import('./pages/OrganizationPage'), 'OrganizationPage');
+const ProfilePage = pg(() => import('./pages/ProfilePage'), 'ProfilePage');
+const FilesPage = pg(() => import('./pages/FilesPage'), 'FilesPage');
+const RecordsPage = pg(() => import('./pages/RecordsPage'), 'RecordsPage');
+const ArchiveAccessPage = pg(() => import('./pages/ArchiveAccessPage'), 'ArchiveAccessPage');
+const InventoryPage = pg(() => import('./pages/InventoryPage'), 'InventoryPage');
+const DisposalPage = pg(() => import('./pages/DisposalPage'), 'DisposalPage');
+const RetentionPage = pg(() => import('./pages/RetentionPage'), 'RetentionPage');
+const LegalReferencesPage = pg(() => import('./pages/LegalReferencesPage'), 'LegalReferencesPage');
+const ComplianceCalendarPage = pg(() => import('./pages/ComplianceCalendarPage'), 'ComplianceCalendarPage');
+const BackupsPage = pg(() => import('./pages/BackupsPage'), 'BackupsPage');
+const TrainingPage = pg(() => import('./pages/TrainingPage'), 'TrainingPage');
+const AuditsPage = pg(() => import('./pages/AuditsPage'), 'AuditsPage');
+const ManagementReportsPage = pg(() => import('./pages/ManagementReportsPage'), 'ManagementReportsPage');
+const AssetsPage = pg(() => import('./pages/AssetsPage'), 'AssetsPage');
+const MovementsPage = pg(() => import('./pages/MovementsPage'), 'MovementsPage');
+const AccessRegisterPage = pg(() => import('./pages/AccessRegisterPage'), 'AccessRegisterPage');
+const IncidentsPage = pg(() => import('./pages/IncidentsPage'), 'IncidentsPage');
+const CasesPage = pg(() => import('./pages/CasesPage'), 'CasesPage');
+const CaseDetailPage = pg(() => import('./pages/CaseDetailPage'), 'CaseDetailPage');
+const SupportChatsPage = pg(() => import('./pages/SupportChatsPage'), 'SupportChatsPage');
+const ApprovalsPage = pg(() => import('./pages/ApprovalsPage'), 'ApprovalsPage');
+const EmployeesPage = pg(() => import('./pages/EmployeesPage'), 'EmployeesPage');
+const ClientsPage = pg(() => import('./pages/ClientsPage'), 'ClientsPage');
+const RulesPage = pg(() => import('./pages/RulesPage'), 'RulesPage');
+const ApprovalFlowsPage = pg(() => import('./pages/ApprovalFlowsPage'), 'ApprovalFlowsPage');
+const DepartmentAccessPage = pg(() => import('./pages/DepartmentAccessPage'), 'DepartmentAccessPage');
+const ProjectsPage = pg(() => import('./pages/ProjectsPage'), 'ProjectsPage');
+const ProjectDetailPage = pg(() => import('./pages/ProjectDetailPage'), 'ProjectDetailPage');
+const TimePage = pg(() => import('./pages/TimePage'), 'TimePage');
+const RateCardsPage = pg(() => import('./pages/RateCardsPage'), 'RateCardsPage');
+const InvoicesPage = pg(() => import('./pages/InvoicesPage'), 'InvoicesPage');
+const InvoiceDetailPage = pg(() => import('./pages/InvoiceDetailPage'), 'InvoiceDetailPage');
+const TaxRatesPage = pg(() => import('./pages/TaxRatesPage'), 'TaxRatesPage');
+const PortalApp = pg(() => import('./portal/PortalApp'), 'PortalApp');
+const ClientPortalAdminPage = pg(() => import('./pages/ClientPortalAdminPage'), 'ClientPortalAdminPage');
+const NotFoundPage = pg(() => import('./pages/ErrorPages'), 'NotFoundPage');
+const ReportsPage = pg(() => import('./pages/ReportsPage'), 'ReportsPage');
+const ReportViewPage = pg(() => import('./pages/ReportViewPage'), 'ReportViewPage');
+const PositionsPage = pg(() => import('./pages/PositionsPage'), 'PositionsPage');
+const EmploymentChangesPage = pg(() => import('./pages/EmploymentChangesPage'), 'EmploymentChangesPage');
+const ReviewsPage = pg(() => import('./pages/ReviewsPage'), 'ReviewsPage');
+const MyEmploymentPage = pg(() => import('./pages/MyEmploymentPage'), 'MyEmploymentPage');
+const RequisitionsPage = pg(() => import('./pages/RequisitionsPage'), 'RequisitionsPage');
+const RecruitmentPage = pg(() => import('./pages/RecruitmentPage'), 'RecruitmentPage');
+const InterviewsPage = pg(() => import('./pages/InterviewsPage'), 'InterviewsPage');
+const ClockPage = pg(() => import('./pages/ClockPage'), 'ClockPage');
+const TeamAttendancePage = pg(() => import('./pages/TeamAttendancePage'), 'TeamAttendancePage');
+const AttendanceSetupPage = pg(() => import('./pages/AttendanceSetupPage'), 'AttendanceSetupPage');
+const AttendanceImportPage = pg(() => import('./pages/AttendanceImportPage'), 'AttendanceImportPage');
+const MyLeavePage = pg(() => import('./pages/MyLeavePage'), 'MyLeavePage');
+const TeamLeavePage = pg(() => import('./pages/TeamLeavePage'), 'TeamLeavePage');
+const LeaveSetupPage = pg(() => import('./pages/LeaveSetupPage'), 'LeaveSetupPage');
+const TripsPage = pg(() => import('./pages/TripsPage'), 'TripsPage');
+const TripDetailPage = pg(() => import('./pages/TripDetailPage'), 'TripDetailPage');
+const TripAuthorizationPage = pg(() => import('./pages/TripAuthorizationPage'), 'TripAuthorizationPage');
+const TripsFinancePage = pg(() => import('./pages/TripsFinancePage'), 'TripsFinancePage');
+const TripRatesPage = pg(() => import('./pages/TripRatesPage'), 'TripRatesPage');
+const PayrollSetupPage = pg(() => import('./pages/PayrollSetupPage'), 'PayrollSetupPage');
+const PayrollRunsPage = pg(() => import('./pages/PayrollRunsPage'), 'PayrollRunsPage');
+const PayrollRunDetailPage = pg(() => import('./pages/PayrollRunDetailPage'), 'PayrollRunDetailPage');
+const PayslipPage = pg(() => import('./pages/PayslipPage'), 'PayslipPage');
+const PayrollExportsPage = pg(() => import('./pages/PayrollExportsPage'), 'PayrollExportsPage');
+const MyPayslipsPage = pg(() => import('./pages/MyPayslipsPage'), 'MyPayslipsPage');
+const MyPayslipPage = pg(() => import('./pages/MyPayslipsPage'), 'MyPayslipPage');
+const MeetingsPage = pg(() => import('./pages/MeetingsPage'), 'MeetingsPage');
+const MeetingDetailPage = pg(() => import('./pages/MeetingDetailPage'), 'MeetingDetailPage');
+const MeetingRoomsPage = pg(() => import('./pages/MeetingRoomsPage'), 'MeetingRoomsPage');
+const MeetingRsvpPage = pg(() => import('./pages/MeetingRsvpPage'), 'MeetingRsvpPage');
+const MeetingGuestJoinPage = pg(() => import('./pages/MeetingGuestJoinPage'), 'MeetingGuestJoinPage');
+const EventsPage = pg(() => import('./pages/EventsPage'), 'EventsPage');
+const EventDetailPage = pg(() => import('./pages/EventDetailPage'), 'EventDetailPage');
+const EventRegisterPage = pg(() => import('./pages/EventRegisterPage'), 'EventRegisterPage');
+const EventTicketPage = pg(() => import('./pages/EventTicketPage'), 'EventTicketPage');
+const SuppliersPage = pg(() => import('./pages/SuppliersPage'), 'SuppliersPage');
+const PurchaseOrdersPage = pg(() => import('./pages/PurchaseOrdersPage'), 'PurchaseOrdersPage');
+const PurchaseOrderDetailPage = pg(() => import('./pages/PurchaseOrderDetailPage'), 'PurchaseOrderDetailPage');
+const RfqsPage = pg(() => import('./pages/RfqsPage'), 'RfqsPage');
+const RfqDetailPage = pg(() => import('./pages/RfqDetailPage'), 'RfqDetailPage');
+const SupplierInvoicesPage = pg(() => import('./pages/SupplierInvoicesPage'), 'SupplierInvoicesPage');
+const SupplierInvoiceDetailPage = pg(() => import('./pages/SupplierInvoiceDetailPage'), 'SupplierInvoiceDetailPage');
+const SupplierDetailPage = pg(() => import('./pages/SupplierDetailPage'), 'SupplierDetailPage');
+const PurchaseRequisitionsPage = pg(() => import('./pages/PurchaseRequisitionsPage'), 'PurchaseRequisitionsPage');
+const PurchaseRequisitionDetailPage = pg(() => import('./pages/PurchaseRequisitionDetailPage'), 'PurchaseRequisitionDetailPage');
+const MeetingCheckinPage = pg(() => import('./pages/MeetingCheckinPage'), 'MeetingCheckinPage');
+const MinutesPage = pg(() => import('./pages/MinutesPage'), 'MinutesPage');
+const FollowUpsPage = pg(() => import('./pages/FollowUpsPage'), 'FollowUpsPage');
+const MinutesDetailPage = pg(() => import('./pages/MinutesDetailPage'), 'MinutesDetailPage');
+
+export default function App() {
+  const { me, loading } = useAuth();
+  const { pathname } = useLocation();
+
+  if (pathname === '/portal' || pathname.startsWith('/portal/')) return <RouteBoundary><PortalApp /></RouteBoundary>;
+
+  if (loading) return <Center h="100dvh"><Loader /></Center>;
+
+  // Links from e-mails must open whether or not somebody is already signed in on this browser (the page itself asks them to
+  // sign out). Previously a signed-in administrator testing an invitation landed on "page not found".
+  if (pathname === '/activate' || pathname === '/reset-password' || pathname.startsWith('/meeting-rsvp/') || pathname.startsWith('/meeting-online/') || pathname.startsWith('/event-register/') || pathname.startsWith('/event-ticket/')) {
+    return (
+      <RouteBoundary><Routes>
+        <Route path="/activate" element={<ActivatePage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/meeting-rsvp/:token" element={<MeetingRsvpPage />} />
+        <Route path="/meeting-online/:token" element={<MeetingGuestJoinPage />} />
+        <Route path="/event-register/:token" element={<EventRegisterPage />} />
+        <Route path="/event-ticket/:ticket" element={<EventTicketPage />} />
+      </Routes></RouteBoundary>
+    );
+  }
+
+  if (!me) {
+    return (
+      <RouteBoundary><Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes></RouteBoundary>
+    );
+  }
+
+  const guard = (perm: string | string[], el: ReactElement) => <RequirePermission permission={perm}>{el}</RequirePermission>;
+
+  return (
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={guard('dashboard.view', <DashboardPage />)} />
+        <Route path="/assets" element={guard('asset.view', <AssetsPage />)} />
+        <Route path="/assets/movements" element={guard('asset.request_movement', <MovementsPage />)} />
+        <Route path="/access-register" element={guard('access.view', <AccessRegisterPage />)} />
+        <Route path="/incidents" element={guard('case.view_own', <IncidentsPage />)} />
+        <Route path="/archive/records" element={guard('archive.view', <RecordsPage />)} />
+        <Route path="/archive/access" element={guard('archive.view', <ArchiveAccessPage />)} />
+        <Route path="/archive/inventory" element={guard('archive.manage', <InventoryPage />)} />
+        <Route path="/archive/disposal" element={guard(['archive.manage', 'archive.approve_disposal'], <DisposalPage />)} />
+        <Route path="/archive/retention" element={guard('archive.view', <RetentionPage />)} />
+        <Route path="/compliance/calendar" element={guard('compliance.view', <ComplianceCalendarPage />)} />
+        <Route path="/compliance/backups" element={guard(['backup.manage', 'compliance.view'], <BackupsPage />)} />
+        <Route path="/compliance/training" element={guard(['training.view', 'training.manage'], <TrainingPage />)} />
+        <Route path="/compliance/audits" element={guard('compliance.view', <AuditsPage />)} />
+        <Route path="/compliance/reports" element={guard(['report.receive', 'compliance.view'], <ManagementReportsPage />)} />
+        <Route path="/compliance/legal" element={guard('archive.view', <LegalReferencesPage />)} />
+        <Route path="/reports" element={guard(['report.view', 'report.receive'], <ReportsPage />)} />
+        <Route path="/reports/:code" element={guard(['report.view', 'report.receive'], <ReportViewPage />)} />
+        <Route path="/files" element={guard('file.view', <FilesPage />)} />
+        <Route path="/cases" element={guard('case.view_own', <CasesPage />)} />
+        <Route path="/cases/:id" element={guard('case.view_own', <CaseDetailPage />)} />
+        <Route path="/support/chats" element={guard('chat.moderate', <SupportChatsPage />)} />
+        <Route path="/admin/users" element={guard('user.view', <UsersPage />)} />
+        <Route path="/admin/roles" element={guard('role.view', <RolesPage />)} />
+        <Route path="/admin/organization" element={guard('organization.view', <OrganizationPage />)} />
+        <Route path="/admin/departments" element={guard('department.view', <DepartmentsPage />)} />
+        <Route path="/admin/locations" element={guard('location.view', <LocationsPage />)} />
+        <Route path="/admin/lookups" element={guard('lookup.view', <LookupsPage />)} />
+        <Route path="/admin/audit-log" element={guard('audit_log.view', <AuditLogPage />)} />
+        <Route path="/approvals" element={guard(['approval.view', 'approval.act'], <ApprovalsPage />)} />
+        <Route path="/hr/employees" element={guard('employee.view', <EmployeesPage />)} />
+        <Route path="/hr/positions" element={guard(['employee.view', 'hr.structure.manage'], <PositionsPage />)} />
+        <Route path="/hr/employment-changes" element={guard('hr.history.manage', <EmploymentChangesPage />)} />
+        <Route path="/hr/reviews" element={guard(['hr.reviews.manage', 'hr.reviews.write', 'hr.self.view'], <ReviewsPage />)} />
+        <Route path="/me/employment" element={guard('hr.self.view', <MyEmploymentPage />)} />
+        <Route path="/hr/requisitions" element={guard(['hr.requisition.create', 'hr.requisition.approve', 'hr.recruitment.manage'], <RequisitionsPage />)} />
+        <Route path="/hr/recruitment" element={guard('hr.recruitment.manage', <RecruitmentPage />)} />
+        <Route path="/hr/interviews" element={guard(['hr.interview.score', 'hr.recruitment.manage'], <InterviewsPage />)} />
+        <Route path="/attendance/clock" element={guard('hr.attendance.clock', <ClockPage />)} />
+        <Route path="/attendance/team" element={guard(['hr.attendance.view', 'hr.attendance.manage'], <TeamAttendancePage />)} />
+        <Route path="/attendance/setup" element={guard('hr.attendance.manage', <AttendanceSetupPage />)} />
+        <Route path="/attendance/import" element={guard('hr.attendance.manage', <AttendanceImportPage />)} />
+        <Route path="/leave/me" element={guard('hr.leave.request', <MyLeavePage />)} />
+        <Route path="/leave/team" element={guard(['hr.leave.view', 'hr.leave.manage'], <TeamLeavePage />)} />
+        <Route path="/leave/setup" element={guard(['hr.leave.manage', 'hr.leave.legal.manage', 'hr.leave.profile', 'rules.view'], <LeaveSetupPage />)} />
+        <Route path="/trips" element={guard(['hr.trip.request', 'hr.trip.view', 'hr.trip.finance'], <TripsPage />)} />
+        <Route path="/trips/finance" element={guard('hr.trip.finance', <TripsFinancePage />)} />
+        <Route path="/trips/rates" element={guard(['hr.trip.configure', 'hr.trip.finance'], <TripRatesPage />)} />
+        <Route path="/trips/:id/authorization" element={guard(['hr.trip.request', 'hr.trip.view', 'hr.trip.finance'], <TripAuthorizationPage />)} />
+        <Route path="/trips/:id" element={guard(['hr.trip.request', 'hr.trip.view', 'hr.trip.finance'], <TripDetailPage />)} />
+        <Route path="/payroll/setup" element={guard(['hr.payroll.view', 'hr.payroll.configure', 'hr.payroll.verify', 'hr.payroll.prepare'], <PayrollSetupPage />)} />
+        <Route path="/payroll/runs" element={guard(['hr.payroll.view', 'hr.payroll.configure', 'hr.payroll.verify', 'hr.payroll.prepare', 'hr.payroll.review', 'hr.payroll.approve', 'hr.payroll.approve_md', 'hr.payroll.lock', 'hr.payroll.pay', 'hr.payroll.declare'], <PayrollRunsPage />)} />
+        <Route path="/payroll/runs/:id" element={guard(['hr.payroll.view', 'hr.payroll.configure', 'hr.payroll.verify', 'hr.payroll.prepare', 'hr.payroll.review', 'hr.payroll.approve', 'hr.payroll.approve_md', 'hr.payroll.lock', 'hr.payroll.pay', 'hr.payroll.declare'], <PayrollRunDetailPage />)} />
+        <Route path="/payroll/payslips/:id" element={guard(['hr.payroll.view', 'hr.payroll.configure', 'hr.payroll.verify', 'hr.payroll.prepare', 'hr.payroll.review', 'hr.payroll.approve', 'hr.payroll.approve_md', 'hr.payroll.lock', 'hr.payroll.pay', 'hr.payroll.declare'], <PayslipPage />)} />
+        <Route path="/payroll/exports" element={guard(['hr.payroll.export', 'hr.payroll.export.configure'], <PayrollExportsPage />)} />
+        <Route path="/payroll/me" element={guard('hr.payslip.own', <MyPayslipsPage />)} />
+        <Route path="/payroll/me/:id" element={guard('hr.payslip.own', <MyPayslipPage />)} />
+        <Route path="/meetings" element={guard('meeting.view', <MeetingsPage />)} />
+        <Route path="/events" element={guard('event.view', <EventsPage />)} />
+        <Route path="/events/:id" element={guard('event.view', <EventDetailPage />)} />
+        <Route path="/suppliers" element={guard('procurement.view', <SuppliersPage />)} />
+        <Route path="/suppliers/:id" element={guard('procurement.view', <SupplierDetailPage />)} />
+        <Route path="/requisitions" element={guard('procurement.requisition.create', <PurchaseRequisitionsPage />)} />
+        <Route path="/requisitions/:id" element={guard('procurement.requisition.create', <PurchaseRequisitionDetailPage />)} />
+        <Route path="/purchase-orders" element={guard('procurement.receive', <PurchaseOrdersPage />)} />
+        <Route path="/purchase-orders/:id" element={guard('procurement.receive', <PurchaseOrderDetailPage />)} />
+        <Route path="/rfqs" element={guard('procurement.manage', <RfqsPage />)} />
+        <Route path="/rfqs/:id" element={guard('procurement.manage', <RfqDetailPage />)} />
+        <Route path="/supplier-invoices" element={guard(['procurement.invoice', 'procurement.invoice.approve', 'procurement.invoice.pay'], <SupplierInvoicesPage />)} />
+        <Route path="/supplier-invoices/:id" element={guard(['procurement.invoice', 'procurement.invoice.approve', 'procurement.invoice.pay'], <SupplierInvoiceDetailPage />)} />
+        <Route path="/meetings/rooms" element={guard('meeting.room.manage', <MeetingRoomsPage />)} />
+        <Route path="/meetings/:id" element={guard('meeting.view', <MeetingDetailPage />)} />
+        <Route path="/meeting-checkin/:token" element={guard('meeting.view', <MeetingCheckinPage />)} />
+        <Route path="/minutes" element={guard('meeting.view', <MinutesPage />)} />
+        <Route path="/follow-ups" element={guard('meeting.view', <FollowUpsPage />)} />
+        <Route path="/minutes/:id" element={guard('meeting.view', <MinutesDetailPage />)} />
+        <Route path="/clients" element={guard('client.view', <ClientsPage />)} />
+        <Route path="/admin/rules" element={guard('rules.view', <RulesPage />)} />
+        <Route path="/admin/approval-flows" element={guard('approval.configure', <ApprovalFlowsPage />)} />
+        <Route path="/admin/department-access" element={guard('scope.manage', <DepartmentAccessPage />)} />
+        <Route path="/projects" element={guard('project.view', <ProjectsPage />)} />
+        <Route path="/projects/:id" element={guard('project.view', <ProjectDetailPage />)} />
+        <Route path="/time" element={guard('time.track', <TimePage />)} />
+        <Route path="/admin/rate-cards" element={guard('rates.view', <RateCardsPage />)} />
+        <Route path="/invoices" element={guard('billing.view', <InvoicesPage />)} />
+        <Route path="/invoices/:id" element={guard('billing.view', <InvoiceDetailPage />)} />
+        <Route path="/admin/tax-rates" element={guard('billing.configure', <TaxRatesPage />)} />
+        <Route path="/admin/client-portal" element={guard('client.manage', <ClientPortalAdminPage />)} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  );
+}
