@@ -1,0 +1,29 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: editions/enterprise/api } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', extensions: mbstring, xml, curl, zip, gd, intl, bcmath, pdo_sqlite, coverage: none }
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: composer audit
+      - run: ./vendor/bin/pint --test
+      - run: php artisan test
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: editions/enterprise/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm, cache-dependency-path: editions/enterprise/web/package-lock.json }
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build:check

@@ -1,0 +1,13 @@
+{
+  "name": "lasabro",
+  "private": true,
+  "description": "LASABRO monorepo: startup kit, plugins and editions",
+  "author": "Robert MAKUTA <dabani.rm@gmail.com> (https://dabani.github.io)",
+  "license": "MIT",
+  "scripts": {
+    "web:dev": "npm --prefix editions/enterprise/web run dev",
+    "web:test": "npm --prefix editions/enterprise/web test",
+    "web:build": "npm --prefix editions/enterprise/web run build:check",
+    "api:test": "cd editions/enterprise/api && php artisan test"
+  }
+}

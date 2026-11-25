@@ -1,0 +1,24 @@
+# secrets and data: never commit
+.env
+.env.*
+!.env.example
+*.sql
+*.sql.gz
+*.dump
+auth.json
+# dependencies and build output
+node_modules/
+vendor/
+dist/
+public/build/
+public/hot
+public/storage
+bootstrap/cache/*.php
+# tooling
+.idea/
+.vscode/
+.DS_Store
+*.log
+*.bak
+.phpunit.cache/
+.phpunit.result.cache
