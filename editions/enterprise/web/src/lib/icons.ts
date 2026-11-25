@@ -103,7 +103,7 @@ Object.assign(MAP, { IconLayoutKanban: IconLayoutKanbanPolish, IconClock: IconCl
 import { IconTimeline, IconStars, IconUser, IconClipboardList, IconUserSearch, IconClockHour4, IconCalendarStats, IconAdjustmentsHorizontal, IconFileImport } from '@tabler/icons-react';
 Object.assign(MAP, { IconTimeline, IconStars, IconUser, IconClipboardList, IconUserSearch, IconClockHour4, IconCalendarStats, IconAdjustmentsHorizontal, IconFileImport });
 import { IconBeach, IconPlane, IconReceipt2 } from '@tabler/icons-react';
-Object.assign(MAP, { IconBeach, IconPlane, IconReceipt2 });
+Object.assign(MAP, { IconBeach, IconPlane, IconReceipt2, IconConfetti, IconShoppingCart });
 import { IconCoins } from '@tabler/icons-react';
 Object.assign(MAP, { IconCoins });
 

@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist', sourcemap: false, chunkSizeWarningLimit: 700,
       rollupOptions: { output: { manualChunks(id: string) {
         if (!id.includes('node_modules')) return undefined;
-        if (/recharts|d3-|victory-vendor/.test(id)) return 'charts';
+        if (/recharts|d3-|victory-vendor|@mantine[\\/]charts/.test(id)) return undefined;   // let Rollup split charts naturally: only the lazy pages that draw charts load them
         if (/@tiptap|prosemirror|@mantine\/tiptap/.test(id)) return 'editor';
         if (/@mantine/.test(id)) return 'mantine';
         if (/@tabler/.test(id)) return 'icons';
