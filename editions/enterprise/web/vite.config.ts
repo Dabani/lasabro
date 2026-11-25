@@ -55,9 +55,9 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
         manifest: {
-          name: 'Company Operations Platform',
-          short_name: 'OpsPlatform',
-          description: 'Archive, IT infrastructure and operations management',
+          name: 'LASABRO Enterprise',
+          short_name: 'LASABRO',
+          description: 'LASABRO Enterprise: modular operations platform',
           theme_color: '#3773b8',
           background_color: '#ffffff',
           display: 'standalone',
