@@ -1,0 +1,15 @@
+{
+    "name": "lasabro/demo",
+    "description": "Test fixture: a minimal LASABRO plugin",
+    "type": "lasabro-plugin",
+    "license": "MIT",
+    "extra": {
+        "lasabro": {
+            "id": "Lasabro.Demo",
+            "title": "Demo (test fixture)",
+            "tier": "domain",
+            "provider": "Lasabro\\Demo\\DemoServiceProvider",
+            "declares": ["permissions"]
+        }
+    }
+}

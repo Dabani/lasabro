@@ -1,0 +1,29 @@
+{
+    "name": "lasabro/framework",
+    "description": "LASABRO startup kit: plugin engine, contracts and CLI for Laravel applications",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        { "name": "Robert MAKUTA", "email": "dabani.rm@gmail.com", "homepage": "https://dabani.github.io" }
+    ],
+    "require": {
+        "php": "^8.3",
+        "composer/semver": "^3.4",
+        "illuminate/support": "^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": { "Lasabro\\Framework\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Lasabro\\Framework\\Tests\\": "tests/" }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [ "Lasabro\\Framework\\FrameworkServiceProvider" ]
+        }
+    },
+    "minimum-stability": "stable"
+}

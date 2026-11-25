@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fa2018a6eeee8b31edaeba4258c6ab02",
+    "content-hash": "8fefdee7071d842ddfe9b1e8b466622e",
     "packages": [
         {
             "name": "brick/math",
@@ -2167,6 +2167,56 @@
                 "source": "https://github.com/laravel/tinker/tree/v3.0.2"
             },
             "time": "2026-03-17T14:54:13+00:00"
+        },
+        {
+            "name": "lasabro/framework",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../../../kit/framework",
+                "reference": "7d86144b5856243b02ebb16a19722d8a18a0cfd8"
+            },
+            "require": {
+                "composer/semver": "^3.4",
+                "illuminate/support": "^12.0 || ^13.0",
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.0 || ^12.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Lasabro\\Framework\\FrameworkServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Lasabro\\Framework\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Lasabro\\Framework\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Robert MAKUTA",
+                    "email": "dabani.rm@gmail.com",
+                    "homepage": "https://dabani.github.io"
+                }
+            ],
+            "description": "LASABRO startup kit: plugin engine, contracts and CLI for Laravel applications",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "league/commonmark",
@@ -10273,10 +10323,13 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "lasabro/framework": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
+        "ext-bcmath": "*",
         "php": "^8.4"
     },
     "platform-dev": {},

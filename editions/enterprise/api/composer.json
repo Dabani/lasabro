@@ -13,6 +13,7 @@
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "lasabro/framework": "@dev",
         "maatwebsite/excel": "^4.0",
         "pusher/pusher-php-server": "^7.3",
         "stevebauman/purify": "^6.3"
@@ -89,5 +90,8 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [
+        { "type": "path", "url": "../../../kit/framework", "options": { "symlink": true } }
+    ]
 }
