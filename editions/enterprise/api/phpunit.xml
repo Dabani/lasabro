@@ -7,10 +7,12 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
+            <directory>../../../plugins/leave/tests/Unit</directory>
             <directory>../../../plugins/procurement/tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+            <directory>../../../plugins/leave/tests/Feature</directory>
         </testsuite>
     </testsuites>
     <source>

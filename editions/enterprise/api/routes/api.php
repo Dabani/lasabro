@@ -33,7 +33,6 @@ Route::prefix('v1')->group(function () {
         require __DIR__ . '/hr.php';           // Positions, grades, employment history, reviews
         require __DIR__ . '/recruitment.php';  // Requisitions, vacancies, applicants, interviews, offers, onboarding
         require __DIR__ . '/attendance.php';   // Clocking, shifts, schedules, holidays, imports, validation
-        require __DIR__ . '/leave.php';
         require __DIR__ . '/trips.php';
         require __DIR__ . '/payroll.php';        // Payroll configuration and dry-run
         require __DIR__ . '/payroll_runs.php';        // Payroll runs, payslips, self-service

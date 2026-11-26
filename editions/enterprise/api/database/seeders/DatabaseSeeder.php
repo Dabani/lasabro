@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Lasabro\Leave\Database\Seeders\HrLeaveSeeder;
 use Lasabro\Procurement\Database\Seeders\ProcurementFilesSeeder;
 use Lasabro\Procurement\Database\Seeders\ProcurementInvoicesSeeder;
 use Lasabro\Procurement\Database\Seeders\ProcurementOrdersSeeder;

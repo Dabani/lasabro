@@ -1,0 +1,95 @@
+{
+  "plugin": "Lasabro.Leave",
+  "moved": {
+    "App\\Console\\Commands\\LeaveAccrue": "Lasabro\\Leave\\Console\\LeaveAccrue",
+    "App\\Console\\Commands\\LeaveYearEnd": "Lasabro\\Leave\\Console\\LeaveYearEnd",
+    "App\\Http\\Controllers\\Api\\V1\\LeaveController": "Lasabro\\Leave\\Http\\Controllers\\LeaveController",
+    "App\\Http\\Controllers\\Api\\V1\\LeaveFileController": "Lasabro\\Leave\\Http\\Controllers\\LeaveFileController",
+    "App\\Http\\Controllers\\Api\\V1\\LeaveSetupController": "Lasabro\\Leave\\Http\\Controllers\\LeaveSetupController",
+    "App\\Models\\LeaveLedgerEntry": "Lasabro\\Leave\\Models\\LeaveLedgerEntry",
+    "App\\Models\\LeavePeriod": "Lasabro\\Leave\\Models\\LeavePeriod",
+    "App\\Models\\LeaveProfile": "Lasabro\\Leave\\Models\\LeaveProfile",
+    "App\\Models\\LeaveRequest": "Lasabro\\Leave\\Models\\LeaveRequest",
+    "App\\Models\\LeaveRequestDay": "Lasabro\\Leave\\Models\\LeaveRequestDay",
+    "App\\Models\\LeaveTypeSetting": "Lasabro\\Leave\\Models\\LeaveTypeSetting",
+    "App\\Models\\LegalLeaveRule": "Lasabro\\Leave\\Models\\LegalLeaveRule",
+    "App\\Providers\\LeaveServiceProvider": "Lasabro\\Leave\\LeaveServiceProvider",
+    "App\\Services\\Hr\\Leave\\DbLeaveLookup": "Lasabro\\Leave\\Services\\DbLeaveLookup",
+    "App\\Services\\Hr\\Leave\\LeaveApprovalHandler": "Lasabro\\Leave\\Services\\LeaveApprovalHandler",
+    "App\\Services\\Hr\\Leave\\LeaveBalanceService": "Lasabro\\Leave\\Services\\LeaveBalanceService",
+    "App\\Services\\Hr\\Leave\\LeaveCarryOver": "Lasabro\\Leave\\Services\\LeaveCarryOver",
+    "App\\Services\\Hr\\Leave\\LeaveChecker": "Lasabro\\Leave\\Services\\LeaveChecker",
+    "App\\Services\\Hr\\Leave\\LeaveDays": "Lasabro\\Leave\\Services\\LeaveDays",
+    "App\\Services\\Hr\\Leave\\LeaveEntitlement": "Lasabro\\Leave\\Services\\LeaveEntitlement",
+    "App\\Services\\Hr\\Leave\\LeavePolicy": "Lasabro\\Leave\\Services\\LeavePolicy",
+    "App\\Services\\Hr\\Leave\\LeavePolicyResolver": "Lasabro\\Leave\\Services\\LeavePolicyResolver",
+    "App\\Services\\Hr\\Leave\\LeaveRequestService": "Lasabro\\Leave\\Services\\LeaveRequestService",
+    "App\\Services\\Hr\\Leave\\LeaveYear": "Lasabro\\Leave\\Services\\LeaveYear",
+    "App\\Services\\Hr\\Leave\\LegalLeaveRules": "Lasabro\\Leave\\Services\\LegalLeaveRules",
+    "App\\Services\\Hr\\Leave\\MoneyHelper": "Lasabro\\Leave\\Services\\MoneyHelper",
+    "Database\\Seeders\\HrLeaveSeeder": "Lasabro\\Leave\\Database\\Seeders\\HrLeaveSeeder"
+  },
+  "host_dependencies": {
+    "App\\Models": [
+      "ApprovalFlow",
+      "ApprovalRequest",
+      "Employee",
+      "FileAsset",
+      "Language",
+      "LegalParameter",
+      "LookupType",
+      "LookupValue",
+      "MenuItem",
+      "Organization",
+      "Permission",
+      "PublicHoliday",
+      "Role",
+      "RuleVersion",
+      "ScheduleAssignment",
+      "User"
+    ],
+    "App\\Support": [
+      "BelongsToOrganization",
+      "HasGeneratedCode",
+      "Immutable",
+      "Lookup"
+    ],
+    "App\\Http\\Controllers": [
+      "Controller"
+    ],
+    "App\\Rules": [
+      "RichTextMin"
+    ],
+    "App\\Services\\Approvals": [
+      "ApprovalEngine",
+      "ApprovalOutcomeHandler"
+    ],
+    "App\\Services\\Hr\\Attendance": [
+      "AttendanceService",
+      "LeaveLookup",
+      "ScheduleResolver"
+    ],
+    "App\\Services\\Hr": [
+      "HrSettings"
+    ],
+    "App\\Services": [
+      "AuditLogger",
+      "CodeGenerator",
+      "FileAccess",
+      "FileService",
+      "MoneyService",
+      "OrganizationContext"
+    ],
+    "App\\Http\\Resources\\Api\\V1": [
+      "FileResource"
+    ],
+    "App\\Services\\Rules": [
+      "RuleResolver"
+    ]
+  },
+  "host_code_naming_plugin": {
+    "database\\seeders\\DatabaseSeeder.php": [
+      "Lasabro\\Leave\\Database\\Seeders\\HrLeaveSeeder"
+    ]
+  }
+}

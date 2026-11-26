@@ -15,6 +15,5 @@ return [
     App\Providers\HrServiceProvider::class,
     App\Providers\MeetingsServiceProvider::class,
     App\Providers\PayrollServiceProvider::class,
-    App\Providers\LeaveServiceProvider::class,
     App\Providers\TripServiceProvider::class,
 ];
