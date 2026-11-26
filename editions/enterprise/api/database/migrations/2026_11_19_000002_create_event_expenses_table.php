@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 7e: event expenses against the event budget, approved through the approval engine; receipts are controlled files (link type "event_expense"). */
+/** Event expenses against the event budget, approved through the approval engine; receipts are controlled files (link type "event_expense"). */
 return new class extends Migration {
     public function up(): void
     {

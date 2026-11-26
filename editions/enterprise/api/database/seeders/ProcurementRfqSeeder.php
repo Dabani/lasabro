@@ -12,7 +12,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 8d: RFQ statuses and the menu entry (buyers use procurement.manage). Run after ProcurementOrdersSeeder. Idempotent. rw / sw labels need native review. */
+/** RFQ statuses and the menu entry (buyers use procurement.manage). Run after ProcurementOrdersSeeder. Idempotent. rw / sw labels need native review. */
 class ProcurementRfqSeeder extends Seeder
 {
     public function run(): void

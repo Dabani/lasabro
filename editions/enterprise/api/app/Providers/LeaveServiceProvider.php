@@ -11,7 +11,7 @@ use App\Services\Hr\Leave\LeavePolicyResolver;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 5a wiring: leave approval handler and permission, request code prefix, attendance leave lookup, daily accrual and year-end jobs. */
+/** Leave approval handler and permission, request code prefix, attendance leave lookup, daily accrual and year-end jobs. */
 class LeaveServiceProvider extends ServiceProvider
 {
     public function register(): void

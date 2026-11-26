@@ -13,7 +13,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 6a seeds (idempotent): payroll lookups, permissions, menu. NO component, scheme, rate, threshold, band, assignment or exemption is seeded:
+ * Payroll lookups, permissions, menu. NO component, scheme, rate, threshold, band, assignment or exemption is seeded:
  * the company accountant's signed schedule and the official RRA/RSSB notices are entered through the screens and verified by a second person (Guide 5.6).
  * The payroll permissions go to admin ONLY: create separate roles for the preparer, the verifier and the approvers (separation of duties).
  * rw / sw labels are first-pass.

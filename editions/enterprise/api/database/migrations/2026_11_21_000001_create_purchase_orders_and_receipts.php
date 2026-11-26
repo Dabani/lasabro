@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 8b (Guide 7.4 steps 8 and 9): purchase orders raised from approved requisitions, and goods receipts with acceptance per line. Statuses are lookups. */
+/** Purchase orders raised from approved requisitions, and goods receipts with acceptance per line. Statuses are lookups. */
 return new class extends Migration {
     public function up(): void
     {

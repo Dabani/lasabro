@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Auth\Notifications\ResetPassword::createUrlUsing(fn ($user, string $token) =>
             rtrim(config('ops.frontend_url'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->getEmailForPasswordReset()));
 
-        // Bundle 7 - hardening
+        // Hardening
         if (app()->isProduction() && config('ops.security.force_https', true)) {
             URL::forceScheme('https');
         }

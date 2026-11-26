@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 7c: meeting minutes (Guide 6.6). One minutes record per meeting; every wording is a numbered version.
+ * Meeting minutes (Guide 6.6). One minutes record per meeting; every wording is a numbered version.
  * An approved and published version is never edited: a correction is a new version and the earlier ones stay readable.
  */
 return new class extends Migration {

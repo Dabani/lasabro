@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 1 routes. Required from routes/api.php inside the authenticated "org.context" group (apply-bundle-09.py does it). */
+/* Routes. Required from routes/api.php inside the authenticated "org.context" group (apply-bundle-09.py does it). */
 Route::get('projects', [V1\ProjectController::class, 'index'])->middleware('perm:project.view');
 Route::post('projects', [V1\ProjectController::class, 'store'])->middleware('perm:project.create');
 Route::get('projects/{id}', [V1\ProjectController::class, 'show'])->middleware('perm:project.view');

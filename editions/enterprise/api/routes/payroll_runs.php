@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 6b routes (payroll runs and payslips). Required once from routes/api.php next to payroll.php, inside the authenticated "org.context" group.
+ | Routes (payroll runs and payslips). Required once from routes/api.php next to payroll.php, inside the authenticated "org.context" group.
  | One permission per stage; the service additionally enforces separation of duties and refuses any change to a locked run.
  */
 Route::middleware('perm:hr.payroll.view,hr.payroll.prepare,hr.payroll.review,hr.payroll.approve,hr.payroll.approve_md,hr.payroll.lock,hr.payroll.pay,hr.payroll.declare')->group(function () {

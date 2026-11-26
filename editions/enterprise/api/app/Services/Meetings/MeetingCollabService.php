@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Chat and polls of online meetings (Phase 7g). An actor is an account holder or an external guest (invitation), as in OnlineMeetingService.
+ * Chat and polls of online meetings. An actor is an account holder or an external guest (invitation), as in OnlineMeetingService.
  * Chat is open to participants while the online room is open and stays readable for them afterwards. Polls are run by the hosts while the meeting is in progress.
  */
 class MeetingCollabService

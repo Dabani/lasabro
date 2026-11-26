@@ -6,7 +6,7 @@ use App\Services\Meetings\AttendanceRules as R;
 use Carbon\CarbonImmutable;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7b: pure attendance rules. */
+/** Pure attendance rules. */
 class MeetingAttendanceRulesTest extends TestCase
 {
     public function test_attendance_opens_when_the_meeting_starts_and_changes_after_the_end_are_corrections(): void

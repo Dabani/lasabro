@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7c routes (meeting minutes). Required from routes/api.php inside the authenticated "org.context" group, next to meetings.php. */
+/* Routes (meeting minutes). Required from routes/api.php inside the authenticated "org.context" group, next to meetings.php. */
 Route::middleware('perm:meeting.view')->group(function () {
     Route::get('minutes', [V1\MeetingMinutesController::class, 'library']);
     Route::get('meetings/{id}/minutes', [V1\MeetingMinutesController::class, 'forMeeting']);

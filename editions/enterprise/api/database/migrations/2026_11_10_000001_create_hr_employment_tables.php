@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 4a: grades, positions, progression criteria, effective-dated employment records, performance reviews, reminder log. */
+/** Grades, positions, progression criteria, effective-dated employment records, performance reviews, reminder log. */
 return new class extends Migration {
     public function up(): void
     {

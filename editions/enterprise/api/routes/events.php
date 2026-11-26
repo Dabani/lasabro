@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7e routes (events). Required from routes/api.php inside the authenticated "org.context" group. */
+/* Routes (events). Required from routes/api.php inside the authenticated "org.context" group. */
 Route::middleware('perm:event.view')->group(function () {
     Route::get('events', [V1\EventController::class, 'index']);
     Route::get('events/people', [V1\EventController::class, 'people'])->middleware('perm:event.create');

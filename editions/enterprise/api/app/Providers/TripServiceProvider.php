@@ -7,7 +7,7 @@ use App\Services\Hr\Trips\TripApprovalHandler;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 5b wiring: trip approval handler and permission, code prefixes (trip, mission authorization), daily reminder of unretired advances. */
+/** Trip approval handler and permission, code prefixes (trip, mission authorization), daily reminder of unretired advances. */
 class TripServiceProvider extends ServiceProvider
 {
     public function boot(): void

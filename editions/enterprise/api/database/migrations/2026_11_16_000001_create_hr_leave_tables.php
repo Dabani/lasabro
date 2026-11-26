@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 5a: leave. Entitlements are never stored as a number that someone typed: balances are the sum of an append-only ledger
+ * Leave. Entitlements are never stored as a number that someone typed: balances are the sum of an append-only ledger
  * (accruals, usage, adjustments, forfeitures), policy lives in the shared rules engine (domain "leave") and statutory limits in legal_parameters.
  * No enums, no JSON. Day counts are DECIMAL(7,2) so half days are exact.
  */

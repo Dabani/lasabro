@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 4b routes (recruitment). Required once from routes/api.php next to hr.php, inside the authenticated "org.context" group.
+ | Routes (recruitment). Required once from routes/api.php next to hr.php, inside the authenticated "org.context" group.
  */
 
 // ---- requisitions -----------------------------------------------------------------------------------------------------------

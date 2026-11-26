@@ -4,18 +4,18 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    require __DIR__ . '/portal.php';          // COPS Phase 0: external client portal (own guard)
-    require __DIR__ . '/meetings-public.php'; // COPS Phase 7a: external guest RSVP (personal link, rate limited)
-    require __DIR__ . '/meetings-online-public.php'; // COPS Phase 7f: online meeting for external guests (personal link, rate limited)
-    require __DIR__ . '/meetings-collab-public.php'; // COPS Phase 7g: chat and polls for external guests
-    require __DIR__ . '/events-public.php';   // COPS Phase 7e: event registration and ticket pages (public, rate limited)
+    require __DIR__ . '/portal.php';          // External client portal (own guard)
+    require __DIR__ . '/meetings-public.php'; // External guest RSVP (personal link, rate limited)
+    require __DIR__ . '/meetings-online-public.php'; // Online meeting for external guests (personal link, rate limited)
+    require __DIR__ . '/meetings-collab-public.php'; // Chat and polls for external guests
+    require __DIR__ . '/events-public.php';   // Event registration and ticket pages (public, rate limited)
 
 
     // ---- public ------------------------------------------------------------------------------
     Route::get('public/config', [V1\PublicController::class, 'config']);
     Route::get('public/logo', [V1\PublicController::class, 'logo']);
     Route::get('kit/manifest', [V1\KitController::class, 'manifest'])->middleware('throttle:60,1');   // edition, theme, active plugins for any frontend
-    Route::get('health', [V1\HealthController::class, 'ping'])->middleware('throttle:health');   // Bundle 7: minimal readiness probe
+    Route::get('health', [V1\HealthController::class, 'ping'])->middleware('throttle:health');   // Minimal readiness probe
 
     Route::post('auth/login', [V1\AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('auth/forgot-password', [V1\AuthController::class, 'forgotPassword'])->middleware('throttle:login');
@@ -26,31 +26,31 @@ Route::prefix('v1')->group(function () {
     // ---- authenticated + tenant context -------------------------------------------------------
     Route::middleware(['auth:sanctum', 'org.context'])->group(function () {
         require __DIR__ . '/foundation.php';
-        require __DIR__ . '/projects.php';     // COPS Phase 1: projects and tasks   // COPS Phase 0: approvals, rules, scope, employees, clients
-        require __DIR__ . '/time.php';         // COPS Phase 2a: timer, timesheets, rate cards
-        require __DIR__ . '/billing.php';      // COPS Phase 2b: invoices, payments, credit notes, tax rates
-        require __DIR__ . '/portal-admin.php'; // COPS Phase 3: staff side of the client portal
-        require __DIR__ . '/hr.php';           // COPS Phase 4a: positions, grades, employment history, reviews
-        require __DIR__ . '/recruitment.php';  // COPS Phase 4b: requisitions, vacancies, applicants, interviews, offers, onboarding
-        require __DIR__ . '/attendance.php';   // COPS Phase 4c: clocking, shifts, schedules, holidays, imports, validation
-        require __DIR__ . '/leave.php';        // COPS Phase 5a: leave
-        require __DIR__ . '/trips.php';        // COPS Phase 5b: business trips
-        require __DIR__ . '/payroll.php';        // COPS Phase 6a: payroll configuration and dry-run
-        require __DIR__ . '/payroll_runs.php';        // COPS Phase 6b: payroll runs, payslips, self-service
-        require __DIR__ . '/payroll_exports.php';        // COPS Phase 6c: payroll bank file, declarations, journal
-        require __DIR__ . '/meetings.php';     // COPS Phase 7a: meetings, rooms, agenda, invitations
-        require __DIR__ . '/meetings-attendance.php'; // COPS Phase 7b: meeting attendance and check-in
-        require __DIR__ . '/meetings-minutes.php'; // COPS Phase 7c: meeting minutes
-        require __DIR__ . '/meetings-followups.php'; // COPS Phase 7d: resolutions and action items
-        require __DIR__ . '/meetings-online.php'; // COPS Phase 7f: online meetings and interventions
-        require __DIR__ . '/meetings-collab.php'; // COPS Phase 7g: chat and polls of online meetings
-        require __DIR__ . '/events.php';       // COPS Phase 7e: events, registration, check-in
-        require __DIR__ . '/events-expenses.php'; // COPS Phase 7e: event expenses and budget
-        require __DIR__ . '/procurement.php'; // COPS Phase 8a: suppliers and purchase requisitions
-        require __DIR__ . '/procurement-orders.php'; // COPS Phase 8b: purchase orders and goods receipts
-        require __DIR__ . '/procurement-rfqs.php'; // COPS Phase 8d: sourcing (RFQ)
-        require __DIR__ . '/procurement-files.php'; // COPS Phase 8e: quote and invoice documents
-        require __DIR__ . '/procurement-invoices.php'; // COPS Phase 8c: supplier invoices
+        require __DIR__ . '/projects.php';     // Projects and tasks   // Approvals, rules, scope, employees, clients
+        require __DIR__ . '/time.php';         // Timer, timesheets, rate cards
+        require __DIR__ . '/billing.php';      // Invoices, payments, credit notes, tax rates
+        require __DIR__ . '/portal-admin.php'; // Staff side of the client portal
+        require __DIR__ . '/hr.php';           // Positions, grades, employment history, reviews
+        require __DIR__ . '/recruitment.php';  // Requisitions, vacancies, applicants, interviews, offers, onboarding
+        require __DIR__ . '/attendance.php';   // Clocking, shifts, schedules, holidays, imports, validation
+        require __DIR__ . '/leave.php';
+        require __DIR__ . '/trips.php';
+        require __DIR__ . '/payroll.php';        // Payroll configuration and dry-run
+        require __DIR__ . '/payroll_runs.php';        // Payroll runs, payslips, self-service
+        require __DIR__ . '/payroll_exports.php';        // Payroll bank file, declarations, journal
+        require __DIR__ . '/meetings.php';     // Meetings, rooms, agenda, invitations
+        require __DIR__ . '/meetings-attendance.php'; // Meeting attendance and check-in
+        require __DIR__ . '/meetings-minutes.php';
+        require __DIR__ . '/meetings-followups.php'; // Resolutions and action items
+        require __DIR__ . '/meetings-online.php'; // Online meetings and interventions
+        require __DIR__ . '/meetings-collab.php'; // Chat and polls of online meetings
+        require __DIR__ . '/events.php';       // Events, registration, check-in
+        require __DIR__ . '/events-expenses.php'; // Event expenses and budget
+        require __DIR__ . '/procurement.php'; // Suppliers and purchase requisitions
+        require __DIR__ . '/procurement-orders.php'; // Purchase orders and goods receipts
+        require __DIR__ . '/procurement-rfqs.php'; // Sourcing (RFQ)
+        require __DIR__ . '/procurement-files.php'; // Quote and invoice documents
+        require __DIR__ . '/procurement-invoices.php';
 
         Route::post('auth/logout', [V1\AuthController::class, 'logout']);
 
@@ -273,7 +273,7 @@ Route::prefix('v1')->group(function () {
         Route::patch('audit-findings/{id}', [V1\AuditController::class, 'updateFinding'])->middleware('perm:compliance.view');
         Route::get('management-reports', [V1\ManagementReportController::class, 'index'])->middleware('perm:report.receive,compliance.view');
 
-        // ---- Bundle 7: reports (view and export are separate permissions; each report also needs its module permission) ----
+        // ---- Reports (view and export are separate permissions; each report also needs its module permission) ----
         Route::get('reports', [V1\ReportController::class, 'index'])->middleware('perm:report.view,report.receive');
         Route::get('reports/{code}', [V1\ReportController::class, 'show'])->middleware(['perm:report.view,report.receive', 'throttle:reports']);
         Route::get('reports/{code}/export', [V1\ReportController::class, 'export'])->middleware(['perm:report.export', 'throttle:report-export']);

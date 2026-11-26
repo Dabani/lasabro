@@ -10,7 +10,7 @@ use App\Models\Permission;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 7c seeds (idempotent): minutes statuses and visibilities, approval subject/step types, the chair-approval flow. rw / sw are first-pass labels. */
+/** Minutes statuses and visibilities, approval subject/step types, the chair-approval flow. rw / sw are first-pass labels. */
 class MeetingsFollowUpSeeder extends Seeder
 {
     public function run(): void

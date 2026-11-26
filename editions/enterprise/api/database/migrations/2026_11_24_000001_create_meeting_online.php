@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 7f: online meetings. A meeting can get a video room (Jitsi), join sessions are logged for online attendance, and participants request
+ * Online meetings. A meeting can get a video room (Jitsi), join sessions are logged for online attendance, and participants request
  * interventions (the right to speak) in an ordered queue that the chair manages. No ENUM, no JSON: kinds and statuses are lookups.
  */
 return new class extends Migration {

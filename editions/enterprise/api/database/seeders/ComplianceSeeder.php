@@ -15,7 +15,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
-/** Bundle 6 reference data. Idempotent. rw/sw labels are first-pass and need native review. */
+/** Reference data. Idempotent. rw/sw labels are first-pass and need native review. */
 class ComplianceSeeder extends Seeder
 {
     public function run(): void

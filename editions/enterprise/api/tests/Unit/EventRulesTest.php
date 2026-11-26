@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Events\EventRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7e: pure event rules. */
+/** Pure event rules. */
 class EventRulesTest extends TestCase
 {
     public function test_lifecycle(): void

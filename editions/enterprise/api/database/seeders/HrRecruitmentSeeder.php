@@ -15,7 +15,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 4b seeds (idempotent): recruitment lookups (stages as in Guide 5.1), permissions, approval flows and a default onboarding checklist.
+ * Recruitment lookups (stages as in Guide 5.1), permissions, approval flows and a default onboarding checklist.
  * No salary, headcount or legal value is seeded. rw / sw labels are first-pass: have native speakers review them.
  */
 class HrRecruitmentSeeder extends Seeder

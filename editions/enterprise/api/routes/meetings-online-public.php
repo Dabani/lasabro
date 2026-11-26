@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7f: online meeting for external guests. Public (the personal link is the credential) and rate limited. Required from routes/api.php next to meetings-public.php. */
+/* Online meeting for external guests. Public (the personal link is the credential) and rate limited. Required from routes/api.php next to meetings-public.php. */
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('public/meeting-online/{token}', [V1\MeetingOnlinePublicController::class, 'show']);
     Route::post('public/meeting-online/{token}/join', [V1\MeetingOnlinePublicController::class, 'join']);

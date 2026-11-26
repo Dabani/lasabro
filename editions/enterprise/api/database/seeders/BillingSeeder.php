@@ -14,7 +14,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 2b seeds (idempotent). No tax rate, no rounding policy beyond the safe defaults and no payment terms are seeded as authoritative:
+ * . No tax rate, no rounding policy beyond the safe defaults and no payment terms are seeded as authoritative:
  * the tax rate is entered by finance and must be signed off before any invoice can be issued. rw/sw labels need native review.
  */
 class BillingSeeder extends Seeder

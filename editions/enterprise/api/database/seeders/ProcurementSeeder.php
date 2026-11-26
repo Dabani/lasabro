@@ -14,7 +14,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 8a (Guide section 7): procurement lookups, permissions, menu and the two approval flows. Idempotent. rw / sw labels need native review.
+ * Procurement lookups, permissions, menu and the two approval flows. Idempotent. rw / sw labels need native review.
  * A buyer is a person with procurement.manage. Bank details are restricted to procurement.supplier.bank, held by the admin role only until the organization
  * decides who in Finance should confirm them. Approval thresholds are set in the approval rules (amount, department), as for every other subject.
  */

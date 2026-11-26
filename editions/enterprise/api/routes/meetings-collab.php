@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7g routes (chat and polls of online meetings, account holders). Required from routes/api.php inside the authenticated "org.context" group. */
+/* Routes (chat and polls of online meetings, account holders). Required from routes/api.php inside the authenticated "org.context" group. */
 Route::middleware('perm:meeting.view')->group(function () {
     Route::get('meetings/{id}/chat', [V1\MeetingCollabController::class, 'chat']);
     Route::post('meetings/{id}/chat', [V1\MeetingCollabController::class, 'post'])->middleware('throttle:60,1');

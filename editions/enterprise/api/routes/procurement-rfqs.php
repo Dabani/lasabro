@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
-/** COPS Phase 8d: sourcing (requests for quotation). Buyers only. Mounted inside the authenticated, organization-scoped group of routes/api.php. */
+/** Sourcing (requests for quotation). Buyers only. Mounted inside the authenticated, organization-scoped group of routes/api.php. */
 Route::middleware('perm:procurement.manage')->group(function () {
     Route::get('rfqs', [V1\RfqController::class, 'index']);
     Route::post('rfqs', [V1\RfqController::class, 'store']);

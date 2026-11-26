@@ -13,7 +13,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 2a seeds (idempotent). No rates are seeded: rate cards are entered by authorised staff. rw/sw labels need native review. */
+/** . No rates are seeded: rate cards are entered by authorised staff. rw/sw labels need native review. */
 class TimeSeeder extends Seeder
 {
     private const PERMS = [

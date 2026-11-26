@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Procurement\InvoiceRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 8c: pure supplier invoice and three-way match rules. */
+/** Pure supplier invoice and three-way match rules. */
 class InvoiceRulesTest extends TestCase
 {
     public function test_lifecycle(): void

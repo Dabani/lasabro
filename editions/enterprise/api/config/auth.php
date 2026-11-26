@@ -38,7 +38,7 @@ return [
     */
 
     'guards' => [
-        'client' => ['driver' => 'session', 'provider' => 'client_identities'],   // COPS Phase 0 portal
+        'client' => ['driver' => 'session', 'provider' => 'client_identities'],
         'web' => [
             'driver' => 'session',
             'provider' => 'users',

@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Bundle 7 - cross-module reports.
+ * Cross-module reports.
  *
  * Rules (developer guide, section 13.2):
  *  - every report is organization-scoped (all models used here carry the tenant global scope; child tables

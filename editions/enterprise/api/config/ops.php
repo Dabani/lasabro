@@ -12,7 +12,7 @@ return [
 
     // Request fields that carry rich text (Tiptap HTML). Purified server-side before validation.
     'rich_text_fields' => ['rationale', 'description', 'address', 'body', 'notes', 'impact', 'immediate_action', 'root_cause', 'preventive_action_plan', 'summary',
-        // Phase 4 (HR, recruitment, attendance): names that are rich text wherever they appear.
+        // Names that are rich text wherever they appear.
         'justification', 'goals', 'employee_comment', 'strengths', 'concerns', 'terms', 'band_exception_reason', 'purpose', 'minutes_body'],
 
     // "reason" is rich text only on these routes (the web app edits it with the rich-text editor there). Everywhere else it is a plain one-line
@@ -45,7 +45,7 @@ return [
         'at_url' => env('AT_URL', 'https://api.africastalking.com/version1/messaging'),
     ],
 
-    // Bundle 7 ---------------------------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------------
     'invitation_days' => (int) env('OPS_INVITATION_DAYS', 7),     // validity of the activation link e-mailed to new users
     'retention' => [
         // Operational logs only. The audit log, case/record history and disposal evidence are never pruned automatically.
@@ -61,7 +61,7 @@ return [
         'force_https' => (bool) env('OPS_FORCE_HTTPS', true),                         // production only
     ],
 
-    // COPS Phase 0 ----------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------
     'clamav' => [
         'enabled' => (bool) env('CLAMAV_ENABLED', false),           // true in production; REQUIRED before client uploads go live
         'host' => env('CLAMAV_HOST', '127.0.0.1'),

@@ -14,7 +14,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 5b seeds (idempotent): trip lookups, permissions, menu, default approval flow. NO rate is seeded: per diem, accommodation and transport
+ * Trip lookups, permissions, menu, default approval flow. NO rate is seeded: per diem, accommodation and transport
  * rates are entered by HR/finance from the organization's own decision. rw / sw labels are first-pass.
  */
 class HrTripSeeder extends Seeder

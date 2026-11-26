@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 3 - client portal: invitations, MFA, visibility flags, client comments and shared deliverables. */
+/** Client portal: invitations, MFA, visibility flags, client comments and shared deliverables. */
 return new class extends Migration {
     public function up(): void
     {

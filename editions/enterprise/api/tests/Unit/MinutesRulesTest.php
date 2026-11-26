@@ -6,7 +6,7 @@ use App\Services\Meetings\MinutesRules as R;
 use App\Services\Meetings\MinutesTemplate as T;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7c: pure minutes rules and starting text. */
+/** Pure minutes rules and starting text. */
 class MinutesRulesTest extends TestCase
 {
     public function test_lifecycle_moves_forward_and_a_returned_draft_goes_back(): void

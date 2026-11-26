@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 0 - shared foundations: rules engine, approval engine, department scope, employee master, clients.
+ * Shared foundations: rules engine, approval engine, department scope, employee master, clients.
  * No ENUM and no JSON columns: every list is a lookup_values row, every rule is relational.
  * Monetary values are DECIMAL(15,2). Timestamps are UTC.
  */

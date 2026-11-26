@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 8c (Guide 7.4 stages 10 and 11): supplier invoices with three-way match (order, receipt, invoice), discrepancy holds, approved exceptions and the payment handoff. */
+/** Supplier invoices with three-way match (order, receipt, invoice), discrepancy holds, approved exceptions and the payment handoff. */
 return new class extends Migration {
     public function up(): void
     {

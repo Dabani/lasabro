@@ -12,7 +12,7 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * Bundle 7 acceptance tests. Not executed in the build environment (no Laravel runtime there) - run `php artisan test`.
+ * Acceptance tests. Not executed in the build environment (no Laravel runtime there) - run `php artisan test`.
  * Use a dedicated MySQL test database (see .env.testing.example); the seeders and migrations target MySQL 8.
  */
 class Bundle7Test extends TestCase

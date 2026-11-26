@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 6c routes (payroll exports: bank file, declarations, journal). Required once from routes/api.php next to payroll_runs.php, inside the authenticated "org.context" group.
+ | Routes (payroll exports: bank file, declarations, journal). Required once from routes/api.php next to payroll_runs.php, inside the authenticated "org.context" group.
  | hr.payroll.export.configure defines layouts and journal accounts, hr.payroll.verify is the second person who verifies a layout, hr.payroll.export generates and downloads.
  */
 Route::middleware('perm:hr.payroll.export,hr.payroll.export.configure')->group(function () {

@@ -13,7 +13,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 7a seeds (idempotent): meeting lookups, permissions, role grants and menu.
+ * Meeting lookups, permissions, role grants and menu.
  * rw / sw labels are first-pass: have native speakers review them.
  */
 class MeetingsSeeder extends Seeder

@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 4a routes (HR core: structure, employment history, career, reviews, self-service).
+ | Routes (HR core: structure, employment history, career, reviews, self-service).
  | Required once from routes/api.php inside the authenticated "org.context" group:   require __DIR__ . '/hr.php';
  */
 

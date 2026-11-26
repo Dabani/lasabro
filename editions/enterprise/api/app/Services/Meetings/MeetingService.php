@@ -209,7 +209,7 @@ class MeetingService
         return DB::transaction(function () use ($meeting, $by) {
             $m = $this->move($meeting, 'in_progress', $by);
             $m->update(['started_at' => now()]);
-            app(MeetingAttendanceService::class)->generate($m, $by);   // the expected list (Phase 7b)
+            app(MeetingAttendanceService::class)->generate($m, $by);   // the expected list
             return $m->refresh();
         });
     }
@@ -220,12 +220,12 @@ class MeetingService
         return DB::transaction(function () use ($meeting, $by) {
             $m = $this->move($meeting, 'held', $by);
             $m->update(['ended_at' => now(), 'started_at' => $m->started_at ?? now()]);
-            app(MeetingAttendanceService::class)->generate($m, $by);   // attendance sheet for a meeting held without being started (Phase 7b)
+            app(MeetingAttendanceService::class)->generate($m, $by);   // attendance sheet for a meeting held without being started
             return $m->refresh();
         });
     }
 
-    /** Close a held meeting (called when its minutes are published, Phase 7c). */
+    /** Close a held meeting (called when its minutes are published). */
     public function close(Meeting $meeting, User $by): Meeting
     {
         return $this->move($meeting, 'closed', $by);

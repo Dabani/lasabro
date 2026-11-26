@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Online meetings (Phase 7f): the video room (Jitsi), who may enter and as what, online attendance, and the intervention queue.
+ * Online meetings: the video room (Jitsi), who may enter and as what, online attendance, and the intervention queue.
  * An "actor" is a user (account) or an invitation (external guest); every rule is the same for both.
  */
 class OnlineMeetingService

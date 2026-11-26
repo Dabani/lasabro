@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 6b: payroll runs and payslips (Guide 5.6.1). A run moves Draft -> Calculated -> Reviewed -> Approved -> Locked -> Paid -> Declared with different
+ * Payroll runs and payslips (Guide 5.6.1). A run moves Draft -> Calculated -> Reviewed -> Approved -> Locked -> Paid -> Declared with different
  * people at each stage. Payslips persist every line with its inputs (base, rate, rounding, scheme version) so they can be reproduced years later.
  * A locked run is immutable (the models refuse any change); a correction is an adjustment run. Money DECIMAL(15,2), rates DECIMAL(9,6). No enums, no JSON.
  */

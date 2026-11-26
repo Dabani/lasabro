@@ -6,7 +6,7 @@ use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\RateCardLine;
 
-/** Hourly rate for one person on one task at a date, from the project's rate card. null = no rate (never guessed). Used by invoicing (Bundle 11). */
+/** Hourly rate for one person on one task at a date, from the project's rate card. null = no rate (never guessed). Used by invoicing. */
 class RateResolver
 {
     public function rateFor(Project $project, string $userId, ?string $taskId, string $date): ?array

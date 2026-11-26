@@ -8,7 +8,7 @@ use App\Models\LookupValue;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 7g: lookups of meeting polls (status). Idempotent. */
+/** Lookups of meeting polls (status). Idempotent. */
 class MeetingsCollabSeeder extends Seeder
 {
     public function run(): void

@@ -13,40 +13,40 @@ class DatabaseSeeder extends Seeder
             LookupSeeder::class,
             PermissionSeeder::class,
             MenuAndWidgetSeeder::class,
-            ServiceDeskSeeder::class,        // Bundle 2: case/chat lookups, bot knowledge, menu, widgets
+            ServiceDeskSeeder::class,        // Case/chat lookups, bot knowledge, menu, widgets
             DemoOrganizationSeeder::class,   // generic demo tenant; remove for production installs
-            ServiceDeskRolesSeeder::class,   // Bundle 2: widgets per role + admin phone (runs after roles exist)
-            FilesSeeder::class,              // Bundle 3: file lookups, classification levels, menu, widgets, role grants
-            ITOperationsSeeder::class,       // Bundle 4: assets, movements, access register, incidents, IT manager role
-            ArchiveSeeder::class,            // Bundle 5: records, retention, disposal, legal references, records manager + compliance officer roles
-            ComplianceSeeder::class,         // Bundle 6: backups, training, compliance calendar, audits
-            ReportsSeeder::class,            // Bundle 7: reports menu and report permissions per role
+            ServiceDeskRolesSeeder::class,   // Widgets per role + admin phone (runs after roles exist)
+            FilesSeeder::class,              // File lookups, classification levels, menu, widgets, role grants
+            ITOperationsSeeder::class,       // Assets, movements, access register, incidents, IT manager role
+            ArchiveSeeder::class,            // Records, retention, disposal, legal references, records manager + compliance officer roles
+            ComplianceSeeder::class,         // Backups, training, compliance calendar, audits
+            ReportsSeeder::class,            // Reports menu and report permissions per role
             CopsFoundationSeeder::class,
             ProjectsSeeder::class,
             TimeSeeder::class,
             BillingSeeder::class,
-            PortalSeeder::class,             // COPS Phase 3            // COPS Phase 2b               // COPS Phase 2a           // COPS Phase 1     // COPS Phase 0: approvals, rules, scope, employees, clients
-            HrSeeder::class,                 // COPS Phase 4a: HR lookups, permissions, hr_manager role, employment-change flow
-            HrRecruitmentSeeder::class,      // COPS Phase 4b: recruitment lookups, permissions, approval flows, onboarding template
-            HrAttendanceSeeder::class,       // COPS Phase 4c: attendance lookups, permissions, correction approval flow
-            HrLeaveSeeder::class,        // COPS Phase 5a: leave
-            HrTripSeeder::class,        // COPS Phase 5b: business trips
-            HrPayrollSeeder::class,          // COPS Phase 6a: payroll lookups, permissions, menu (no rate or scheme is seeded)
-            HrPayrollRunSeeder::class,       // COPS Phase 6b: run / payslip lookups, stage permissions, menu
-            HrPayrollExportSeeder::class,    // COPS Phase 6c: export lookups and permissions (no layout or account is seeded)
-            MeetingsSeeder::class,          // COPS Phase 7a: meeting lookups, permissions, menu
-            MeetingsAttendanceSeeder::class, // COPS Phase 7b: attendance statuses and check-in methods
-            MeetingsMinutesSeeder::class, // COPS Phase 7c: minutes statuses, visibilities and the chair-approval flow
-            MeetingsFollowUpSeeder::class, // COPS Phase 7d: resolution and action statuses, follow-up menu
-            EventsSeeder::class, // COPS Phase 7e: event lookups, permissions, menu
-            EventsExpensesSeeder::class, // COPS Phase 7e: expense categories, statuses, approval flow
-            ProcurementSeeder::class, // COPS Phase 8a: procurement lookups, permissions, menu, approval flows
-            ProcurementOrdersSeeder::class, // COPS Phase 8b: purchase order statuses, receiving permission, flow
-            ProcurementInvoicesSeeder::class, // COPS Phase 8c: invoice statuses, permissions, menu
-            ProcurementRfqSeeder::class, // COPS Phase 8d: RFQ statuses and menu
-            ProcurementFilesSeeder::class, // COPS Phase 8e: file link types for quote and invoice documents
-            MeetingsOnlineSeeder::class, // COPS Phase 7f: online meeting lookups
-            MeetingsCollabSeeder::class, // COPS Phase 7g: poll statuses
+            PortalSeeder::class,             // // COPS Phase 2b               // // COPS Phase 1     // Approvals, rules, scope, employees, clients
+            HrSeeder::class,                 // HR lookups, permissions, hr_manager role, employment-change flow
+            HrRecruitmentSeeder::class,      // Recruitment lookups, permissions, approval flows, onboarding template
+            HrAttendanceSeeder::class,       // Attendance lookups, permissions, correction approval flow
+            HrLeaveSeeder::class,
+            HrTripSeeder::class,
+            HrPayrollSeeder::class,          // Payroll lookups, permissions, menu (no rate or scheme is seeded)
+            HrPayrollRunSeeder::class,       // Run / payslip lookups, stage permissions, menu
+            HrPayrollExportSeeder::class,    // Export lookups and permissions (no layout or account is seeded)
+            MeetingsSeeder::class,          // Meeting lookups, permissions, menu
+            MeetingsAttendanceSeeder::class, // Attendance statuses and check-in methods
+            MeetingsMinutesSeeder::class, // Minutes statuses, visibilities and the chair-approval flow
+            MeetingsFollowUpSeeder::class, // Resolution and action statuses, follow-up menu
+            EventsSeeder::class, // Event lookups, permissions, menu
+            EventsExpensesSeeder::class, // Expense categories, statuses, approval flow
+            ProcurementSeeder::class, // Procurement lookups, permissions, menu, approval flows
+            ProcurementOrdersSeeder::class, // Purchase order statuses, receiving permission, flow
+            ProcurementInvoicesSeeder::class, // Invoice statuses, permissions, menu
+            ProcurementRfqSeeder::class, // RFQ statuses and menu
+            ProcurementFilesSeeder::class, // File link types for quote and invoice documents
+            MeetingsOnlineSeeder::class, // Online meeting lookups
+            MeetingsCollabSeeder::class,
             MeetingBaselineAccessSeeder::class, // COPS b37: every role may open its own meetings and decide its approvals
             PolishSeeder::class,             // currency list and menu icons
             CodesSeeder::class,              // system rule sets with fixed keys

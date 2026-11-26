@@ -12,7 +12,7 @@ use App\Models\Permission;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** Bundle 2 reference data. Idempotent: safe to run again. rw/sw text is first-pass and needs native review. */
+/** Reference data. Idempotent: safe to run again. rw/sw text is first-pass and needs native review. */
 class ServiceDeskSeeder extends Seeder
 {
     public function run(): void

@@ -14,7 +14,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** Bundle 5 reference data. Idempotent. rw/sw labels are first-pass and need native review. */
+/** Reference data. Idempotent. rw/sw labels are first-pass and need native review. */
 class ArchiveSeeder extends Seeder
 {
     public function run(): void

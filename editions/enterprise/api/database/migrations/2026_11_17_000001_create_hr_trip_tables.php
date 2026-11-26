@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 5b: business trips and expenses (Guide 5.5). Money is DECIMAL(15,2) with an explicit currency, never float. No enums, no JSON.
+ * Business trips and expenses (Guide 5.5). Money is DECIMAL(15,2) with an explicit currency, never float. No enums, no JSON.
  * Rates are effective-dated rows (a change = a new row), advances and settlements are never edited after the fact.
  */
 return new class extends Migration {

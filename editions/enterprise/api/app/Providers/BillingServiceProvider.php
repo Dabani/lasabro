@@ -8,7 +8,7 @@ use App\Services\Billing\InvoiceApprovalHandler;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 2b wiring: invoice / credit-note approval handlers and the overdue job. */
+/** Invoice / credit-note approval handlers and the overdue job. */
 class BillingServiceProvider extends ServiceProvider
 {
     public function boot(): void

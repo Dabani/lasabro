@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
- * Bundle 7 - reports. View and export are separate permissions (report.view / report.export) and every
+ * Reports. View and export are separate permissions (report.view / report.export) and every
  * report additionally needs its own module permission (see ReportService::definitions()).
  * Viewing and exporting are written to the audit log with the filters used (developer guide 13.2).
  */

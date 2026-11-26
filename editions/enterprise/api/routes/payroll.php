@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 6a routes (payroll configuration and dry-run). Required once from routes/api.php next to trips.php, inside the authenticated "org.context" group.
+ | Routes (payroll configuration and dry-run). Required once from routes/api.php next to trips.php, inside the authenticated "org.context" group.
  | hr.payroll.view reads, hr.payroll.configure prepares, hr.payroll.verify is the second person, hr.payroll.prepare runs the dry-run.
  */
 Route::middleware('perm:hr.payroll.view,hr.payroll.configure,hr.payroll.verify,hr.payroll.prepare')->group(function () {

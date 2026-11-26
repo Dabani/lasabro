@@ -15,7 +15,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 5a seeds (idempotent): leave lookups, permissions, menu, the default approval flow and one settings row per leave type.
+ * Leave lookups, permissions, menu, the default approval flow and one settings row per leave type.
  * NO legal value and NO day count is seeded: entitlements come from the company policy (rules engine) and statutory limits that HR/legal enter and a second person verifies.
  * Type settings are created once and never overwritten. Defaults are conservative and must be confirmed (see docs/PHASE-5A-LEAVE.md). rw / sw labels are first-pass.
  */

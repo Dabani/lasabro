@@ -10,7 +10,7 @@ use App\Services\Meetings\MinutesChairResolver;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 7 wiring: reminder jobs (7a meeting reminders, 7d follow-up reminders), the minutes approval handler and the "meeting_chair" step resolver (7c), the event expense approval handler (7e). */
+/** Reminder jobs (7a meeting reminders, 7d follow-up reminders), the minutes approval handler and the "meeting_chair" step resolver (7c), the event expense approval handler (7e). */
 class MeetingsServiceProvider extends ServiceProvider
 {
     public function boot(): void

@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Procurement\ProcurementRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 8a: pure supplier and requisition rules. */
+/** Pure supplier and requisition rules. */
 class ProcurementRulesTest extends TestCase
 {
     public function test_supplier_lifecycle(): void

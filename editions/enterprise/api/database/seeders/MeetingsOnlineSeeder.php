@@ -8,7 +8,7 @@ use App\Models\LookupValue;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 7f: lookups of online meetings (kinds and statuses of interventions). Idempotent. */
+/** Lookups of online meetings (kinds and statuses of interventions). Idempotent. */
 class MeetingsOnlineSeeder extends Seeder
 {
     public function run(): void

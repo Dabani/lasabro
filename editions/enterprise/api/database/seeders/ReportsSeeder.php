@@ -9,7 +9,7 @@ use App\Models\Role;
 use Illuminate\Database\Seeder;
 
 /**
- * Bundle 7 - reports menu entry and report permissions per standard role. Idempotent.
+ * Reports menu entry and report permissions per standard role. Idempotent.
  *
  *  report.view     opens the Reports hub (each report also needs its own module permission, see ReportService)
  *  report.receive  executive overview and management reports

@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 6a: payroll configuration (Guide 5.6). No rate, threshold, band or exemption is ever seeded: the accountant enters each one with its source,
+ * Payroll configuration (Guide 5.6). No rate, threshold, band or exemption is ever seeded: the accountant enters each one with its source,
  * and a DIFFERENT person verifies it. Everything is effective-dated; a verified row is never edited (it is ended and a new one entered).
  * Money DECIMAL(15,2), rates DECIMAL(9,6) as percentages. No enums, no JSON.
  */

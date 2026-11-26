@@ -15,7 +15,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 4c seeds (idempotent): attendance lookups, permissions and the correction approval flow.
+ * Attendance lookups, permissions and the correction approval flow.
  * No shift, schedule, holiday or legal value is seeded: working time and public holidays are decided and entered by the organization.
  * rw / sw labels are first-pass: have native speakers review them.
  */

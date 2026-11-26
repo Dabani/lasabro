@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 4c (part 2): configurable import profiles for any device or spreadsheet, device codes, work sites (geolocation). */
+/** Configurable import profiles for any device or spreadsheet, device codes, work sites (geolocation). */
 return new class extends Migration {
     public function up(): void
     {

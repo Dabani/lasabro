@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 3: rate limits for the external portal (Guide 8.6). */
+/** Rate limits for the external portal (Guide 8.6). */
 class PortalServiceProvider extends ServiceProvider
 {
     public function boot(): void

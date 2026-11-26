@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 0 wiring. Registered in bootstrap/providers.php by scripts/apply-bundle-08.py. */
+/** . Registered in bootstrap/providers.php by scripts/apply-bundle-08.py. */
 class CopsFoundationServiceProvider extends ServiceProvider
 {
     public function register(): void

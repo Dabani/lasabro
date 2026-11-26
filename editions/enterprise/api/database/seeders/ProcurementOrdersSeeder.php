@@ -13,7 +13,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 8b: purchase order statuses, the receiving permission, the order approval flow and the menu entry. Run after ProcurementSeeder. Idempotent. rw / sw labels need native review. */
+/** Purchase order statuses, the receiving permission, the order approval flow and the menu entry. Run after ProcurementSeeder. Idempotent. rw / sw labels need native review. */
 class ProcurementOrdersSeeder extends Seeder
 {
     private const GRANTS = ['staff' => ['procurement.receive'], 'team_leader' => ['procurement.receive'], 'manager' => ['procurement.receive']];

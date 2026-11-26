@@ -6,7 +6,7 @@ use App\Services\Projects\ProjectReviewerResolver;
 use App\Services\Projects\TaskReviewApprovalHandler;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 1 wiring: registers the task_review approval handler and the project_reviewer step resolver. */
+/** Registers the task_review approval handler and the project_reviewer step resolver. */
 class ProjectsServiceProvider extends ServiceProvider
 {
     public function boot(): void

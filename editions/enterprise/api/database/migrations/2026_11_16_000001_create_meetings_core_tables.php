@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 7a: meetings and events, core. Rooms, meetings (and their recurrence), room bookings with conflict detection,
+ * Meetings and events, core. Rooms, meetings (and their recurrence), room bookings with conflict detection,
  * agenda, invitations / RSVP, schedule history. No ENUM and no JSON columns: every state is a lookup.
  * Instants are stored in UTC (App\Casts\UtcDateTime); presentation uses the organization timezone.
  */

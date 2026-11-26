@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Procurement\OrderRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 8b: pure purchase order and receipt rules. */
+/** Pure purchase order and receipt rules. */
 class OrderRulesTest extends TestCase
 {
     public function test_lifecycle(): void

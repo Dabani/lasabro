@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 8a (Guide section 7): supplier master with verified bank details, and purchase requisitions. Statuses and kinds are lookups. Bank account numbers are encrypted. */
+/** Supplier master with verified bank details, and purchase requisitions. Statuses and kinds are lookups. Bank account numbers are encrypted. */
 return new class extends Migration {
     public function up(): void
     {

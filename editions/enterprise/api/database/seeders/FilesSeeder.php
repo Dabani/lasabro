@@ -14,7 +14,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** Bundle 3 reference data. Idempotent. rw/sw text is first-pass and needs native review. */
+/** Reference data. Idempotent. rw/sw text is first-pass and needs native review. */
 class FilesSeeder extends Seeder
 {
     public function run(): void

@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 2b - invoices, payments, credit notes. Money is DECIMAL(15,2) with a currency code per document.
+ * Invoices, payments, credit notes. Money is DECIMAL(15,2) with a currency code per document.
  * Every calculation input is stored (rates, rounding, tax percent, source time entries) so totals stay reproducible years later.
  */
 return new class extends Migration {

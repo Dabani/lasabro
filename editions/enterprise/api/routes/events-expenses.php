@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7e routes (event expenses). Required from routes/api.php inside the authenticated "org.context" group, next to events.php. */
+/* Routes (event expenses). Required from routes/api.php inside the authenticated "org.context" group, next to events.php. */
 Route::middleware('perm:event.view')->group(function () {
     Route::get('events/{id}/expenses/export', [V1\EventExpenseController::class, 'export']);
     Route::get('events/{id}/expenses', [V1\EventExpenseController::class, 'index']);

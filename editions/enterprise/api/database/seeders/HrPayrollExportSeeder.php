@@ -12,7 +12,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 6c seeds (idempotent): export lookups and two permissions. NO layout and NO account is seeded: the bank, RRA and RSSB layouts and the journal accounts come from
+ * Export lookups and two permissions. NO layout and NO account is seeded: the bank, RRA and RSSB layouts and the journal accounts come from
  * the accountant (a layout records who agreed it and a second person verifies it). Permissions go to admin ONLY. rw / sw labels are first-pass.
  */
 class HrPayrollExportSeeder extends Seeder

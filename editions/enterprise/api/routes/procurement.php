@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
-/** COPS Phase 8a: suppliers and purchase requisitions. Mounted inside the authenticated, organization-scoped group of routes/api.php. */
+/** Suppliers and purchase requisitions. Mounted inside the authenticated, organization-scoped group of routes/api.php. */
 Route::middleware('perm:procurement.view')->group(function () {
     Route::get('suppliers', [V1\SupplierController::class, 'index']);
     Route::get('suppliers/{id}', [V1\SupplierController::class, 'show']);

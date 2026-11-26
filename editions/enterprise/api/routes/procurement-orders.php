@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
-/** COPS Phase 8b: purchase orders and goods receipts. Mounted inside the authenticated, organization-scoped group of routes/api.php. */
+/** Purchase orders and goods receipts. Mounted inside the authenticated, organization-scoped group of routes/api.php. */
 Route::middleware('perm:procurement.manage,procurement.receive')->group(function () {
     Route::get('purchase-orders', [V1\PurchaseOrderController::class, 'index']);
     Route::get('purchase-orders/{id}', [V1\PurchaseOrderController::class, 'show']);

@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 2a routes - required inside the authenticated "org.context" group by apply-bundle-10.py. */
+/* Routes - required inside the authenticated "org.context" group by apply-bundle-10.py. */
 Route::middleware('perm:time.track')->group(function () {
     Route::get('timer', [V1\TimeController::class, 'timer']);
     Route::post('timer/start', [V1\TimeController::class, 'start']);

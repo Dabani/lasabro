@@ -6,7 +6,7 @@ use App\Models\MenuItem;
 use App\Models\Permission;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 3 seeds (idempotent): the staff menu entry for portal administration. Portal switches stay OFF until enabled per client or project. */
+/** The staff menu entry for portal administration. Portal switches stay OFF until enabled per client or project. */
 class PortalSeeder extends Seeder
 {
     public function run(): void

@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7b routes (meeting attendance). Required from routes/api.php inside the authenticated "org.context" group, next to meetings.php. */
+/* Routes (meeting attendance). Required from routes/api.php inside the authenticated "org.context" group, next to meetings.php. */
 Route::middleware('perm:meeting.view')->group(function () {
     Route::get('meetings/{id}/attendance', [V1\MeetingAttendanceController::class, 'index']);
     Route::post('meetings/{id}/attendance/generate', [V1\MeetingAttendanceController::class, 'generate']);

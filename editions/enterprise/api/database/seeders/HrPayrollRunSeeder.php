@@ -13,7 +13,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 6b seeds (idempotent): run / payslip lookups, one permission per payroll stage, menu. Stage permissions go to admin ONLY: create separate roles for the
+ * Run / payslip lookups, one permission per payroll stage, menu. Stage permissions go to admin ONLY: create separate roles for the
  * reviewer (HR), the finance approver, the Managing Director and whoever pays, so that no one person can prepare and approve (the service refuses it anyway).
  * Every employee role receives hr.payslip.own (their OWN payslips, once paid). rw / sw labels are first-pass.
  */

@@ -13,7 +13,7 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * COPS Phase 7 acceptance (Guide 6.8 and the roadmap gate): the whole journey from invitation to published minutes and tracked action items,
+ * Acceptance (Guide 6.8 and the roadmap gate): the whole journey from invitation to published minutes and tracked action items,
  * plus the confidentiality rules. Not executed in the build environment (no Laravel runtime): run `php artisan test --filter=MeetingsJourney`.
  * Needs bundles 17 to 20 and the MySQL test database.
  */

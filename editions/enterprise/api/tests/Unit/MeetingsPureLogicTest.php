@@ -10,7 +10,7 @@ use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7a: pure meeting logic (no database). */
+/** Pure meeting logic (no database). */
 class MeetingsPureLogicTest extends TestCase
 {
     public function test_lifecycle_allows_only_the_documented_moves(): void

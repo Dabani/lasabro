@@ -17,7 +17,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 4a seeds (idempotent): HR lookups, permissions, menu, the hr_manager role, the employment-change approval flow,
+ * HR lookups, permissions, menu, the hr_manager role, the employment-change approval flow,
  * and a "hire" history row for employees that existed before this phase. No salary, grade or legal value is seeded.
  * rw / sw labels are first-pass: have native speakers review them.
  */

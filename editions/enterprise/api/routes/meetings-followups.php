@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7d routes (resolutions and action items). Required from routes/api.php inside the authenticated "org.context" group. */
+/* Routes (resolutions and action items). Required from routes/api.php inside the authenticated "org.context" group. */
 Route::middleware('perm:meeting.view')->group(function () {
     Route::get('meeting-followups/summary', [V1\MeetingFollowUpController::class, 'summary']);
     Route::get('meeting-followups', [V1\MeetingFollowUpController::class, 'index']);

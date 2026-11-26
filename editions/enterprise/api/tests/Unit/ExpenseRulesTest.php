@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Events\ExpenseRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7e: pure event expense rules. */
+/** Pure event expense rules. */
 class ExpenseRulesTest extends TestCase
 {
     public function test_lifecycle(): void

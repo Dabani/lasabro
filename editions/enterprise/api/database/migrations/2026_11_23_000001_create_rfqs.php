@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 8d (Guide 7.4 sourcing): requests for quotation raised from an approved requisition, supplier quotes per requisition line, a documented award, and the link to the purchase order. */
+/** Requests for quotation raised from an approved requisition, supplier quotes per requisition line, a documented award, and the link to the purchase order. */
 return new class extends Migration {
     public function up(): void
     {

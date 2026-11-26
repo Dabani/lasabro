@@ -12,7 +12,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 8c: invoice statuses, invoice permissions and the menu entry. Run after ProcurementOrdersSeeder. Idempotent. rw / sw labels need native review. */
+/** Invoice statuses, invoice permissions and the menu entry. Run after ProcurementOrdersSeeder. Idempotent. rw / sw labels need native review. */
 class ProcurementInvoicesSeeder extends Seeder
 {
     private const PERMS = [

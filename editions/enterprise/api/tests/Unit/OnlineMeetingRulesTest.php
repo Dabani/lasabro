@@ -7,7 +7,7 @@ use App\Services\Meetings\OnlineRules as R;
 use Carbon\CarbonImmutable;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7f: pure rules of online meetings and the join token. */
+/** Pure rules of online meetings and the join token. */
 class OnlineMeetingRulesTest extends TestCase
 {
     public function test_the_room_opens_before_the_start_and_closes_with_the_meeting(): void

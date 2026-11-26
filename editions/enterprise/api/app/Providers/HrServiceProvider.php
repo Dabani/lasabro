@@ -17,7 +17,7 @@ use App\Services\Hr\SelectionApprovalHandler;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 4a wiring: approval handler and permission, code prefixes, hire observer, daily jobs. */
+/** Approval handler and permission, code prefixes, hire observer, daily jobs. */
 class HrServiceProvider extends ServiceProvider
 {
     public function boot(): void
@@ -37,7 +37,7 @@ class HrServiceProvider extends ServiceProvider
         ]);
         Employee::observe(EmployeeObserver::class);
         $this->commands([HrApplyEffective::class, HrSendReminders::class, HrRetentionReview::class, HrAttendanceClose::class]);
-        $this->app->bindIf(LeaveLookup::class, NullLeaveLookup::class);       // Phase 5 (leave) rebinds this to its own implementation
+        $this->app->bindIf(LeaveLookup::class, NullLeaveLookup::class);       // Rebinds this to its own implementation
         $this->callAfterResolving(Schedule::class, function (Schedule $s) {
             $s->command('cops:hr-apply-effective')->dailyAt('00:10')->withoutOverlapping();
             $s->command('cops:hr-reminders')->dailyAt('07:00')->withoutOverlapping();

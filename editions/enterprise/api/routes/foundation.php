@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 0 routes. Required once from routes/api.php inside the authenticated "org.context" group:
+ | Routes. Required once from routes/api.php inside the authenticated "org.context" group:
  |     require __DIR__ . '/foundation.php';
  | Portal (external client) routes are registered by routes/portal.php outside that group.
  */

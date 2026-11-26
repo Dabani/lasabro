@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Meetings\FollowUpRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7d: pure rules for resolutions and action items. */
+/** Pure rules for resolutions and action items. */
 class FollowUpRulesTest extends TestCase
 {
     public function test_lifecycles(): void

@@ -13,7 +13,7 @@ use App\Models\Role;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 1 seeds (idempotent): lookups, permissions, menu, role grants, default task-review flow. rw/sw labels need native review. */
+/** Lookups, permissions, menu, role grants, default task-review flow. rw/sw labels need native review. */
 class ProjectsSeeder extends Seeder
 {
     private const PERMS = [

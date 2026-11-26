@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 2a - time entries (server-side timer segments), weekly timesheets, rate cards. Money is DECIMAL(15,2); timestamps are UTC. */
+/** Time entries (server-side timer segments), weekly timesheets, rate cards. Money is DECIMAL(15,2); timestamps are UTC. */
 return new class extends Migration {
     public function up(): void
     {

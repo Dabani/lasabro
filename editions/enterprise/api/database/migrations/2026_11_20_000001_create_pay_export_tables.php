@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 6c: payroll exports (Guide 5.6). The bank, PAYE and RSSB layouts and the journal accounts are the accountant's: they are configured here, NEVER built in.
+ * Payroll exports (Guide 5.6). The bank, PAYE and RSSB layouts and the journal accounts are the accountant's: they are configured here, NEVER built in.
  * A layout records who agreed it and is verified by a second person before any file can be generated from it. A generated file is stored immutable (encrypted, checksummed).
  */
 return new class extends Migration {

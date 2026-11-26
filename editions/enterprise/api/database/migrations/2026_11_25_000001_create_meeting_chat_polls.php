@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * COPS Phase 7g: chat and polls of online meetings. Chat is kept with the meeting (moderators can remove a message, the removal is recorded).
+ * Chat and polls of online meetings. Chat is kept with the meeting (moderators can remove a message, the removal is recorded).
  * Polls are run by the hosts; who voted is stored apart from what was voted, so an anonymous poll cannot be traced back to a person from the vote rows.
  */
 return new class extends Migration {

@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 2b routes - required inside the authenticated "org.context" group by apply-bundle-11.py. */
+/* Routes - required inside the authenticated "org.context" group by apply-bundle-11.py. */
 Route::get('invoices', [V1\InvoiceController::class, 'index'])->middleware('perm:billing.view');
 Route::get('invoices/{id}', [V1\InvoiceController::class, 'show'])->middleware('perm:billing.view');
 Route::get('invoices/{id}/pdf', [V1\InvoiceController::class, 'pdf'])->middleware('perm:billing.view');

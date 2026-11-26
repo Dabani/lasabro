@@ -7,7 +7,7 @@ use App\Services\Procurement\RequisitionApprovalHandler;
 use App\Services\Procurement\SupplierApprovalHandler;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 8 wiring: approval outcome handlers for the subjects "supplier", "purchase_requisition" and "purchase_order". */
+/** Approval outcome handlers for the subjects "supplier", "purchase_requisition" and "purchase_order". */
 class ProcurementServiceProvider extends ServiceProvider
 {
     public function boot(): void

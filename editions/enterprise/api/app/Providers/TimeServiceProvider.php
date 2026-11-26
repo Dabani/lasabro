@@ -7,7 +7,7 @@ use App\Services\Time\TimesheetApprovalHandler;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
-/** COPS Phase 2a wiring: timesheet approval handler and the timer auto-stop job. */
+/** Timesheet approval handler and the timer auto-stop job. */
 class TimeServiceProvider extends ServiceProvider
 {
     public function boot(): void

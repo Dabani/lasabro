@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 5a routes (leave). Required once from routes/api.php next to attendance.php, inside the authenticated "org.context" group.
+ | Routes (leave). Required once from routes/api.php next to attendance.php, inside the authenticated "org.context" group.
  | Every route names its permission; people-scoped data is additionally filtered by Employee::visibleTo (404 outside scope).
  */
 

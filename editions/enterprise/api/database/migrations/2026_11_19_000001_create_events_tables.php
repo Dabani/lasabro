@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 7e: events with registration, capacity / waitlist and attendance (Guide 6, Appendix A.4). Statuses and kinds are lookups; times are UTC. */
+/** Events with registration, capacity / waitlist and attendance (Guide 6, Appendix A.4). Statuses and kinds are lookups; times are UTC. */
 return new class extends Migration {
     public function up(): void
     {

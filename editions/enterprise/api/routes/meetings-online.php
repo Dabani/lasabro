@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 7f routes (online meetings, account holders). Required from routes/api.php inside the authenticated "org.context" group, next to meetings.php. */
+/* Routes (online meetings, account holders). Required from routes/api.php inside the authenticated "org.context" group, next to meetings.php. */
 Route::middleware('perm:meeting.view')->group(function () {
     Route::get('meetings/{id}/online', [V1\MeetingOnlineController::class, 'show']);
     Route::post('meetings/{id}/online/enable', [V1\MeetingOnlineController::class, 'enable']);

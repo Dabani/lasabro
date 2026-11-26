@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 7d: resolutions and action items of a meeting (Guide 6.7). Statuses are lookups; every change is kept in meeting_followup_history. */
+/** Resolutions and action items of a meeting (Guide 6.7). Statuses are lookups; every change is kept in meeting_followup_history. */
 return new class extends Migration {
     public function up(): void
     {

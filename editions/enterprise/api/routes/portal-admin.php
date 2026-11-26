@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
-/* COPS Phase 3 staff routes - required inside the authenticated "org.context" group by apply-bundle-12.py. */
+/* Staff routes - required inside the authenticated "org.context" group by apply-bundle-12.py. */
 Route::middleware('perm:client.manage')->group(function () {
     Route::get('portal-admin/clients', [V1\PortalAdminController::class, 'overview']);
     Route::put('clients/{id}/portal', [V1\PortalAdminController::class, 'setClientPortal']);

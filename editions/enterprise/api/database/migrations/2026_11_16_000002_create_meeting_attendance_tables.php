@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** COPS Phase 7b: meeting attendance (Guide 6.5). Statuses and check-in methods are lookups; every change is kept in an immutable history. */
+/** Meeting attendance (Guide 6.5). Statuses and check-in methods are lookups; every change is kept in an immutable history. */
 return new class extends Migration {
     public function up(): void
     {

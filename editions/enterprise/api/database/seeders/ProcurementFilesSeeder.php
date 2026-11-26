@@ -8,7 +8,7 @@ use App\Models\LookupValue;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 8e: file link types for supplier quote documents and supplier invoice scans. Idempotent. */
+/** File link types for supplier quote documents and supplier invoice scans. Idempotent. */
 class ProcurementFilesSeeder extends Seeder
 {
     public function run(): void

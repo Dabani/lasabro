@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\V1 as V1;
 use Illuminate\Support\Facades\Route;
 
 /*
- | COPS Phase 5b routes (business trips and expenses). Required once from routes/api.php next to leave.php, inside the authenticated "org.context" group.
+ | Routes (business trips and expenses). Required once from routes/api.php next to leave.php, inside the authenticated "org.context" group.
  | Static paths (rates, unretired-advances) come before trips/{id}. People-scoped data is filtered per trip (404 outside scope); finance sees all trips.
  */
 

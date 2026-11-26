@@ -8,7 +8,7 @@ use App\Models\LookupValue;
 use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
-/** COPS Phase 7b seeds (idempotent): attendance statuses and check-in methods. rw / sw are first-pass labels. */
+/** Attendance statuses and check-in methods. rw / sw are first-pass labels. */
 class MeetingsAttendanceSeeder extends Seeder
 {
     public function run(): void

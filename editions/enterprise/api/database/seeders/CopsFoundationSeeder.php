@@ -14,7 +14,7 @@ use App\Support\Lookup;
 use Illuminate\Database\Seeder;
 
 /**
- * COPS Phase 0 seeds (idempotent): lookups, permissions, menu, role grants, default approval flows.
+ * Lookups, permissions, menu, role grants, default approval flows.
  * Nothing legal or financial is seeded as authoritative: no statutory values, no thresholds. With no active rule every
  * request takes the safe default flow (explicit two-level approval). rw / sw labels are first-pass: have native speakers review them.
  */

@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Services\Meetings\CollabRules as R;
 use PHPUnit\Framework\TestCase;
 
-/** COPS Phase 7g: pure rules of chat and polls. */
+/** Pure rules of chat and polls. */
 class CollabRulesTest extends TestCase
 {
     public function test_messages_and_questions(): void
