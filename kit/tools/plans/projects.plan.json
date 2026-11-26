@@ -8,6 +8,7 @@
   "requires": {
     "Lasabro.Core": "^1.0",
     "Lasabro.Approvals": "^1.0",
+    "Lasabro.Clients": "^1.0",
     "Lasabro.Files": "^1.0"
   },
   "suggests": {},
@@ -23,11 +24,9 @@
     {
       "from": "app/Models",
       "include": [
-        "LookupValueTranslation",
         "Milestone",
+        "Project",
         "ProjectMember",
-        "RuleCondition",
-        "RuleOutcome",
         "Task",
         "TaskComment",
         "TaskStatusHistory"

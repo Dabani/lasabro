@@ -21,6 +21,7 @@ class LasabroHostServiceProvider extends ServiceProvider
         'Lasabro.Approvals' => '1.0.0',
         'Lasabro.Rules' => '1.0.0',
         'Lasabro.Files' => '1.0.0',
+        'Lasabro.Clients' => '1.0.0',
         'Lasabro.Hr' => '1.0.0',
         'Lasabro.Attendance' => '1.0.0',  // Hr, Attendance, Recruitment, Payroll: extracted in a later bundle
     ];
