@@ -1,0 +1,110 @@
+{
+  "plugin": "Lasabro.Procurement",
+  "moved": {
+    "App\\Http\\Controllers\\Api\\V1\\ProcurementFileController": "Lasabro\\Procurement\\Http\\Controllers\\ProcurementFileController",
+    "App\\Http\\Controllers\\Api\\V1\\PurchaseOrderController": "Lasabro\\Procurement\\Http\\Controllers\\PurchaseOrderController",
+    "App\\Http\\Controllers\\Api\\V1\\PurchaseRequisitionController": "Lasabro\\Procurement\\Http\\Controllers\\PurchaseRequisitionController",
+    "App\\Http\\Controllers\\Api\\V1\\RfqController": "Lasabro\\Procurement\\Http\\Controllers\\RfqController",
+    "App\\Http\\Controllers\\Api\\V1\\SupplierController": "Lasabro\\Procurement\\Http\\Controllers\\SupplierController",
+    "App\\Http\\Controllers\\Api\\V1\\SupplierInvoiceController": "Lasabro\\Procurement\\Http\\Controllers\\SupplierInvoiceController",
+    "App\\Http\\Resources\\Api\\V1\\PurchaseOrderRowResource": "Lasabro\\Procurement\\Http\\Resources\\PurchaseOrderRowResource",
+    "App\\Http\\Resources\\Api\\V1\\RequisitionRowResource": "Lasabro\\Procurement\\Http\\Resources\\RequisitionRowResource",
+    "App\\Http\\Resources\\Api\\V1\\RfqRowResource": "Lasabro\\Procurement\\Http\\Resources\\RfqRowResource",
+    "App\\Http\\Resources\\Api\\V1\\SupplierInvoiceRowResource": "Lasabro\\Procurement\\Http\\Resources\\SupplierInvoiceRowResource",
+    "App\\Http\\Resources\\Api\\V1\\SupplierRowResource": "Lasabro\\Procurement\\Http\\Resources\\SupplierRowResource",
+    "App\\Models\\GoodsReceipt": "Lasabro\\Procurement\\Models\\GoodsReceipt",
+    "App\\Models\\GoodsReceiptLine": "Lasabro\\Procurement\\Models\\GoodsReceiptLine",
+    "App\\Models\\PurchaseOrder": "Lasabro\\Procurement\\Models\\PurchaseOrder",
+    "App\\Models\\PurchaseOrderHistory": "Lasabro\\Procurement\\Models\\PurchaseOrderHistory",
+    "App\\Models\\PurchaseOrderLine": "Lasabro\\Procurement\\Models\\PurchaseOrderLine",
+    "App\\Models\\PurchaseRequisition": "Lasabro\\Procurement\\Models\\PurchaseRequisition",
+    "App\\Models\\PurchaseRequisitionHistory": "Lasabro\\Procurement\\Models\\PurchaseRequisitionHistory",
+    "App\\Models\\PurchaseRequisitionLine": "Lasabro\\Procurement\\Models\\PurchaseRequisitionLine",
+    "App\\Models\\Rfq": "Lasabro\\Procurement\\Models\\Rfq",
+    "App\\Models\\RfqHistory": "Lasabro\\Procurement\\Models\\RfqHistory",
+    "App\\Models\\RfqQuote": "Lasabro\\Procurement\\Models\\RfqQuote",
+    "App\\Models\\RfqQuoteLine": "Lasabro\\Procurement\\Models\\RfqQuoteLine",
+    "App\\Models\\Supplier": "Lasabro\\Procurement\\Models\\Supplier",
+    "App\\Models\\SupplierBankAccount": "Lasabro\\Procurement\\Models\\SupplierBankAccount",
+    "App\\Models\\SupplierInvoice": "Lasabro\\Procurement\\Models\\SupplierInvoice",
+    "App\\Models\\SupplierInvoiceHistory": "Lasabro\\Procurement\\Models\\SupplierInvoiceHistory",
+    "App\\Models\\SupplierInvoiceIssue": "Lasabro\\Procurement\\Models\\SupplierInvoiceIssue",
+    "App\\Models\\SupplierInvoiceLine": "Lasabro\\Procurement\\Models\\SupplierInvoiceLine",
+    "App\\Models\\SupplierStatusHistory": "Lasabro\\Procurement\\Models\\SupplierStatusHistory",
+    "App\\Providers\\ProcurementServiceProvider": "Lasabro\\Procurement\\ProcurementServiceProvider",
+    "App\\Services\\Procurement\\InvoiceRules": "Lasabro\\Procurement\\Services\\InvoiceRules",
+    "App\\Services\\Procurement\\InvoiceService": "Lasabro\\Procurement\\Services\\InvoiceService",
+    "App\\Services\\Procurement\\OrderAccess": "Lasabro\\Procurement\\Services\\OrderAccess",
+    "App\\Services\\Procurement\\OrderApprovalHandler": "Lasabro\\Procurement\\Services\\OrderApprovalHandler",
+    "App\\Services\\Procurement\\OrderRules": "Lasabro\\Procurement\\Services\\OrderRules",
+    "App\\Services\\Procurement\\OrderService": "Lasabro\\Procurement\\Services\\OrderService",
+    "App\\Services\\Procurement\\ProcurementAccess": "Lasabro\\Procurement\\Services\\ProcurementAccess",
+    "App\\Services\\Procurement\\ProcurementRules": "Lasabro\\Procurement\\Services\\ProcurementRules",
+    "App\\Services\\Procurement\\RequisitionApprovalHandler": "Lasabro\\Procurement\\Services\\RequisitionApprovalHandler",
+    "App\\Services\\Procurement\\RequisitionService": "Lasabro\\Procurement\\Services\\RequisitionService",
+    "App\\Services\\Procurement\\RfqRules": "Lasabro\\Procurement\\Services\\RfqRules",
+    "App\\Services\\Procurement\\RfqService": "Lasabro\\Procurement\\Services\\RfqService",
+    "App\\Services\\Procurement\\SupplierApprovalHandler": "Lasabro\\Procurement\\Services\\SupplierApprovalHandler",
+    "App\\Services\\Procurement\\SupplierService": "Lasabro\\Procurement\\Services\\SupplierService",
+    "Database\\Seeders\\ProcurementFilesSeeder": "Lasabro\\Procurement\\Database\\Seeders\\ProcurementFilesSeeder",
+    "Database\\Seeders\\ProcurementInvoicesSeeder": "Lasabro\\Procurement\\Database\\Seeders\\ProcurementInvoicesSeeder",
+    "Database\\Seeders\\ProcurementOrdersSeeder": "Lasabro\\Procurement\\Database\\Seeders\\ProcurementOrdersSeeder",
+    "Database\\Seeders\\ProcurementRfqSeeder": "Lasabro\\Procurement\\Database\\Seeders\\ProcurementRfqSeeder",
+    "Database\\Seeders\\ProcurementSeeder": "Lasabro\\Procurement\\Database\\Seeders\\ProcurementSeeder"
+  },
+  "host_dependencies": {
+    "App\\Models": [
+      "ApprovalAction",
+      "ApprovalFlow",
+      "ApprovalRequest",
+      "Department",
+      "FileAsset",
+      "Language",
+      "LookupType",
+      "LookupValue",
+      "MenuItem",
+      "Organization",
+      "Permission",
+      "Project",
+      "Role",
+      "User"
+    ],
+    "App\\Support": [
+      "AppliesListQuery",
+      "BelongsToOrganization",
+      "HasGeneratedCode",
+      "Immutable",
+      "Lookup"
+    ],
+    "App\\Casts": [
+      "UtcDateTime"
+    ],
+    "App\\Http\\Controllers": [
+      "Controller"
+    ],
+    "App\\Http\\Resources\\Api\\V1": [
+      "FileResource"
+    ],
+    "App\\Services": [
+      "AuditLogger",
+      "FileAccess",
+      "FileService",
+      "Notifier",
+      "OrganizationContext",
+      "SettingsService"
+    ],
+    "App\\Services\\Approvals": [
+      "ApprovalEngine",
+      "ApprovalOutcomeHandler"
+    ]
+  },
+  "host_code_naming_plugin": {
+    "database\\seeders\\DatabaseSeeder.php": [
+      "Lasabro\\Procurement\\Database\\Seeders\\ProcurementFilesSeeder",
+      "Lasabro\\Procurement\\Database\\Seeders\\ProcurementInvoicesSeeder",
+      "Lasabro\\Procurement\\Database\\Seeders\\ProcurementOrdersSeeder",
+      "Lasabro\\Procurement\\Database\\Seeders\\ProcurementRfqSeeder",
+      "Lasabro\\Procurement\\Database\\Seeders\\ProcurementSeeder"
+    ]
+  }
+}

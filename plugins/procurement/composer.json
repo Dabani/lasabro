@@ -1,0 +1,46 @@
+{
+    "name": "lasabro/procurement",
+    "description": "Suppliers, purchase requisitions, requests for quotation, purchase orders, goods receipts and supplier invoices, with approval flows and controlled documents.",
+    "type": "lasabro-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Robert MAKUTA",
+            "email": "dabani.rm@gmail.com",
+            "homepage": "https://dabani.github.io"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "lasabro/framework": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lasabro\\Procurement\\": "src/",
+            "Lasabro\\Procurement\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        },
+        "lasabro": {
+            "id": "Lasabro.Procurement",
+            "title": "Procurement",
+            "tier": "domain",
+            "provider": "Lasabro\\Procurement\\ProcurementServiceProvider",
+            "requires": {
+                "Lasabro.Core": "^1.0",
+                "Lasabro.Approvals": "^1.0",
+                "Lasabro.Rules": "^1.0",
+                "Lasabro.Files": "^1.0"
+            },
+            "suggests": {},
+            "frontends": {},
+            "declares": [
+                "seeders",
+                "menu"
+            ]
+        }
+    }
+}

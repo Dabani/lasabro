@@ -46,11 +46,6 @@ Route::prefix('v1')->group(function () {
         require __DIR__ . '/meetings-collab.php'; // Chat and polls of online meetings
         require __DIR__ . '/events.php';       // Events, registration, check-in
         require __DIR__ . '/events-expenses.php'; // Event expenses and budget
-        require __DIR__ . '/procurement.php'; // Suppliers and purchase requisitions
-        require __DIR__ . '/procurement-orders.php'; // Purchase orders and goods receipts
-        require __DIR__ . '/procurement-rfqs.php'; // Sourcing (RFQ)
-        require __DIR__ . '/procurement-files.php'; // Quote and invoice documents
-        require __DIR__ . '/procurement-invoices.php';
 
         Route::post('auth/logout', [V1\AuthController::class, 'logout']);
 

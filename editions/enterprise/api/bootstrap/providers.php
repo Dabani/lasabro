@@ -14,7 +14,6 @@ return [
     App\Providers\LasabroHostServiceProvider::class,
     App\Providers\HrServiceProvider::class,
     App\Providers\MeetingsServiceProvider::class,
-    App\Providers\ProcurementServiceProvider::class,
     App\Providers\PayrollServiceProvider::class,
     App\Providers\LeaveServiceProvider::class,
     App\Providers\TripServiceProvider::class,

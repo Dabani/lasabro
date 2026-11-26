@@ -3,6 +3,11 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Lasabro\Procurement\Database\Seeders\ProcurementFilesSeeder;
+use Lasabro\Procurement\Database\Seeders\ProcurementInvoicesSeeder;
+use Lasabro\Procurement\Database\Seeders\ProcurementOrdersSeeder;
+use Lasabro\Procurement\Database\Seeders\ProcurementRfqSeeder;
+use Lasabro\Procurement\Database\Seeders\ProcurementSeeder;
 
 class DatabaseSeeder extends Seeder
 {
