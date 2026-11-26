@@ -33,7 +33,15 @@ final class PluginManager
         private readonly DeclarationRegistry $declarations,
         private readonly PluginCache $cache,
         private readonly string $cacheFile,
+        /** @var array<string,string> capabilities the host application provides: plugin id => version */
+        private readonly array $provided = [],
     ) {
+    }
+
+    /** @return array<string,string> */
+    public function provided(): array
+    {
+        return $this->provided;
     }
 
     /** @return array<string,Manifest> */
@@ -49,7 +57,7 @@ final class PluginManager
 
     public function resolver(): DependencyResolver
     {
-        return new DependencyResolver($this->manifests(), $this->states->all());
+        return new DependencyResolver($this->manifests(), $this->states->all(), $this->provided);
     }
 
     /** Messages about things that were skipped (for example a declared resource type nobody handles). @return list<string> */
@@ -68,6 +76,9 @@ final class PluginManager
                 'id' => $id, 'title' => $m->title, 'tier' => $m->tier, 'version' => $m->version, 'requires' => $m->requires,
                 'state' => ! isset($states[$id]) ? 'not installed' : ($states[$id]->active ? 'active' : 'inactive'),
             ];
+        }
+        foreach ($this->provided as $id => $version) {
+            $rows[] = ['id' => $id, 'title' => '(provided by the host application)', 'tier' => 'platform', 'version' => $version, 'requires' => [], 'state' => 'provided'];
         }
         usort($rows, fn ($a, $b) => [$a['tier'] === 'platform' ? 0 : 1, $a['id']] <=> [$b['tier'] === 'platform' ? 0 : 1, $b['id']]);
 
@@ -206,6 +217,9 @@ final class PluginManager
             }
             $seen[$cur] = true;
             foreach (array_keys($this->manifest($cur)->requires) as $dep) {
+                if (isset($this->provided[$dep])) {
+                    continue;
+                }
                 if (! isset($this->manifests()[$dep])) {
                     throw new PluginException("{$cur} requires {$dep}, which is not installed on this system.");
                 }

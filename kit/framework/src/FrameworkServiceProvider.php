@@ -17,12 +17,14 @@ use Lasabro\Framework\Contracts\MigrationRunner;
 use Lasabro\Framework\Contracts\ResourceLedger;
 use Lasabro\Framework\Contracts\StateStore;
 use Lasabro\Framework\Plugin\DeclarationRegistry;
+use Lasabro\Framework\Plugin\DependencyResolver;
 use Lasabro\Framework\Plugin\PluginCache;
 use Lasabro\Framework\Plugin\PluginManager;
 use Lasabro\Framework\Support\ArtisanMigrationRunner;
 use Lasabro\Framework\Support\ComposerManifestSource;
 use Lasabro\Framework\Support\DatabaseResourceLedger;
 use Lasabro\Framework\Support\DatabaseStateStore;
+use Lasabro\Framework\Support\SeederDeclarationHandler;
 
 /**
  * Entry point of the kit (auto-discovered by Laravel). It wires the plugin engine and then registers the service
@@ -52,7 +54,10 @@ class FrameworkServiceProvider extends ServiceProvider
             $app->make(DeclarationRegistry::class),
             $app->make(PluginCache::class),
             $this->cacheFile(),
+            (array) $app['config']->get('lasabro.provided', []),
         ));
+        $this->app->singleton(SeederDeclarationHandler::class, fn ($app) => new SeederDeclarationHandler($app->make(ResourceLedger::class)));
+        $this->app->afterResolving(DeclarationRegistry::class, fn (DeclarationRegistry $r, $app) => $r->register($app->make(SeederDeclarationHandler::class)));
 
         $this->registerActivePlugins();
     }
@@ -60,6 +65,7 @@ class FrameworkServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadPluginMigrations();
         $this->publishes([__DIR__ . '/../config/lasabro.php' => config_path('lasabro.php')], 'lasabro-config');
 
         if ($this->app->runningInConsole()) {
@@ -70,6 +76,42 @@ class FrameworkServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * `php artisan migrate` creates the tables of every plugin package that is installed, active or not: installing the package is
+     * what brings its schema; activation only switches the plugin's behaviour on. (Console only: web requests never migrate.)
+     */
+    private function loadPluginMigrations(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+        foreach ($this->app->make(ManifestSource::class)->manifests() as $manifest) {
+            if (is_dir($dir = $manifest->path . '/database/migrations')) {
+                $this->loadMigrationsFrom($dir);
+            }
+        }
+    }
+
+    /**
+     * The plugins whose providers to register: the compiled cache of active plugins, or, when `lasabro.boot_all` is on
+     * (tests and local development), every installed plugin in dependency order regardless of activation state.
+     *
+     * @return list<array{id:string,provider:string,path:string}>
+     */
+    private function pluginsToBoot(): array
+    {
+        if (! $this->app['config']->get('lasabro.boot_all', false)) {
+            return $this->app->make(PluginCache::class)->read($this->cacheFile());
+        }
+        $manifests = $this->app->make(ManifestSource::class)->manifests();
+        $entries = [];
+        foreach ((new DependencyResolver($manifests, []))->order(array_keys($manifests)) as $id) {
+            $entries[] = ['id' => $id, 'provider' => $manifests[$id]->provider, 'path' => $manifests[$id]->path];
+        }
+
+        return $entries;
+    }
+
     private function cacheFile(): string
     {
         return $this->app['config']->get('lasabro.cache_path') ?: $this->app->bootstrapPath('cache/lasabro.php');
@@ -78,7 +120,7 @@ class FrameworkServiceProvider extends ServiceProvider
     /** Register the providers of the plugins that were active when the cache was last built (dependencies first). */
     private function registerActivePlugins(): void
     {
-        foreach ($this->app->make(PluginCache::class)->read($this->cacheFile()) as $entry) {
+        foreach ($this->pluginsToBoot() as $entry) {
             if (! class_exists($entry['provider'])) {
                 // Package removed without deactivating it: keep the application up and say so.
                 Log::warning("LASABRO: plugin {$entry['id']} is listed as active but {$entry['provider']} cannot be loaded. Run `php artisan lasabro:plugin:discover`.");

@@ -15,19 +15,21 @@ final class DependencyResolver
     /**
      * @param array<string,Manifest>    $manifests plugins whose packages are present
      * @param array<string,PluginState> $states    what is installed/active here
+     * @param array<string,string>      $provided  plugin id => version that the host application itself provides, always active.
+     *                                             Used while a platform module has not been extracted into its own plugin yet.
      */
-    public function __construct(private readonly array $manifests, private readonly array $states)
+    public function __construct(private readonly array $manifests, private readonly array $states, private readonly array $provided = [])
     {
     }
 
     public function isActive(string $id): bool
     {
-        return isset($this->states[$id]) && $this->states[$id]->active;
+        return isset($this->provided[$id]) || (isset($this->states[$id]) && $this->states[$id]->active);
     }
 
     public function isInstalled(string $id): bool
     {
-        return isset($this->states[$id]);
+        return isset($this->provided[$id]) || isset($this->states[$id]);
     }
 
     /** Problems that stop $id from being activated right now. */
@@ -208,6 +210,11 @@ final class DependencyResolver
     /** @return array{plugin:string,kind:string,constraint:string,found:?string}|null */
     private function problemWith(string $dep, string $constraint): ?array
     {
+        if (isset($this->provided[$dep])) {
+            return self::satisfies($this->provided[$dep], $constraint)
+                ? null
+                : ['plugin' => $dep, 'kind' => ActivationReport::VERSION, 'constraint' => $constraint, 'found' => $this->provided[$dep]];
+        }
         if (! isset($this->manifests[$dep])) {
             return ['plugin' => $dep, 'kind' => ActivationReport::MISSING, 'constraint' => $constraint, 'found' => null];
         }

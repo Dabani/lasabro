@@ -21,6 +21,7 @@
         "psr-4": { "Lasabro\\Framework\\Tests\\": "tests/" }
     },
     "extra": {
+        "branch-alias": { "dev-main": "1.x-dev" },
         "laravel": {
             "providers": [ "Lasabro\\Framework\\FrameworkServiceProvider" ]
         }

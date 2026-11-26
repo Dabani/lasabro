@@ -11,6 +11,7 @@ return [
     App\Providers\CopsFoundationServiceProvider::class,
     AppServiceProvider::class,
     DatabaseServiceProvider::class,
+    App\Providers\LasabroHostServiceProvider::class,
     App\Providers\HrServiceProvider::class,
     App\Providers\MeetingsServiceProvider::class,
     App\Providers\ProcurementServiceProvider::class,

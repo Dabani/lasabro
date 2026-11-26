@@ -121,4 +121,23 @@ class DependencyResolverTest extends TestCase
         $this->assertStringContainsString('Works better with Lasabro.Leave (unpaid leave deductions).', $notice);
         $this->assertStringContainsString('Required by Lasabro.Attendance and Lasabro.Payroll.', $this->catalogue()->notice('Lasabro.Hr'));
     }
+
+    public function test_capabilities_provided_by_the_host_count_as_active_requirements(): void
+    {
+        $hr = Fixtures::manifest('Lasabro.Hr', ['Lasabro.Core' => '^1.0', 'Lasabro.Approvals' => '^1.0']);
+        $r = new DependencyResolver(['Lasabro.Hr' => $hr], [], ['Lasabro.Core' => '1.0.0', 'Lasabro.Approvals' => '1.2.0']);
+        $this->assertTrue($r->activationReport('Lasabro.Hr')->ok());
+        $this->assertTrue($r->isActive('Lasabro.Core'));
+        $plan = $r->activationPlan('Lasabro.Hr');
+        $this->assertSame(['Lasabro.Hr'], $plan['order']);
+    }
+
+    public function test_a_provided_capability_with_the_wrong_version_is_a_version_problem(): void
+    {
+        $hr = Fixtures::manifest('Lasabro.Hr', ['Lasabro.Core' => '^2.0']);
+        $r = new DependencyResolver(['Lasabro.Hr' => $hr], [], ['Lasabro.Core' => '1.0.0']);
+        $report = $r->activationReport('Lasabro.Hr');
+        $this->assertSame(['Lasabro.Core'], $report->problemsOfKind(ActivationReport::VERSION));
+        $this->assertStringContainsString('Lasabro.Core 1.0.0 does not satisfy ^2.0', $report->message());
+    }
 }

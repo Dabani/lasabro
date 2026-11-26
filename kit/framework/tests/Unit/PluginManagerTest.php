@@ -154,4 +154,20 @@ class PluginManagerTest extends TestCase
         $this->pm->deactivate('Lasabro.Hr');
         $this->assertSame(['Lasabro.Core:installed', 'Lasabro.Core:activated', 'Lasabro.Hr:installed', 'Lasabro.Hr:activated', 'Lasabro.Hr:deactivated'], $this->states->events);
     }
+
+    public function test_a_plugin_requiring_only_host_provided_capabilities_activates_alone(): void
+    {
+        $dir = Fixtures::tempPlugin('permissions', [['code' => 'proc.view']]);
+        $pm = new PluginManager(
+            new ArrayManifestSource([Fixtures::manifest('Lasabro.Procurement', ['Lasabro.Core' => '^1.0', 'Lasabro.Approvals' => '^1.0'], '1.0.0', ['permissions'], [], $dir)]),
+            $this->states, $this->ledger, $this->migrations, (function () { $r = new DeclarationRegistry(); $r->register($this->permissions); return $r; })(),
+            new PluginCache(), $this->cacheFile, ['Lasabro.Core' => '1.0.0', 'Lasabro.Approvals' => '1.0.0'],
+        );
+        $this->assertSame(['Lasabro.Procurement'], $pm->activate('Lasabro.Procurement'));
+        $this->assertSame(['Lasabro.Procurement'], $this->cachedIds());
+        $rows = array_column($pm->status(), 'state', 'id');
+        $this->assertSame('provided', $rows['Lasabro.Core']);
+        $this->assertSame('active', $rows['Lasabro.Procurement']);
+        $this->assertSame([], $pm->install('Lasabro.Procurement'));   // activation already installed it
+    }
 }
