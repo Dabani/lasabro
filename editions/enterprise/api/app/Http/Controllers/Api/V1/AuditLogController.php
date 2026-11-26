@@ -16,6 +16,7 @@ class AuditLogController extends Controller
     public function index(Request $request, OrganizationContext $ctx)
     {
         $q = AuditLog::query()->with(['user', 'outcome'])->where('organization_id', $ctx->organizationId());
+
         return $this->respondList($request, $q, AuditLogResource::class,
             ['action', 'entity_type', 'request_id', 'user.name'], ['created_at', 'action'], ['action', 'entity_type'],
             ['created_at', 'action', 'entity_type', 'entity_id', 'user', 'outcome', 'ip_address']);

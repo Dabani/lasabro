@@ -23,10 +23,12 @@ use Tests\TestCase;
 /** Needs Bundles 08-11 and the CopsTestHelpers trait. Run: php artisan test */
 class BillingTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $manager;
+
     private User $admin;
+
     private Project $project;
 
     protected function setUp(): void
@@ -42,8 +44,8 @@ class BillingTest extends TestCase
         $this->project = Project::create(['code' => 'PRJ', 'name' => 'Portal', 'owner_id' => $this->manager->id, 'status_id' => Lookup::id('project_status', 'active'),
             'client_id' => $client->id, 'rate_card_id' => $card->id, 'billing_model_id' => Lookup::id('billing_model', 'time_and_materials'), 'currency_code' => 'RWF']);
         foreach ([7620, 3600] as $i => $secs) {                                                   // 2h07 + 1h = 187 min -> 180 min at 15-min rounding
-            TimeEntry::create(['user_id' => $this->manager->id, 'project_id' => $this->project->id, 'work_date' => '2026-11-0' . ($i + 2), 'started_at' => '2026-11-0' . ($i + 2) . ' 08:00:00',
-                'ended_at' => '2026-11-0' . ($i + 2) . ' 10:00:00', 'duration_seconds' => $secs, 'is_billable' => true, 'status_id' => Lookup::id('time_entry_status', 'approved')]);
+            TimeEntry::create(['user_id' => $this->manager->id, 'project_id' => $this->project->id, 'work_date' => '2026-11-0'.($i + 2), 'started_at' => '2026-11-0'.($i + 2).' 08:00:00',
+                'ended_at' => '2026-11-0'.($i + 2).' 10:00:00', 'duration_seconds' => $secs, 'is_billable' => true, 'status_id' => Lookup::id('time_entry_status', 'approved')]);
         }
     }
 
@@ -56,6 +58,7 @@ class BillingTest extends TestCase
     private function draftId(): string
     {
         Sanctum::actingAs($this->manager);
+
         return $this->postJson("/api/v1/projects/{$this->project->id}/invoices/generate")->assertCreated()->json('data.id');
     }
 
@@ -65,6 +68,7 @@ class BillingTest extends TestCase
         $this->postJson("/api/v1/invoices/$id/issue")->assertOk()->assertJsonPath('data.status', 'pending_approval');
         $req = ApprovalRequest::where('subject_id', $id)->firstOrFail();
         app(ApprovalEngine::class)->act($req->id, $this->admin, 'approve');
+
         return Invoice::findOrFail($id);
     }
 
@@ -98,7 +102,7 @@ class BillingTest extends TestCase
 
         $inv = $this->issue($id);
         $this->assertSame('issued', $inv->status->code);
-        $this->assertSame('INV-' . date('Y') . '-0001', $inv->number);
+        $this->assertSame('INV-'.date('Y').'-0001', $inv->number);
         $this->assertSame(2, TimeEntry::where('project_id', $this->project->id)->whereHas('status', fn ($s) => $s->where('code', 'invoiced'))->count());
         $this->assertSame('88500.00', (string) $inv->balance);
     }
@@ -107,7 +111,12 @@ class BillingTest extends TestCase
     {
         $this->tax(true);
         $inv = $this->issue($this->draftId());
-        try { $inv->update(['notes' => 'tampered']); $this->fail('issued invoice was edited'); } catch (\LogicException $e) { $this->assertTrue(true); }
+        try {
+            $inv->update(['notes' => 'tampered']);
+            $this->fail('issued invoice was edited');
+        } catch (\LogicException $e) {
+            $this->assertTrue(true);
+        }
         $this->expectException(\LogicException::class);
         $inv->delete();
     }

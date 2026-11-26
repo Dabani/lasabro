@@ -17,12 +17,14 @@ class IncidentService
     public static function targets(string $severityId): array
     {
         $r = DB::table('incident_severity_rules')->where('severity_id', $severityId)->first();
+
         return [(int) ($r->containment_hours ?? 2), (int) ($r->rca_business_days ?? 5)];
     }
 
     public static function dueDates(string $severityId, Carbon $from): array
     {
         [$hours, $days] = self::targets($severityId);
+
         return [$from->copy()->addHours($hours), BusinessDays::add($from, $days)];
     }
 
@@ -53,6 +55,7 @@ class IncidentService
                 'containment_due_at' => $containDue, 'rca_due_at' => $rcaDue,
                 'personal_data_breach' => (bool) ($d['personal_data_breach'] ?? false), 'affected_asset_id' => $asset?->id,
             ]);
+
             return $case;
         });
 

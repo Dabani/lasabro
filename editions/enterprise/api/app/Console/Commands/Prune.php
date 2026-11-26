@@ -13,6 +13,7 @@ use Illuminate\Console\Command;
 class Prune extends Command
 {
     protected $signature = 'ops:prune {--dry-run : Only report what would be removed}';
+
     protected $description = 'Remove old notification delivery logs and read in-app notifications beyond their configured retention.';
 
     public function handle(): int
@@ -25,12 +26,14 @@ class Prune extends Command
 
         if ($this->option('dry-run')) {
             $this->info(sprintf('Would remove %d delivery log(s) and %d read notification(s).', $deliveries->count(), $notifications->count()));
+
             return self::SUCCESS;
         }
 
         $d = $deliveries->delete();
         $n = $notifications->delete();
         $this->info("Removed {$d} delivery log(s) and {$n} read notification(s).");
+
         return self::SUCCESS;
     }
 }

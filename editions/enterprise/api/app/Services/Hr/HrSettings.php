@@ -27,6 +27,7 @@ final class HrSettings
     public static function get(string $orgId, string $key): int
     {
         $v = HrSetting::withoutGlobalScopes()->where('organization_id', $orgId)->where('key', $key)->value('value');
+
         return $v !== null ? (int) $v : self::DEFS[$key][0];
     }
 
@@ -37,7 +38,7 @@ final class HrSettings
 
     public static function set(string $orgId, string $key, int $value): void
     {
-        if (!isset(self::DEFS[$key]) || $value < self::DEFS[$key][1] || $value > self::DEFS[$key][2]) {
+        if (! isset(self::DEFS[$key]) || $value < self::DEFS[$key][1] || $value > self::DEFS[$key][2]) {
             throw ValidationException::withMessages([$key => [__('recruitment.setting_invalid')]]);
         }
         HrSetting::withoutGlobalScopes()->updateOrCreate(['organization_id' => $orgId, 'key' => $key], ['value' => (string) $value]);

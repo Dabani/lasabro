@@ -43,11 +43,11 @@ class AttendanceImporter
         }
         $rows = $f['rows'];
         $guess = $headerRow;
-        if (!$guess) {
+        if (! $guess) {
             $guess = 1;
             foreach (array_slice($rows, 0, 15, true) as $i => $r) {
                 $cells = array_values(array_filter($r, fn ($c) => CellParser::text($c) !== ''));
-                $words = array_filter($cells, fn ($c) => !CellParser::isNumber($c) && !is_numeric(CellParser::text($c)));
+                $words = array_filter($cells, fn ($c) => ! CellParser::isNumber($c) && ! is_numeric(CellParser::text($c)));
                 if (count($cells) >= 2 && count($words) * 2 >= count($cells)) {
                     $guess = $i + 1;
                     break;
@@ -57,9 +57,10 @@ class AttendanceImporter
         $header = $rows[$guess - 1] ?? [];
         $columns = [];
         foreach ($header as $i => $c) {
-            $columns[] = ['index' => $i, 'letter' => ColumnRef::letter($i), 'label' => CellParser::text($c) ?: '(' . ColumnRef::letter($i) . ')'];
+            $columns[] = ['index' => $i, 'letter' => ColumnRef::letter($i), 'label' => CellParser::text($c) ?: '('.ColumnRef::letter($i).')'];
         }
         $sample = array_map(fn ($r) => array_map(fn ($c) => mb_substr(CellParser::text($c), 0, 60), $r), array_slice($rows, $guess, 5));
+
         return ['type' => $f['type'], 'sheets' => $f['sheets'], 'sheet' => $f['sheet'], 'header_row' => $guess, 'row_count' => count($rows), 'columns' => $columns, 'sample' => $sample];
     }
 
@@ -74,16 +75,18 @@ class AttendanceImporter
         }
         if (in_array($identifyBy, ['device_code', 'either'], true)) {
             foreach (AttendanceDeviceCode::withoutGlobalScopes()->where('organization_id', $orgId)->pluck('employee_id', 'code') as $code => $id) {
-                $dir['#' . strtoupper(ltrim((string) $code, '0') ?: '0')] = $id;       // codes also match without leading zeros: 0101 = 101
+                $dir['#'.strtoupper(ltrim((string) $code, '0') ?: '0')] = $id;       // codes also match without leading zeros: 0101 = 101
             }
         }
+
         return $dir;
     }
 
     private function lookup(array $dir, string $ref): ?string
     {
         $u = strtoupper($ref);
-        return $dir[$u] ?? $dir['#' . (ltrim($u, '0') ?: '0')] ?? null;
+
+        return $dir[$u] ?? $dir['#'.(ltrim($u, '0') ?: '0')] ?? null;
     }
 
     /**
@@ -114,7 +117,7 @@ class AttendanceImporter
         $byEmp = [];
         foreach ($m['punches'] as $p) {
             $emp = $this->lookup($dir, $p['ref']);
-            if (!$emp) {
+            if (! $emp) {
                 $rejected[] = ['line' => $p['line'], 'reason' => 'unknown_employee'];
                 $unknown[$p['ref']] = true;
             } elseif ($p['ts'] > $nowTs + 300) {
@@ -142,15 +145,21 @@ class AttendanceImporter
             foreach ($rows as $r) {
                 $prev = null;
                 foreach ($timeline as $t) {
-                    if ($t['ts'] <= $r['ts']) { $prev = $t; }
+                    if ($t['ts'] <= $r['ts']) {
+                        $prev = $t;
+                    }
                 }
-                $isNew = !($prev && $r['ts'] - $prev['ts'] < $minGap);                    // the same punch again, or a double tap
+                $isNew = ! ($prev && $minGap > $r['ts'] - $prev['ts']);                    // the same punch again, or a double tap
                 $d = $r['dir'] ?? EventPairer::infer($prev ? ['dir' => $prev['dir'], 'at' => gmdate('Y-m-d H:i:s', $prev['ts'])] : null, gmdate('Y-m-d H:i:s', $r['ts']), $window);
                 if (count($sample) < 20) {
                     $sample[] = ['line' => $r['line'], 'employee' => $people[$empId]->full_name, 'employee_number' => $people[$empId]->employee_number, 'ref' => $r['ref'],
-                        'at' => (new DateTimeImmutable('@' . $r['ts']))->setTimezone(new \DateTimeZone($tz))->format('Y-m-d H:i:s'), 'direction' => $d, 'new' => $isNew];
+                        'at' => (new DateTimeImmutable('@'.$r['ts']))->setTimezone(new \DateTimeZone($tz))->format('Y-m-d H:i:s'), 'direction' => $d, 'new' => $isNew];
                 }
-                if (!$isNew) { $skipped++; continue; }
+                if (! $isNew) {
+                    $skipped++;
+
+                    continue;
+                }
                 if ($commit) {
                     AttendanceEvent::create(['employee_id' => $empId, 'direction' => $d, 'occurred_at' => gmdate('Y-m-d H:i:s', $r['ts']), 'source_id' => $sourceId, 'import_id' => $import->id, 'created_by' => $by->id]);
                 }
@@ -164,14 +173,15 @@ class AttendanceImporter
             }
         }
 
-        $errors = array_map(fn ($r) => 'line ' . $r['line'] . ': ' . __("attendance.import_reason.{$r['reason']}"), array_slice($rejected, 0, 50));
-        $result = ['dry_run' => !$commit, 'import_id' => $import?->id, 'file_type' => $file['type'], 'sheet' => $file['sheet'], 'profile' => $profile?->name, 'columns' => $m['columns'],
+        $errors = array_map(fn ($r) => 'line '.$r['line'].': '.__("attendance.import_reason.{$r['reason']}"), array_slice($rejected, 0, 50));
+        $result = ['dry_run' => ! $commit, 'import_id' => $import?->id, 'file_type' => $file['type'], 'sheet' => $file['sheet'], 'profile' => $profile?->name, 'columns' => $m['columns'],
             'rows_total' => $m['total'], 'rows_imported' => $imported, 'rows_skipped' => $skipped, 'rows_rejected' => count($rejected), 'errors' => $errors ? implode("\n", $errors) : null,
             'unknown_ids' => array_slice(array_map('strval', array_keys($unknown)), 0, 50), 'sample' => $sample, 'created_at' => $import?->created_at?->toIso8601String()];
         if ($commit) {
             $import->update(['rows_total' => $m['total'], 'rows_imported' => $imported, 'rows_skipped' => $skipped, 'rows_rejected' => count($rejected), 'errors' => $result['errors']]);
             AuditLogger::log('attendance.imported', $import, [], ['rows' => $m['total'], 'imported' => $imported, 'skipped' => $skipped, 'rejected' => count($rejected), 'type' => $file['type'], 'profile' => $profile?->name]);
         }
+
         return $result;
     }
 }

@@ -32,31 +32,41 @@ class MeetingService
         throw ValidationException::withMessages([$field => [__("meetings.$key", $params)]]);
     }
 
-    private function status(string $code): string { return Lookup::id('meeting_status', $code); }
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
+    private function status(string $code): string
+    {
+        return Lookup::id('meeting_status', $code);
+    }
+
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
 
     private function history(Meeting $m, ?string $from, string $to, ?User $by, ?string $note = null): void
     {
         MeetingStatusHistory::create(['meeting_id' => $m->id, 'from_status_id' => $from, 'to_status_id' => $to, 'note' => $note, 'changed_by' => $by?->id, 'created_at' => now()]);
     }
 
-    private function parse(string $iso): CarbonImmutable { return CarbonImmutable::parse($iso)->utc(); }
+    private function parse(string $iso): CarbonImmutable
+    {
+        return CarbonImmutable::parse($iso)->utc();
+    }
 
     // ---- create ------------------------------------------------------------------------------------------------------------
     /**
-     * @param array $d validated input (see MeetingController::rules)
+     * @param  array  $d  validated input (see MeetingController::rules)
      * @return array{meetings: Meeting[], warnings: array}
      */
     public function create(array $d, User $by): array
     {
         $start = $this->parse($d['starts_at']);
         $end = $this->parse($d['ends_at']);
-        if (!$end->greaterThan($start) || $start->diffInHours($end) > 24 * 7) {
+        if (! $end->greaterThan($start) || $start->diffInHours($end) > 24 * 7) {
             $this->fail('ends_at', 'bad_period');
         }
         $duration = $end->diffInSeconds($start, true);
         $starts = [$start];
-        if (!empty($d['recurrence'])) {
+        if (! empty($d['recurrence'])) {
             $r = $d['recurrence'];
             try {
                 $starts = RecurrenceExpander::expand($start, $r['frequency'], (int) ($r['interval'] ?? 1), $r['ends_on'] ?? null, isset($r['occurrences']) ? (int) $r['occurrences'] : null, AttendanceService::tz($this->org()));
@@ -90,6 +100,7 @@ class MeetingService
                 AuditLogger::log('meeting.created', $m, [], ['code' => $m->code, 'starts_at' => $m->starts_at->toIso8601String(), 'series' => $series?->id]);
                 $made[] = $m;
             }
+
             return ['meetings' => $made, 'warnings' => $this->invites->busyElsewhere($made[0])];
         });
     }
@@ -103,17 +114,20 @@ class MeetingService
         return DB::transaction(function () use ($meeting, $d, $by) {
             $m = Meeting::lockForUpdate()->findOrFail($meeting->id);
             $status = $m->status->code;
-            if (!MeetingWorkflow::editable($status)) {
+            if (! MeetingWorkflow::editable($status)) {
                 $this->fail('status', 'not_editable');
             }
             $old = $m->only(self::TRACKED) + ['starts_at' => $m->starts_at->toIso8601String(), 'ends_at' => $m->ends_at->toIso8601String()];
-            $oldStart = $m->starts_at; $oldEnd = $m->ends_at; $oldRoom = $m->room_id; $oldVenue = $m->venue;
+            $oldStart = $m->starts_at;
+            $oldEnd = $m->ends_at;
+            $oldRoom = $m->room_id;
+            $oldVenue = $m->venue;
 
             $attrs = array_intersect_key($d, array_flip(self::TRACKED));
             if (isset($d['starts_at']) || isset($d['ends_at'])) {
                 $s = isset($d['starts_at']) ? $this->parse($d['starts_at']) : $m->starts_at;
                 $e = isset($d['ends_at']) ? $this->parse($d['ends_at']) : $m->ends_at;
-                if (!$e->greaterThan($s) || $s->diffInHours($e) > 24 * 7) {
+                if (! $e->greaterThan($s) || $s->diffInHours($e) > 24 * 7) {
                     $this->fail('ends_at', 'bad_period');
                 }
                 $attrs['starts_at'] = $s;
@@ -121,7 +135,7 @@ class MeetingService
             }
             $m->fill($attrs);
 
-            $timeChanged = !$oldStart->equalTo($m->starts_at) || !$oldEnd->equalTo($m->ends_at);
+            $timeChanged = ! $oldStart->equalTo($m->starts_at) || ! $oldEnd->equalTo($m->ends_at);
             $placeChanged = $oldRoom !== $m->room_id || $oldVenue !== $m->venue || $m->isDirty('online_url');
             $visibleChange = $timeChanged || $placeChanged || $m->isDirty('title');
 
@@ -149,6 +163,7 @@ class MeetingService
             if ($status === 'scheduled' && $visibleChange) {
                 $this->notices->send($m, $m->invitations()->with('user.language')->get(), 'meeting_updated', ['reason' => (string) ($d['reason'] ?? '')]);
             }
+
             return ['meeting' => $m->refresh(), 'warnings' => $this->invites->busyElsewhere($m)];
         });
     }
@@ -158,13 +173,14 @@ class MeetingService
     {
         $m = Meeting::lockForUpdate()->with('status')->findOrFail($meeting->id);
         $from = $m->status->code;
-        if (!MeetingWorkflow::allowed($from, $to)) {
+        if (! MeetingWorkflow::allowed($from, $to)) {
             $this->fail('status', 'transition_not_allowed', ['from' => $from, 'to' => $to]);
         }
         $fromId = $m->status_id;
         $m->update(['status_id' => $this->status($to)]);
         $this->history($m, $fromId, $m->status_id, $by, $note);
         AuditLogger::log("meeting.$to", $m, ['status' => $from], ['status' => $to], $note);
+
         return $m->refresh();
     }
 
@@ -173,7 +189,7 @@ class MeetingService
     {
         return DB::transaction(function () use ($meeting, $by) {
             $m = Meeting::with(['invitations'])->findOrFail($meeting->id);
-            if (!$m->chair_id) {
+            if (! $m->chair_id) {
                 $this->fail('chair_id', 'chair_required');
             }
             if ($m->starts_at->isPast()) {
@@ -185,6 +201,7 @@ class MeetingService
             $m = $this->move($m, 'scheduled', $by);
             MeetingInvitation::where('meeting_id', $m->id)->update(['invited_at' => now()]);
             $this->notices->send($m, $m->invitations()->with('user.language')->get(), 'meeting_invited');
+
             return $m;
         });
     }
@@ -200,6 +217,7 @@ class MeetingService
             if ($wasScheduled) {
                 $this->notices->send($m, $m->invitations()->with('user.language')->get(), 'meeting_cancelled', ['reason' => $reason]);
             }
+
             return $m->refresh();
         });
     }
@@ -210,6 +228,7 @@ class MeetingService
             $m = $this->move($meeting, 'in_progress', $by);
             $m->update(['started_at' => now()]);
             app(MeetingAttendanceService::class)->generate($m, $by);   // the expected list
+
             return $m->refresh();
         });
     }
@@ -221,6 +240,7 @@ class MeetingService
             $m = $this->move($meeting, 'held', $by);
             $m->update(['ended_at' => now(), 'started_at' => $m->started_at ?? now()]);
             app(MeetingAttendanceService::class)->generate($m, $by);   // attendance sheet for a meeting held without being started
+
             return $m->refresh();
         });
     }
@@ -234,7 +254,7 @@ class MeetingService
     // ---- agenda ------------------------------------------------------------------------------------------------------------
     private function requireOpenAgenda(Meeting $m): void
     {
-        if (!MeetingWorkflow::editable($m->status->code)) {
+        if (! MeetingWorkflow::editable($m->status->code)) {
             $this->fail('status', 'not_editable');
         }
     }
@@ -257,6 +277,7 @@ class MeetingService
             $item = MeetingAgendaItem::create($d + ['meeting_id' => $m->id, 'position' => $position, 'priority_id' => $d['priority_id'] ?? Lookup::id('agenda_priority', 'normal')]);
             $this->touchAgenda($m, $by);
             AuditLogger::log('meeting.agenda_item_added', $item, [], ['meeting' => $m->code, 'title' => $item->title]);
+
             return $item;
         });
     }
@@ -270,6 +291,7 @@ class MeetingService
             $item->update($d);
             $this->touchAgenda($m, $by);
             AuditLogger::log('meeting.agenda_item_updated', $item, $old, $d);
+
             return $item->refresh();
         });
     }
@@ -307,13 +329,13 @@ class MeetingService
     /** draft -> circulated: the invitees are told the agenda is ready to read. */
     public function circulateAgenda(Meeting $meeting, User $by): Meeting
     {
-        return DB::transaction(function () use ($meeting, $by) {
+        return DB::transaction(function () use ($meeting) {
             $m = Meeting::lockForUpdate()->with(['status', 'agendaStatus'])->findOrFail($meeting->id);
             $this->requireOpenAgenda($m);
             if ($m->agendaStatus->code !== 'draft') {
                 $this->fail('agenda', 'agenda_not_draft');
             }
-            if (!MeetingAgendaItem::where('meeting_id', $m->id)->exists()) {
+            if (! MeetingAgendaItem::where('meeting_id', $m->id)->exists()) {
                 $this->fail('agenda', 'agenda_empty');
             }
             $m->update(['agenda_status_id' => Lookup::id('agenda_status', 'circulated')]);
@@ -321,6 +343,7 @@ class MeetingService
             if ($m->status->code === 'scheduled') {
                 $this->notices->send($m, $m->invitations()->with('user.language')->get(), 'meeting_agenda_circulated', [], ['in_app']);
             }
+
             return $m->refresh();
         });
     }
@@ -336,6 +359,7 @@ class MeetingService
             }
             $m->update(['agenda_status_id' => Lookup::id('agenda_status', 'approved'), 'agenda_approved_by' => $by->id, 'agenda_approved_at' => now()]);
             AuditLogger::log('meeting.agenda_approved', $m);
+
             return $m->refresh();
         });
     }
@@ -348,16 +372,17 @@ class MeetingService
         if ($m->status->code !== 'scheduled') {
             $this->fail('response', 'rsvp_closed');
         }
-        if ($response === 'proposed' && !$proposedStartsAt) {
+        if ($response === 'proposed' && ! $proposedStartsAt) {
             $this->fail('proposed_starts_at', 'proposal_needs_time');
         }
         $inv->update(['response_id' => Lookup::id('rsvp_response', $response), 'response_note' => $note, 'responded_at' => now(),
             'proposed_starts_at' => $response === 'proposed' ? $this->parse($proposedStartsAt) : null]);
         AuditLogger::log('meeting.rsvp', $m, [], ['invitee' => $inv->displayName(), 'response' => $response]);
         if (in_array($response, ['declined', 'proposed'], true) && $m->organizer_id !== $inv->user_id) {
-            Notifier::send($m->organizer, 'meeting_rsvp_' . $response, ['title' => $m->title, 'who' => $inv->displayName(), 'note' => (string) $note,
-                'when' => $this->notices->whenText($m)], null, ['in_app'], '/meetings/' . $m->id, $m->organization_id);
+            Notifier::send($m->organizer, 'meeting_rsvp_'.$response, ['title' => $m->title, 'who' => $inv->displayName(), 'note' => (string) $note,
+                'when' => $this->notices->whenText($m)], null, ['in_app'], '/meetings/'.$m->id, $m->organization_id);
         }
+
         return $inv->refresh();
     }
 }

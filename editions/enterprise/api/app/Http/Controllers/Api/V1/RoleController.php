@@ -10,8 +10,9 @@ use App\Models\Role;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use App\Support\AppliesListQuery;
+use Database\Seeders\MeetingBaselineAccessSeeder;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Arr;
 
 class RoleController extends Controller
 {
@@ -22,6 +23,7 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         $q = Role::query()->withCount('memberships')->with(['permissions', 'widgets']);
+
         return $this->respondList($request, $q, RoleResource::class, ['name', 'code'], ['level', 'name', 'code'], ['is_active'],
             ['code', 'name', 'level', 'users_count']);
     }
@@ -30,6 +32,7 @@ class RoleController extends Controller
     {
         $perms = Permission::with('group.translations.language')->orderBy('code')->get();
         $lang = request()->user()->language_id;
+
         return response()->json(['data' => $perms->map(fn ($p) => [
             'id' => $p->id, 'code' => $p->code, 'name' => $p->name, 'description' => $p->description,
             'group' => $p->group->code, 'group_label' => $p->group->label($lang), 'group_order' => $p->group->sort_order,
@@ -47,8 +50,9 @@ class RoleController extends Controller
         abort_if($data['level'] > $this->ctx->level(), 403, __('api.role_above_authority'));
         $role = Role::create($data + ['is_system' => false]);
         $this->syncRelations($role, $request);
-        $role->permissions()->syncWithoutDetaching(\App\Models\Permission::whereIn('code', \Database\Seeders\MeetingBaselineAccessSeeder::CODES)->pluck('id')->all()); // COPS b37: baseline access to own meetings and approvals, added after the chosen permissions
+        $role->permissions()->syncWithoutDetaching(Permission::whereIn('code', MeetingBaselineAccessSeeder::CODES)->pluck('id')->all()); // COPS b37: baseline access to own meetings and approvals, added after the chosen permissions
         AuditLogger::log('role.created', $role, [], $data);
+
         return (new RoleResource($role->load(['permissions', 'widgets'])))->response()->setStatusCode(201);
     }
 
@@ -66,6 +70,7 @@ class RoleController extends Controller
         $role->update($data);
         $this->syncRelations($role, $request);
         AuditLogger::log('role.updated', $role, $old + ['permissions' => $oldPerms], $data + ['permissions' => $role->permissions()->pluck('code')->sort()->implode(',')]);
+
         return new RoleResource($role->load(['permissions', 'widgets']));
     }
 
@@ -77,6 +82,7 @@ class RoleController extends Controller
         abort_if($role->level > $this->ctx->level(), 403, __('api.role_above_authority'));
         $role->delete();
         AuditLogger::log('role.deleted', $role);
+
         return response()->noContent();
     }
 
@@ -91,7 +97,8 @@ class RoleController extends Controller
             'permission_ids' => 'array', 'permission_ids.*' => 'exists:permissions,id',
             'widget_ids' => 'array', 'widget_ids.*' => 'exists:dashboard_widgets,id',
         ]);
-        return \Illuminate\Support\Arr::except($v, ['permission_ids', 'widget_ids']);   // relations are synced separately
+
+        return Arr::except($v, ['permission_ids', 'widget_ids']);   // relations are synced separately
     }
 
     private function syncRelations(Role $role, Request $request): void

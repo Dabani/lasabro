@@ -1,0 +1,75 @@
+{
+  "plugin": "Lasabro.Trips",
+  "moved": {
+    "App\\Console\\Commands\\TripsRemind": "Lasabro\\Trips\\Console\\TripsRemind",
+    "App\\Http\\Controllers\\Api\\V1\\TripController": "Lasabro\\Trips\\Http\\Controllers\\TripController",
+    "App\\Http\\Controllers\\Api\\V1\\TripSetupController": "Lasabro\\Trips\\Http\\Controllers\\TripSetupController",
+    "App\\Models\\Trip": "Lasabro\\Trips\\Models\\Trip",
+    "App\\Models\\TripAdvance": "Lasabro\\Trips\\Models\\TripAdvance",
+    "App\\Models\\TripBooking": "Lasabro\\Trips\\Models\\TripBooking",
+    "App\\Models\\TripDeductionConsent": "Lasabro\\Trips\\Models\\TripDeductionConsent",
+    "App\\Models\\TripExpense": "Lasabro\\Trips\\Models\\TripExpense",
+    "App\\Models\\TripRate": "Lasabro\\Trips\\Models\\TripRate",
+    "App\\Models\\TripSettlement": "Lasabro\\Trips\\Models\\TripSettlement",
+    "App\\Models\\TripTraveler": "Lasabro\\Trips\\Models\\TripTraveler",
+    "App\\Providers\\TripServiceProvider": "Lasabro\\Trips\\TripServiceProvider",
+    "App\\Services\\Hr\\Trips\\TripApprovalHandler": "Lasabro\\Trips\\Services\\TripApprovalHandler",
+    "App\\Services\\Hr\\Trips\\TripMath": "Lasabro\\Trips\\Services\\TripMath",
+    "App\\Services\\Hr\\Trips\\TripService": "Lasabro\\Trips\\Services\\TripService",
+    "Database\\Seeders\\HrTripSeeder": "Lasabro\\Trips\\Database\\Seeders\\HrTripSeeder"
+  },
+  "host_dependencies": {
+    "App\\Models": [
+      "ApprovalFlow",
+      "ApprovalRequest",
+      "Employee",
+      "FileAsset",
+      "FileLink",
+      "Language",
+      "LookupType",
+      "LookupValue",
+      "MenuItem",
+      "Organization",
+      "Permission",
+      "Project",
+      "Role",
+      "User"
+    ],
+    "App\\Support": [
+      "BelongsToOrganization",
+      "HasGeneratedCode",
+      "Lookup"
+    ],
+    "App\\Http\\Controllers": [
+      "Controller"
+    ],
+    "App\\Http\\Resources\\Api\\V1": [
+      "FileResource"
+    ],
+    "App\\Services\\Approvals": [
+      "ApprovalEngine",
+      "ApprovalOutcomeHandler"
+    ],
+    "App\\Services": [
+      "AuditLogger",
+      "CodeGenerator",
+      "FileAccess",
+      "FileService",
+      "MoneyService",
+      "Notifier",
+      "OrganizationContext"
+    ],
+    "App\\Services\\Hr\\Attendance": [
+      "AttendanceService"
+    ],
+    "App\\Services\\Hr": [
+      "EmploymentService",
+      "HrSettings"
+    ]
+  },
+  "host_code_naming_plugin": {
+    "database\\seeders\\DatabaseSeeder.php": [
+      "Lasabro\\Trips\\Database\\Seeders\\HrTripSeeder"
+    ]
+  }
+}

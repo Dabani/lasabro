@@ -10,9 +10,13 @@ use PHPUnit\Framework\TestCase;
 class AttendanceMathTest extends TestCase
 {
     private const TZ = 'Africa/Kigali';                         // UTC+2: 08:00 local = 06:00Z
+
     private const DAY = '2026-11-02';                           // a Monday
 
-    private function shift(array $o = []): array { return $o + ['start' => '08:00', 'end' => '17:00', 'break' => 60, 'auto_deduct' => false, 'grace' => 10]; }
+    private function shift(array $o = []): array
+    {
+        return $o + ['start' => '08:00', 'end' => '17:00', 'break' => 60, 'auto_deduct' => false, 'grace' => 10];
+    }
 
     private function day(array $over = []): array
     {

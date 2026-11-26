@@ -53,8 +53,13 @@ class SettingsService
     {
         [$type, $default] = self::KEYS[$key];
         $row = Setting::withoutGlobalScopes()->where('organization_id', $orgId)->where('key', $key)->first();
-        if (!$row) return $default;
-        return match ($type) { 'integer' => (int) $row->value_integer, 'boolean' => (bool) $row->value_boolean, 'decimal' => (float) $row->value_decimal, default => $row->value_text };
+        if (! $row) {
+            return $default;
+        }
+
+        return match ($type) {
+            'integer' => (int) $row->value_integer, 'boolean' => (bool) $row->value_boolean, 'decimal' => (float) $row->value_decimal, default => $row->value_text
+        };
     }
 
     public static function set(string $orgId, string $key, $value): void

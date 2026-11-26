@@ -11,8 +11,13 @@ class ClientRecoveryCode extends Model
     use HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['used_at' => 'datetime'];
 
-    public function identity() { return $this->belongsTo(ClientIdentity::class, 'client_identity_id'); }
+    public function identity()
+    {
+        return $this->belongsTo(ClientIdentity::class, 'client_identity_id');
+    }
 }

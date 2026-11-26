@@ -17,7 +17,7 @@ trait BelongsToOrganization
         static::addGlobalScope('organization', function (Builder $q) {
             $ctx = app(OrganizationContext::class);
             if ($ctx->resolved()) {
-                $q->where($q->getModel()->getTable() . '.organization_id', $ctx->organizationId());
+                $q->where($q->getModel()->getTable().'.organization_id', $ctx->organizationId());
             }
         });
 

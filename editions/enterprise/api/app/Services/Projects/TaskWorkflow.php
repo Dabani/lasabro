@@ -17,11 +17,12 @@ class TaskWorkflow
     public static function allowed(string $from, string $to, bool $isManager): bool
     {
         $need = self::MAP[$from][$to] ?? null;
-        return $need !== null && (!$need || $isManager);
+
+        return $need !== null && (! $need || $isManager);
     }
 
     public static function targets(string $from, bool $isManager): array
     {
-        return array_keys(array_filter(self::MAP[$from] ?? [], fn ($needsManager) => !$needsManager || $isManager));
+        return array_keys(array_filter(self::MAP[$from] ?? [], fn ($needsManager) => ! $needsManager || $isManager));
     }
 }

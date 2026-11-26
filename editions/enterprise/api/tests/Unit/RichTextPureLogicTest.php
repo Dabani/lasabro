@@ -20,7 +20,7 @@ class RichTextPureLogicTest extends TestCase
 
     public function test_reason_is_rich_only_on_the_configured_routes(): void
     {
-        $config = require __DIR__ . '/../../config/ops.php';
+        $config = require __DIR__.'/../../config/ops.php';
         $patterns = $config['rich_text_route_fields']['reason'];
         $matches = fn (string $path) => (bool) array_filter($patterns, fn ($p) => fnmatch($p, $path));
         foreach (['api/v1/time-entries', 'api/v1/time-entries/abc/adjust', 'api/v1/attendance/corrections', 'api/v1/attendance/periods/2026-11/reopen',

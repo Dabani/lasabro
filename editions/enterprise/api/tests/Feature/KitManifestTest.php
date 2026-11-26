@@ -11,7 +11,7 @@ use Tests\TestCase;
 /** GET /api/v1/kit/manifest: the language-neutral description of the installation used by every frontend. */
 class KitManifestTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     protected function setUp(): void
     {

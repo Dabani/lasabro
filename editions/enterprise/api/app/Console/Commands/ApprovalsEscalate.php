@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 class ApprovalsEscalate extends Command
 {
     protected $signature = 'cops:approvals-escalate';
+
     protected $description = 'Send reminders for approval steps pending longer than their configured hours';
 
     public function handle(ApprovalEngine $engine): int
@@ -20,6 +21,7 @@ class ApprovalsEscalate extends Command
             $total += $engine->escalateOverdue();
         }
         $this->info("Escalated $total request(s).");
+
         return self::SUCCESS;
     }
 }

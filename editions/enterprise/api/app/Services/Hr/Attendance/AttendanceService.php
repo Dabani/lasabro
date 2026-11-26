@@ -6,8 +6,8 @@ use App\Models\AttendanceCorrection;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\AttendanceNetwork;
-use App\Models\AttendanceSite;
 use App\Models\AttendancePeriod;
+use App\Models\AttendanceSite;
 use App\Models\Employee;
 use App\Models\Organization;
 use App\Models\PublicHoliday;
@@ -43,19 +43,30 @@ class AttendanceService
     {
         return self::$tzCache[$orgId] ??= (function () use ($orgId) {
             $code = Organization::find($orgId)?->timezone?->code;
+
             return $code && in_array($code, DateTimeZone::listIdentifiers(), true) ? $code : (string) config('app.timezone', 'UTC');
         })();
     }
 
-    public static function forgetTimezones(): void { self::$tzCache = []; }
+    public static function forgetTimezones(): void
+    {
+        self::$tzCache = [];
+    }
 
-    private function now(): CarbonImmutable { return CarbonImmutable::instance(now())->utc(); }     // Laravel's now(): follows the test clock too
+    private function now(): CarbonImmutable
+    {
+        return CarbonImmutable::instance(now())->utc();
+    }     // Laravel's now(): follows the test clock too
+
     private function localDate(string $tz, CarbonImmutable|string $utc): string
     {
         return AttendanceCalculator::localDate($tz, $utc instanceof CarbonImmutable ? $utc->format('Y-m-d H:i:s') : $utc);
     }
 
-    private function status(string $code): string { return Lookup::id('attendance_status', $code); }
+    private function status(string $code): string
+    {
+        return Lookup::id('attendance_status', $code);
+    }
 
     // ---- clocking -----------------------------------------------------------------------------------------------------
     /** Current state from the last event: 'in' while the last punch was an 'in' within the pairing window. */
@@ -64,6 +75,7 @@ class AttendanceService
         $window = HrSettings::get($e->organization_id, 'pairing_window_hours') * 3600;
         $last = AttendanceEvent::where('employee_id', $e->id)->orderByDesc('occurred_at')->orderByDesc('id')->first();
         $in = $last && $last->direction === 'in' && $this->now()->getTimestamp() - $last->occurred_at->getTimestamp() <= $window;
+
         return ['state' => $in ? 'in' : 'out', 'since' => $in ? $last->occurred_at : null, 'last' => $last];
     }
 
@@ -83,6 +95,7 @@ class AttendanceService
             return 'off';
         }
         $sites = AttendanceSite::withoutGlobalScopes()->where('organization_id', $orgId)->where('is_active', true)->exists();
+
         return $mode === 2 && $sites ? 'required' : 'record';
     }
 
@@ -111,7 +124,7 @@ class AttendanceService
             $storeIp = null;
             $networks = AttendanceNetwork::where('is_active', true)->get();
             if ($networks->isNotEmpty()) {                                           // optional restriction: disclosed to staff, IP kept only while it is on
-                if (!$ip || !$networks->contains(fn ($n) => Cidr::contains($n->cidr, $ip))) {
+                if (! $ip || ! $networks->contains(fn ($n) => Cidr::contains($n->cidr, $ip))) {
                     $this->fail('network', 'network_not_allowed');
                 }
                 $storeIp = $ip;
@@ -122,39 +135,42 @@ class AttendanceService
                 $has = $geo && Geo::validCoordinates($geo['lat'] ?? null, $geo['lng'] ?? null);
                 $site = null;
                 if ($mode === 'required') {
-                    if (!$has) {
+                    if (! $has) {
                         $this->fail('location', 'location_required');
                     }
                     $max = HrSettings::get($org, 'geolocation_max_accuracy_meters');
-                    if (!isset($geo['accuracy']) || !is_numeric($geo['accuracy']) || (float) $geo['accuracy'] > $max) {
+                    if (! isset($geo['accuracy']) || ! is_numeric($geo['accuracy']) || (float) $geo['accuracy'] > $max) {
                         $this->fail('location', 'location_inaccurate', ['max' => $max]);
                     }
                 }
                 if ($has) {
                     $site = Geo::insideSite((float) $geo['lat'], (float) $geo['lng'], AttendanceSite::where('is_active', true)->get());
-                    if ($mode === 'required' && !$site) {
+                    if ($mode === 'required' && ! $site) {
                         $this->fail('location', 'outside_site');
                     }
                     $place = ['latitude' => round((float) $geo['lat'], 6), 'longitude' => round((float) $geo['lng'], 6), 'accuracy_m' => isset($geo['accuracy']) && is_numeric($geo['accuracy']) ? (int) round((float) $geo['accuracy']) : null, 'site_id' => $site?->id];
                 }
             }
+
             return AttendanceEvent::create(['employee_id' => $e->id, 'direction' => $dir, 'occurred_at' => $now, 'source_id' => Lookup::id('attendance_source', 'web'),
                 'ip_address' => $storeIp, 'created_by' => request()->user()?->id] + $place);
         });
         $local = $this->localDate($tz, $event->occurred_at);
         $this->recompute($e, (new DateTimeImmutable($local))->modify('-1 day')->format('Y-m-d'), $local);
+
         return $event;
     }
 
     // ---- periods ------------------------------------------------------------------------------------------------------
     public function isValidated(string $orgId, string $date): bool
     {
-        return AttendancePeriod::withoutGlobalScopes()->where('organization_id', $orgId)->whereNull('reopened_at')->whereDate('month', substr($date, 0, 7) . '-01')->exists();
+        return AttendancePeriod::withoutGlobalScopes()->where('organization_id', $orgId)->whereNull('reopened_at')->whereDate('month', substr($date, 0, 7).'-01')->exists();
     }
 
     private function monthBounds(string $month): array
     {
-        $first = $month . '-01';
+        $first = $month.'-01';
+
         return [$first, (new DateTimeImmutable($first))->modify('last day of this month')->format('Y-m-d')];
     }
 
@@ -180,6 +196,7 @@ class AttendanceService
         $p = AttendancePeriod::withoutGlobalScopes()->updateOrCreate(['organization_id' => $orgId, 'month' => $first],
             ['validated_at' => $this->now(), 'validated_by' => $by->id, 'reopened_at' => null, 'reopened_by' => null, 'reopen_reason' => null]);
         AuditLogger::log('attendance.month_validated', $p, [], ['month' => $month]);
+
         return $p;
     }
 
@@ -187,11 +204,12 @@ class AttendanceService
     {
         [$first] = $this->monthBounds($month);
         $p = AttendancePeriod::withoutGlobalScopes()->where('organization_id', $orgId)->whereDate('month', $first)->whereNull('reopened_at')->first();
-        if (!$p) {
+        if (! $p) {
             $this->fail('month', 'not_validated');
         }
         $p->update(['reopened_at' => $this->now(), 'reopened_by' => $by->id, 'reopen_reason' => $reason]);
         AuditLogger::log('attendance.month_reopened', $p, [], ['month' => $month, 'reason' => $reason]);
+
         return $p;
     }
 
@@ -235,6 +253,7 @@ class AttendanceService
             $existing = AttendanceDay::where('employee_id', $e->id)->whereDate('work_date', $date)->first();
             if ($r['status'] === null) {
                 $existing?->delete();
+
                 continue;
             }
             $values = ['organization_id' => $org, 'shift_id' => $shift?->id, 'expected_minutes' => $r['expected'], 'first_in_at' => $r['first_in'], 'last_out_at' => $r['last_out'],
@@ -252,6 +271,7 @@ class AttendanceService
             $this->recompute($e, $first, $last);
             $n++;
         }
+
         return $n;
     }
 
@@ -268,6 +288,7 @@ class AttendanceService
                 $n++;
             }
         }
+
         return $n;
     }
 
@@ -296,12 +317,14 @@ class AttendanceService
         if (AttendanceCorrection::where('employee_id', $e->id)->whereDate('work_date', $date)->where('status_id', $pending)->exists()) {
             $this->fail('work_date', 'correction_pending');
         }
+
         return DB::transaction(function () use ($e, $d, $by, $date, $in, $out, $pending) {
             $c = AttendanceCorrection::create(['employee_id' => $e->id, 'work_date' => $date, 'requested_in_at' => gmdate('Y-m-d H:i:s', $in), 'requested_out_at' => gmdate('Y-m-d H:i:s', $out),
                 'reason' => $d['reason'], 'status_id' => $pending, 'requested_by' => $by->id]);
             AuditLogger::log('attendance.correction_requested', $c, [], ['employee_id' => $e->id, 'work_date' => $date]);
             $req = $this->approvals->submit('attendance_correction', $c->id, $by, __('attendance.approval_title', ['name' => $e->full_name, 'date' => $date]), ['department_id' => $e->department_id]);
             $c->update(['approval_request_id' => $req->id]);
+
             return $c->refresh();
         });
     }
@@ -309,7 +332,7 @@ class AttendanceService
     public function correctionOutcome(string $id, string $outcome): void
     {
         $c = AttendanceCorrection::withoutGlobalScopes()->find($id);
-        if (!$c || $c->status_id !== Lookup::id('attendance_correction_status', 'pending_approval')) {
+        if (! $c || $c->status_id !== Lookup::id('attendance_correction_status', 'pending_approval')) {
             return;
         }
         $date = $c->work_date->toDateString();

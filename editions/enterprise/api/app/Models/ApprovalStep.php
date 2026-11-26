@@ -8,12 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class ApprovalStep extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['step_order' => 'integer', 'escalate_after_hours' => 'integer'];
 
-    public function flow() { return $this->belongsTo(ApprovalFlow::class, 'flow_id'); }
-    public function type() { return $this->belongsTo(LookupValue::class, 'step_type_id'); }
-    public function role() { return $this->belongsTo(Role::class)->withoutGlobalScopes(); }
+    public function flow()
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'flow_id');
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(LookupValue::class, 'step_type_id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class)->withoutGlobalScopes();
+    }
 }

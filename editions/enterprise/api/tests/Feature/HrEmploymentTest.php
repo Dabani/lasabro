@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ApprovalRequest;
 use App\Models\AppNotification;
+use App\Models\ApprovalRequest;
 use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\EmploymentRecord;
@@ -20,7 +20,7 @@ use Tests\TestCase;
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundle 14 (HrServiceProvider registered). */
 class HrEmploymentTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -43,6 +43,7 @@ class HrEmploymentTest extends TestCase
     private function dept(string $name): string
     {
         Sanctum::actingAs($this->admin());
+
         return $this->postJson('/api/v1/departments', ['name' => $name])->assertCreated()->json('data.id');
     }
 
@@ -55,8 +56,9 @@ class HrEmploymentTest extends TestCase
             'first_name' => 'Ada',
             'last_name' => 'Uwase',
             'hired_on' => '2026-01-05',
-            'category_id' => Lookup::id('employee_category', 'probation')
+            'category_id' => Lookup::id('employee_category', 'probation'),
         ])->assertCreated()->json('data.id');
+
         return [$hr, $id];
     }
 
@@ -227,7 +229,7 @@ class HrEmploymentTest extends TestCase
             'category_id' => Lookup::id('employee_category', 'probation'),
             'status_id' => Lookup::id('employee_status', 'active'),
             'user_id' => $staff->id,
-            'manager_employee_id' => $mgr->id
+            'manager_employee_id' => $mgr->id,
         ]);
         Employee::create(['first_name' => 'Out', 'last_name' => 'Sider', 'category_id' => Lookup::id('employee_category', 'contracted'), 'status_id' => Lookup::id('employee_status', 'active'), 'user_id' => $other->id]);
 
@@ -269,7 +271,7 @@ class HrEmploymentTest extends TestCase
             'last_name' => 'Bation',
             'category_id' => Lookup::id('employee_category', 'probation'),
             'status_id' => Lookup::id('employee_status', 'active'),
-            'probation_end_on' => '2026-11-19'
+            'probation_end_on' => '2026-11-19',
         ]);                                                                    // 10 days away -> the 14-day step
 
         $this->artisan('cops:hr-reminders')->assertSuccessful();

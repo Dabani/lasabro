@@ -22,8 +22,15 @@ class MeetingAttendanceService
         throw ValidationException::withMessages([$field => [__("meetings.$key", $params)]]);
     }
 
-    private function sid(string $code): string { return Lookup::id('meeting_attendance_status', $code); }
-    private function mid(string $code): string { return Lookup::id('meeting_checkin_method', $code); }
+    private function sid(string $code): string
+    {
+        return Lookup::id('meeting_attendance_status', $code);
+    }
+
+    private function mid(string $code): string
+    {
+        return Lookup::id('meeting_checkin_method', $code);
+    }
 
     /** One "expected" line for every invitation that has none yet. Safe to run again (late invitees are added, nothing is reset). */
     public function generate(Meeting $m, ?User $by = null): int
@@ -34,19 +41,21 @@ class MeetingAttendanceService
                 'user_id' => $inv->user_id, 'guest_name' => $inv->user_id ? null : $inv->guest_name, 'status_id' => $this->sid('expected'), 'recorded_by' => $by?->id]);
             $made += $row->wasRecentlyCreated ? 1 : 0;
         }
+
         return $made;
     }
 
     /** Set a person's status. Before the end it is ordinary check-in; after it, a correction that needs a reason. */
     public function record(MeetingAttendance $a, string $status, User $by, ?string $note = null, ?string $reason = null, string $method = 'secretary'): MeetingAttendance
     {
-        if (!in_array($status, AttendanceRules::STATUSES, true)) {
+        if (! in_array($status, AttendanceRules::STATUSES, true)) {
             $this->fail('status', 'bad_attendance_status');
         }
+
         return DB::transaction(function () use ($a, $status, $by, $note, $reason, $method) {
             $a = MeetingAttendance::lockForUpdate()->with(['status', 'meeting.status'])->findOrFail($a->id);
             $meetingStatus = $a->meeting->status->code;
-            if (!AttendanceRules::isOpen($meetingStatus)) {
+            if (! AttendanceRules::isOpen($meetingStatus)) {
                 $this->fail('status', 'attendance_not_open');
             }
             $correction = AttendanceRules::isCorrection($meetingStatus);
@@ -56,7 +65,7 @@ class MeetingAttendanceService
             if ($from === $status && $note === ($a->note)) {
                 return $a;
             }
-            if ($correction && $from !== $status && (!$reason || mb_strlen($reason) < 3)) {
+            if ($correction && $from !== $status && (! $reason || mb_strlen($reason) < 3)) {
                 $this->fail('reason', 'reason_required');
             }
             $attrs = ['status_id' => $this->sid($status), 'note' => $note ?? $a->note, 'recorded_by' => $by->id];
@@ -72,6 +81,7 @@ class MeetingAttendanceService
                     'to_status_id' => $this->sid($status), 'is_correction' => $correction, 'reason' => $reason, 'changed_by' => $by->id, 'created_at' => now()]);
                 AuditLogger::log($correction ? 'meeting.attendance_corrected' : 'meeting.attendance_recorded', $a->meeting, ['status' => $from], ['status' => $status, 'person' => $a->displayName()], $reason);
             }
+
             return $a->refresh();
         });
     }
@@ -80,10 +90,10 @@ class MeetingAttendanceService
     public function walkIn(Meeting $m, ?string $userId, ?string $guestName, User $by, ?string $reason = null): MeetingAttendance
     {
         $status = $m->status->code;
-        if (!AttendanceRules::isOpen($status)) {
+        if (! AttendanceRules::isOpen($status)) {
             $this->fail('status', 'attendance_not_open');
         }
-        if (AttendanceRules::isCorrection($status) && (!$reason || mb_strlen(trim($reason)) < 3)) {
+        if (AttendanceRules::isCorrection($status) && (! $reason || mb_strlen(trim($reason)) < 3)) {
             $this->fail('reason', 'reason_required');
         }
         $a = $userId
@@ -96,6 +106,7 @@ class MeetingAttendanceService
         MeetingAttendanceHistory::create(['attendance_id' => $a->id, 'meeting_id' => $m->id, 'from_status_id' => null, 'to_status_id' => $this->sid('present'),
             'is_correction' => AttendanceRules::isCorrection($status), 'reason' => $reason, 'changed_by' => $by->id, 'created_at' => now()]);
         AuditLogger::log('meeting.attendance_walk_in', $m, [], ['person' => $a->displayName()], $reason);
+
         return $a;
     }
 
@@ -114,6 +125,7 @@ class MeetingAttendanceService
         }
         $grace = (int) SettingsService::get($m->organization_id, 'meeting.late_after_minutes');
         $status = $online ? 'online' : AttendanceRules::classify(now(), $m->starts_at, $grace);
+
         return $this->record($a, $status, $u, null, null, 'self');
     }
 
@@ -122,13 +134,14 @@ class MeetingAttendanceService
     {
         $a = MeetingAttendance::where('meeting_id', $m->id)->where('user_id', $u->id)->first();
         abort_unless($a, 404);
-        if (!AttendanceRules::attended($a->status()->value('code') ?? '')) {
+        if (! AttendanceRules::attended($a->status()->value('code') ?? '')) {
             $this->fail('status', 'ack_not_attended');
         }
-        if (!$a->acknowledged_at) {
+        if (! $a->acknowledged_at) {
             $a->update(['acknowledged_at' => now()]);
             AuditLogger::log('meeting.attendance_acknowledged', $m, [], ['person' => $u->name]);
         }
+
         return $a->refresh();
     }
 
@@ -137,6 +150,7 @@ class MeetingAttendanceService
     {
         $m->update(['checkin_token' => Str::random(40)]);
         AuditLogger::log('meeting.checkin_rotated', $m, [], []);
+
         return $m->checkin_token;
     }
 }

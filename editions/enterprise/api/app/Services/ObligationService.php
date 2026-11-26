@@ -14,6 +14,7 @@ class ObligationService
     public static function add(Carbon $d, string $frequency): Carbon
     {
         $d = $d->copy();
+
         return match ($frequency) {
             'weekly' => $d->addWeek(), 'monthly' => $d->addMonthNoOverflow(), 'quarterly' => $d->addMonthsNoOverflow(3),
             'semi_annual' => $d->addMonthsNoOverflow(6), default => $d->addYearNoOverflow(),
@@ -28,8 +29,13 @@ class ObligationService
 
     public static function state(ComplianceObligation $o): string
     {
-        if (!$o->is_active) return 'inactive';
-        if ($o->next_due_on->lt(today())) return 'overdue';
+        if (! $o->is_active) {
+            return 'inactive';
+        }
+        if ($o->next_due_on->lt(today())) {
+            return 'overdue';
+        }
+
         return $o->next_due_on->lte(today()->addDays(14)) ? 'due_soon' : 'ok';
     }
 
@@ -40,8 +46,11 @@ class ObligationService
             $c = ObligationCompletion::create(['obligation_id' => $o->id, 'due_on' => $o->next_due_on, 'completed_on' => $on, 'completed_by' => $by?->id, 'notes' => $notes ? mb_substr($notes, 0, 1000) : null, 'automatic' => $automatic]);
 
             $next = $o->next_due_on->copy();
-            do { $next = self::add($next, $o->frequency->code); } while ($next->lte($on));      // next occurrence strictly after the completion date
+            do {
+                $next = self::add($next, $o->frequency->code);
+            } while ($next->lte($on));      // next occurrence strictly after the completion date
             $o->update(['last_completed_on' => $on, 'next_due_on' => $next, 'alerted_for' => null]);
+
             return $c;
         });
     }
@@ -50,8 +59,11 @@ class ObligationService
     public static function autoComplete(string $orgId, string $code, ?User $by, string $note): bool
     {
         $o = ComplianceObligation::withoutGlobalScopes()->with('frequency')->where('organization_id', $orgId)->where('code', $code)->where('is_active', true)->first();
-        if (!$o || $o->next_due_on->gt(today()->addDays(self::window($o->frequency->code)))) return false;
+        if (! $o || $o->next_due_on->gt(today()->addDays(self::window($o->frequency->code)))) {
+            return false;
+        }
         self::complete($o, today(), $by, $note, true);
+
         return true;
     }
 }

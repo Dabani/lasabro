@@ -8,6 +8,7 @@ use App\Models\ClientIdentity;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\LookupValue;
+use App\Models\User;
 use App\Models\UserDepartmentAssignment;
 use App\Services\SettingsService;
 use App\Support\Lookup;
@@ -18,7 +19,7 @@ use Tests\TestCase;
 /** Replaces the Bundle 08 version: the portal now requires two-factor by default, so these tests switch it off and PortalTest covers it. */
 class PortalAndScopeTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -31,7 +32,8 @@ class PortalAndScopeTest extends TestCase
     {
         $c = Client::create(['code' => $code, 'name' => $code, 'status_id' => Lookup::id('client_status', 'active'), 'portal_enabled' => true]);
         $contact = ClientContact::create(['client_id' => $c->id, 'name' => "Contact $code"]);
-        $identity = ClientIdentity::create(['client_id' => $c->id, 'email' => strtolower($code) . '@client.test', 'password' => 'Str0ng-Passw0rd!x', 'is_active' => true]);
+        $identity = ClientIdentity::create(['client_id' => $c->id, 'email' => strtolower($code).'@client.test', 'password' => 'Str0ng-Passw0rd!x', 'is_active' => true]);
+
         return [$c, $contact, $identity];
     }
 
@@ -39,6 +41,7 @@ class PortalAndScopeTest extends TestCase
     private function spa(): static
     {
         config(['sanctum.stateful' => ['spa.test']]);                 // do not depend on the developer's SANCTUM_STATEFUL_DOMAINS
+
         return $this->withHeaders(['Referer' => 'http://spa.test']);
     }
 
@@ -90,7 +93,7 @@ class PortalAndScopeTest extends TestCase
 
     public function test_sensitive_fields_are_hidden_encrypted_and_audited(): void
     {
-        $admin = \App\Models\User::where('email', 'admin@example.com')->firstOrFail();
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
         Sanctum::actingAs($admin);
         $id = $this->postJson('/api/v1/employees', ['employee_number' => 'E-1', 'first_name' => 'Ada', 'last_name' => 'L', 'national_id' => '1199880012345678',
             'category_id' => Lookup::id('employee_category', 'contracted')])->assertCreated()->assertJsonMissingPath('data.national_id')->json('data.id');

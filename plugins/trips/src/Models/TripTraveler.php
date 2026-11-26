@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace Lasabro\Trips\Models;
 
+use App\Models\Employee;
 use App\Support\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
 

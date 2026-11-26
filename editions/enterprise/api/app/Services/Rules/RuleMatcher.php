@@ -16,7 +16,7 @@ class RuleMatcher
     public static function conditionMatches(array $c, array $attrs): bool
     {
         $key = $c['attribute'];
-        if (!array_key_exists($key, $attrs) || $attrs[$key] === null || $attrs[$key] === '') {
+        if (! array_key_exists($key, $attrs) || $attrs[$key] === null || $attrs[$key] === '') {
             return false;                                   // an attribute the transaction does not carry never satisfies a condition
         }
         $actual = $attrs[$key];
@@ -25,6 +25,7 @@ class RuleMatcher
         if ($c['decimal'] !== null && is_numeric($actual)) {
             $a = (string) $actual;
             $x = (string) $c['decimal'];
+
             return match ($op) {
                 'eq' => bccomp($a, $x, 2) === 0,
                 'ne' => bccomp($a, $x, 2) !== 0,
@@ -38,6 +39,7 @@ class RuleMatcher
         }
 
         $text = (string) $c['text'];
+
         return match ($op) {
             'eq' => (string) $actual === $text,
             'ne' => (string) $actual !== $text,
@@ -49,10 +51,11 @@ class RuleMatcher
     public static function matches(array $conditions, array $attrs): bool
     {
         foreach ($conditions as $c) {
-            if (!self::conditionMatches($c, $attrs)) {
+            if (! self::conditionMatches($c, $attrs)) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -65,11 +68,12 @@ class RuleMatcher
     public static function pick(array $candidates, array $attrs, string $on): ?array
     {
         $hits = array_values(array_filter($candidates, fn ($c) => self::inEffect($c, $on) && self::matches($c['conditions'], $attrs)));
-        if (!$hits) {
+        if (! $hits) {
             return null;
         }
         usort($hits, fn ($a, $b) => [count($b['conditions']), $b['priority'], $b['effective_from'], $b['version']]
             <=> [count($a['conditions']), $a['priority'], $a['effective_from'], $a['version']]);
+
         return $hits[0];
     }
 
@@ -85,14 +89,23 @@ class RuleMatcher
             }
             $x = $cents($c['decimal']);
             switch ($c['operator']) {
-                case 'gte': $lo = max($lo, $x); break;
-                case 'gt': $lo = max($lo, $x + 1); break;
-                case 'lte': $hi = min($hi, $x); break;
-                case 'lt': $hi = min($hi, $x - 1); break;
-                case 'between': $lo = max($lo, $x); $hi = min($hi, $cents($c['decimal_to'] ?? $c['decimal'])); break;
-                case 'eq': $lo = max($lo, $x); $hi = min($hi, $x); break;
+                case 'gte': $lo = max($lo, $x);
+                    break;
+                case 'gt': $lo = max($lo, $x + 1);
+                    break;
+                case 'lte': $hi = min($hi, $x);
+                    break;
+                case 'lt': $hi = min($hi, $x - 1);
+                    break;
+                case 'between': $lo = max($lo, $x);
+                    $hi = min($hi, $cents($c['decimal_to'] ?? $c['decimal']));
+                    break;
+                case 'eq': $lo = max($lo, $x);
+                    $hi = min($hi, $x);
+                    break;
             }
         }
+
         return [$lo, $hi];
     }
 
@@ -112,6 +125,7 @@ class RuleMatcher
             $next = max($next, $hi + 1);
         }
         $gaps[] = [$next, self::OPEN_END];
+
         return $gaps;
     }
 }

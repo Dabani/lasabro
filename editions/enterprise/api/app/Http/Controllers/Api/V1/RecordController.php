@@ -14,7 +14,6 @@ use App\Models\FileClassificationRule;
 use App\Models\Location;
 use App\Models\LookupType;
 use App\Models\LookupValue;
-use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\FileAccess;
 use App\Services\FileService;
@@ -45,6 +44,7 @@ class RecordController extends Controller
     {
         $allowed = FileClassificationRule::where('min_level', '<=', $this->ctx->level())->pluck('classification_id');
         $me = request()->user()->id;
+
         return ArchiveRecord::query()->where(fn ($w) => $w->whereIn('classification_id', $allowed)->orWhere('custodian_id', $me)->orWhere('created_by', $me));
     }
 
@@ -53,9 +53,15 @@ class RecordController extends Controller
         return Rule::exists('lookup_values', 'id')->where(fn ($q) => $q->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id')));
     }
 
-    private function orgRule(string $table) { return Rule::exists($table, 'id')->where('organization_id', $this->ctx->organizationId()); }
+    private function orgRule(string $table)
+    {
+        return Rule::exists($table, 'id')->where('organization_id', $this->ctx->organizationId());
+    }
 
-    private function isPhysical(ArchiveRecord $r): bool { return in_array($r->format->code, ['physical', 'hybrid'], true); }
+    private function isPhysical(ArchiveRecord $r): bool
+    {
+        return in_array($r->format->code, ['physical', 'hybrid'], true);
+    }
 
     public function index(Request $request)
     {
@@ -65,7 +71,9 @@ class RecordController extends Controller
             'disposal' => $q->whereHas('status', fn ($s) => $s->where('code', 'archived'))->whereDate('retention_until', '<=', today())->where('legal_hold', false),
             default => null,
         };
-        if ($request->boolean('hold')) $q->where('legal_hold', true);
+        if ($request->boolean('hold')) {
+            $q->where('legal_hold', true);
+        }
 
         return $this->respondList($request, $q, RecordResource::class, ['reference', 'title', 'client_name', 'project_name', 'index_code'],
             ['record_date', 'retention_until', 'reference', 'title', 'created_at'], ['category_id', 'format_id', 'status_id', 'department_id', 'location_id', 'custodian_id'],
@@ -80,8 +88,8 @@ class RecordController extends Controller
 
         $ids = $events->pluck('old_ref')->merge($events->pluck('new_ref'))->filter()->unique();
         $lookups = LookupValue::with('translations')->whereIn('id', $ids)->get()->keyBy('id');
-        $locs = Location::whereIn('id', $ids)->get()->mapWithKeys(fn ($l) => [$l->id => $l->code . ' — ' . $l->name]);
-        $res = fn ($v) => !$v ? null : ($lookups[$v]?->label($lang) ?? $locs[$v] ?? $v);
+        $locs = Location::whereIn('id', $ids)->get()->mapWithKeys(fn ($l) => [$l->id => $l->code.' — '.$l->name]);
+        $res = fn ($v) => ! $v ? null : ($lookups[$v]?->label($lang) ?? $locs[$v] ?? $v);
 
         [$years, $rule] = RecordRules::retention($this->ctx->organizationId(), $r->category_id);
         $out = ArchiveAccessLog::with('requester')->where('record_id', $r->id)->whereHas('status', fn ($s) => $s->where('code', 'authorized'))->first();
@@ -111,9 +119,11 @@ class RecordController extends Controller
         $d = $request->validate($this->rules() + ['status_code' => 'nullable|in:active,inactive,archived']);
         $status = $d['status_code'] ?? 'active';
         $date = Carbon::parse($d['record_date']);
-        $dept = !empty($d['department_id']) ? Department::find($d['department_id']) : null;
+        $dept = ! empty($d['department_id']) ? Department::find($d['department_id']) : null;
         $cat = LookupValue::find($d['category_id']);
-        if ($status === 'archived' && $this->isPhysicalId($d['format_id'])) abort_unless(!empty($d['location_id']), 422, __('api.location_required'));
+        if ($status === 'archived' && $this->isPhysicalId($d['format_id'])) {
+            abort_unless(! empty($d['location_id']), 422, __('api.location_required'));
+        }
 
         $r = DB::transaction(function () use ($d, $status, $date, $dept, $cat, $request) {
             $r = new ArchiveRecord(collect($d)->except('status_code')->all() + [
@@ -122,26 +132,37 @@ class RecordController extends Controller
                 'index_code' => RecordRules::indexCode($dept?->code, $cat->code, $date), 'created_by' => $request->user()->id,
             ]);
             $r->organization_id = $this->ctx->organizationId();
-            if ($status !== 'active') $r->became_inactive_on = $date->toDateString();       // legacy records enter already inactive/archived
-            if ($status === 'archived') $r->archived_on = today()->toDateString();
+            if ($status !== 'active') {
+                $r->became_inactive_on = $date->toDateString();
+            }       // legacy records enter already inactive/archived
+            if ($status === 'archived') {
+                $r->archived_on = today()->toDateString();
+            }
             $r->load(['status', 'format']);
             RecordRules::recompute($r);
             $r->save();
             RecordRules::event($r, 'created');
+
             return $r;
         });
         AuditLogger::log('record.created', $r, [], ['reference' => $r->reference, 'title' => $r->title]);
+
         return (new RecordResource($r->load($this->with())))->response()->setStatusCode(201);
     }
 
-    private function isPhysicalId(string $formatId): bool { return in_array(LookupValue::find($formatId)->code, ['physical', 'hybrid'], true); }
+    private function isPhysicalId(string $formatId): bool
+    {
+        return in_array(LookupValue::find($formatId)->code, ['physical', 'hybrid'], true);
+    }
 
     public function update(Request $request, string $id)
     {
         $r = $this->visible()->with($this->with())->findOrFail($id);
         abort_if(in_array($r->status->code, ['disposal_pending', 'disposed'], true), 422, __('api.record_status_invalid'));
         $d = $request->validate($this->rules());
-        if (empty($d['classification_id'])) unset($d['classification_id']);
+        if (empty($d['classification_id'])) {
+            unset($d['classification_id']);
+        }
 
         $oldUntil = $r->retention_until?->toDateString();
         $r->fill($d);
@@ -152,8 +173,11 @@ class RecordController extends Controller
         $r->save();
 
         RecordRules::event($r, 'updated');
-        if (($r->retention_until?->toDateString()) !== $oldUntil) RecordRules::event($r, 'retention_changed', $oldUntil, $r->retention_until?->toDateString());
+        if (($r->retention_until?->toDateString()) !== $oldUntil) {
+            RecordRules::event($r, 'retention_changed', $oldUntil, $r->retention_until?->toDateString());
+        }
         AuditLogger::log('record.updated', $r, [], ['reference' => $r->reference]);
+
         return new RecordResource($r->refresh()->load($this->with()));
     }
 
@@ -166,11 +190,13 @@ class RecordController extends Controller
         $old = $r->status_id;
         $r->status_id = Lookup::id('record_status', 'inactive');
         $r->became_inactive_on = Carbon::parse($d['date'] ?? today())->toDateString();
-        $r->load(['status', 'format']); $r->setRelation('status', LookupValue::find($r->status_id));
+        $r->load(['status', 'format']);
+        $r->setRelation('status', LookupValue::find($r->status_id));
         RecordRules::recompute($r);
         $r->save();
         RecordRules::event($r, 'marked_inactive', $old, $r->status_id);
         AuditLogger::log('record.marked_inactive', $r, [], ['reference' => $r->reference]);
+
         return new RecordResource($r->refresh()->load($this->with()));
     }
 
@@ -180,18 +206,26 @@ class RecordController extends Controller
         $r = $this->visible()->with($this->with())->findOrFail($id);
         abort_unless($r->status->code === 'inactive', 422, __('api.record_status_invalid'));
         $d = $request->validate(['location_id' => ['nullable', $this->orgRule('locations')]]);
-        if ($this->isPhysical($r)) abort_unless(!empty($d['location_id']), 422, __('api.location_required'));
+        if ($this->isPhysical($r)) {
+            abort_unless(! empty($d['location_id']), 422, __('api.location_required'));
+        }
 
-        $old = $r->status_id; $oldLoc = $r->location_id;
+        $old = $r->status_id;
+        $oldLoc = $r->location_id;
         $r->status_id = Lookup::id('record_status', 'archived');
         $r->archived_on = today()->toDateString();
-        if (!empty($d['location_id'])) $r->location_id = $d['location_id'];
+        if (! empty($d['location_id'])) {
+            $r->location_id = $d['location_id'];
+        }
         $r->setRelation('status', LookupValue::find($r->status_id));
         RecordRules::recompute($r);
         $r->save();
         RecordRules::event($r, 'transferred', $old, $r->status_id);
-        if ($r->location_id !== $oldLoc) RecordRules::event($r, 'moved', $oldLoc, $r->location_id);
+        if ($r->location_id !== $oldLoc) {
+            RecordRules::event($r, 'moved', $oldLoc, $r->location_id);
+        }
         AuditLogger::log('record.transferred', $r, [], ['reference' => $r->reference]);
+
         return new RecordResource($r->refresh()->load($this->with()));
     }
 
@@ -205,6 +239,7 @@ class RecordController extends Controller
         $r->update(['location_id' => $d['location_id']]);
         RecordRules::event($r, 'moved', $old, $d['location_id']);
         AuditLogger::log('record.moved', $r, [], ['reference' => $r->reference]);
+
         return new RecordResource($r->refresh()->load($this->with()));
     }
 
@@ -216,6 +251,7 @@ class RecordController extends Controller
         $r->update(['legal_hold' => true, 'hold_reason' => $d['reason']]);
         RecordRules::event($r, 'hold_placed', null, null, $d['reason']);
         AuditLogger::log('record.hold_placed', $r, [], ['reference' => $r->reference], $d['reason']);
+
         return new RecordResource($r->refresh()->load($this->with()));
     }
 
@@ -226,6 +262,7 @@ class RecordController extends Controller
         $r->update(['legal_hold' => false, 'hold_reason' => null]);
         RecordRules::event($r, 'hold_released', null, null, $d['reason'] ?? null);
         AuditLogger::log('record.hold_released', $r, [], ['reference' => $r->reference], $d['reason'] ?? null);
+
         return new RecordResource($r->refresh()->load($this->with()));
     }
 
@@ -234,6 +271,7 @@ class RecordController extends Controller
         $r = $this->visible()->findOrFail($id);
         $q = FileAccess::scopeVisible(FileAsset::query())->with(['classification.translations', 'status.translations', 'owner'])
             ->whereHas('links', fn ($l) => $l->where('link_type_id', Lookup::id('file_link_type', 'record'))->where('link_id', $r->id))->orderByDesc('created_at');
+
         return FileResource::collection($q->get());
     }
 
@@ -245,7 +283,8 @@ class RecordController extends Controller
         $asset = FileService::store($request->file('file'), $request->user(), ['classification_id' => $request->input('classification_id', $r->classification_id)], ['type' => 'record', 'id' => $r->id]);
         $asset->load(['classification.translations', 'status.translations', 'owner']);
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, 'record' => $r->reference, 'sha256' => $asset->currentVersion->sha256]);
-        RecordRules::event($r, 'updated', null, null, 'attachment: ' . $asset->name);
+        RecordRules::event($r, 'updated', null, null, 'attachment: '.$asset->name);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 
@@ -255,6 +294,7 @@ class RecordController extends Controller
         $import = new RecordsImport($this->ctx);
         Excel::import($import, $request->file('file'));
         AuditLogger::log('record.imported', null, [], ['created' => $import->created, 'skipped' => count($import->errors)]);
+
         return response()->json(['created' => $import->created, 'errors' => $import->errors]);
     }
 }

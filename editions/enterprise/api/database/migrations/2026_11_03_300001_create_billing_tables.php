@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Schema;
  * Invoices, payments, credit notes. Money is DECIMAL(15,2) with a currency code per document.
  * Every calculation input is stored (rates, rounding, tax percent, source time entries) so totals stay reproducible years later.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::table('projects', fn (Blueprint $t) => $t->foreignUlid('billing_model_id')->nullable()->after('rate_card_id')->constrained('lookup_values')->nullOnDelete());
@@ -147,8 +148,13 @@ return new class extends Migration {
 
     public function down(): void
     {
-        foreach (['credit_notes', 'invoice_payments', 'invoice_line_sources', 'invoice_lines', 'invoices', 'document_sequences', 'tax_rates'] as $t) Schema::dropIfExists($t);
+        foreach (['credit_notes', 'invoice_payments', 'invoice_line_sources', 'invoice_lines', 'invoices', 'document_sequences', 'tax_rates'] as $t) {
+            Schema::dropIfExists($t);
+        }
         Schema::table('milestones', fn (Blueprint $t) => $t->dropColumn('billing_amount'));
-        Schema::table('projects', function (Blueprint $t) { $t->dropForeign(['billing_model_id']); $t->dropColumn('billing_model_id'); });
+        Schema::table('projects', function (Blueprint $t) {
+            $t->dropForeign(['billing_model_id']);
+            $t->dropColumn('billing_model_id');
+        });
     }
 };

@@ -17,9 +17,20 @@ use Illuminate\Validation\ValidationException;
 /** Appraisal cycles and performance reviews (Guide 5.2). The reviewer writes, the employee acknowledges; HR sees all (audited). */
 class ReviewController extends Controller
 {
-    private function ctx(): OrganizationContext { return app(OrganizationContext::class); }
-    private function mine(Request $r): ?Employee { return Employee::where('user_id', $r->user()->id)->first(); }
-    private function codes(string $type): array { return LookupValue::whereNull('organization_id')->whereHas('type', fn ($q) => $q->where('code', $type))->pluck('code')->all(); }
+    private function ctx(): OrganizationContext
+    {
+        return app(OrganizationContext::class);
+    }
+
+    private function mine(Request $r): ?Employee
+    {
+        return Employee::where('user_id', $r->user()->id)->first();
+    }
+
+    private function codes(string $type): array
+    {
+        return LookupValue::whereNull('organization_id')->whereHas('type', fn ($q) => $q->where('code', $type))->pluck('code')->all();
+    }
 
     private function cycleShape(ReviewCycle $c): array
     {
@@ -43,8 +54,15 @@ class ReviewController extends Controller
         return PerformanceReview::with(['cycle', 'employee', 'reviewer', 'status', 'rating', 'recommendation'])->findOrFail($id);
     }
 
-    private function isReviewer(Request $r, PerformanceReview $p): bool { return $p->reviewer?->user_id !== null && $p->reviewer->user_id === $r->user()->id; }
-    private function isSubject(Request $r, PerformanceReview $p): bool { return $p->employee?->user_id !== null && $p->employee->user_id === $r->user()->id; }
+    private function isReviewer(Request $r, PerformanceReview $p): bool
+    {
+        return $p->reviewer?->user_id !== null && $p->reviewer->user_id === $r->user()->id;
+    }
+
+    private function isSubject(Request $r, PerformanceReview $p): bool
+    {
+        return $p->employee?->user_id !== null && $p->employee->user_id === $r->user()->id;
+    }
 
     private function visible(Request $r, PerformanceReview $p): bool
     {
@@ -52,13 +70,17 @@ class ReviewController extends Controller
     }
 
     // ---- cycles (HR) ---------------------------------------------------------------------------------------------------
-    public function cycles() { return ['data' => ReviewCycle::with('status')->orderByDesc('period_start')->get()->map(fn ($c) => $this->cycleShape($c))]; }
+    public function cycles()
+    {
+        return ['data' => ReviewCycle::with('status')->orderByDesc('period_start')->get()->map(fn ($c) => $this->cycleShape($c))];
+    }
 
     public function storeCycle(Request $request)
     {
         $d = $request->validate(['name' => 'required|string|max:150', 'period_start' => 'required|date_format:Y-m-d', 'period_end' => 'required|date_format:Y-m-d|after_or_equal:period_start']);
         $c = ReviewCycle::create($d + ['status_id' => Lookup::id('review_cycle_status', 'open')]);
         AuditLogger::log('review.cycle_created', $c);
+
         return response()->json(['data' => $this->cycleShape($c->load('status'))], 201);
     }
 
@@ -67,6 +89,7 @@ class ReviewController extends Controller
         $c = ReviewCycle::findOrFail($id);
         $c->update(['status_id' => Lookup::id('review_cycle_status', 'closed')]);
         AuditLogger::log('review.cycle_closed', $c);
+
         return ['data' => $this->cycleShape($c->load('status'))];
     }
 
@@ -85,6 +108,7 @@ class ReviewController extends Controller
             $created += $r->wasRecentlyCreated ? 1 : 0;
         }
         AuditLogger::log('review.assigned', $c, [], ['created' => $created]);
+
         return response()->json(['data' => ['created' => $created]], 201);
     }
 
@@ -92,7 +116,7 @@ class ReviewController extends Controller
     public function index(Request $request)
     {
         $q = PerformanceReview::with(['cycle', 'employee', 'reviewer', 'status', 'rating', 'recommendation'])->orderByDesc('created_at');
-        if (!$this->ctx()->can('hr.reviews.manage')) {
+        if (! $this->ctx()->can('hr.reviews.manage')) {
             $me = $this->mine($request);
             $q->where(function ($w) use ($me) {
                 $w->whereRaw('1 = 0');
@@ -104,6 +128,7 @@ class ReviewController extends Controller
         if ($c = $request->query('cycle_id')) {
             $q->where('cycle_id', $c);
         }
+
         return ['data' => $q->limit(500)->get()->map(fn ($r) => $this->shape($r))];
     }
 
@@ -111,9 +136,10 @@ class ReviewController extends Controller
     {
         $p = $this->load($id);
         abort_unless($this->visible($request, $p), 404);
-        if ($this->ctx()->can('hr.reviews.manage') && !$this->isReviewer($request, $p) && !$this->isSubject($request, $p)) {
+        if ($this->ctx()->can('hr.reviews.manage') && ! $this->isReviewer($request, $p) && ! $this->isSubject($request, $p)) {
             AuditLogger::log('review.viewed', $p);
         }
+
         return ['data' => $this->shape($p)];
     }
 
@@ -135,6 +161,7 @@ class ReviewController extends Controller
             $upd['recommendation_id'] = $d['recommendation'] ? Lookup::id('review_recommendation', $d['recommendation']) : null;
         }
         $p->update($upd);
+
         return ['data' => $this->shape($this->load($id))];
     }
 
@@ -143,11 +170,12 @@ class ReviewController extends Controller
         $p = $this->load($id);
         abort_unless($this->isReviewer($request, $p), 404);
         abort_unless($p->status?->code === 'draft' && $p->cycle?->status_id === Lookup::id('review_cycle_status', 'open'), 422);
-        if (!$p->rating_id) {
+        if (! $p->rating_id) {
             throw ValidationException::withMessages(['rating' => [__('hr.review.rating_required')]]);
         }
         $p->update(['status_id' => Lookup::id('review_status', 'submitted'), 'submitted_at' => now()]);
         AuditLogger::log('review.submitted', $p);
+
         return ['data' => $this->shape($this->load($id))];
     }
 
@@ -159,6 +187,7 @@ class ReviewController extends Controller
         $d = $request->validate(['employee_comment' => 'nullable|string|max:10000']);
         $p->update(['status_id' => Lookup::id('review_status', 'acknowledged'), 'acknowledged_at' => now(), 'employee_comment' => $d['employee_comment'] ?? null]);
         AuditLogger::log('review.acknowledged', $p);
+
         return ['data' => $this->shape($this->load($id))];
     }
 }

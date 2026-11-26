@@ -16,7 +16,7 @@ trait BelongsToClient
         static::addGlobalScope('client', function (Builder $q) {
             $ctx = app(ClientContext::class);
             if ($ctx->active()) {
-                $q->where($q->getModel()->getTable() . '.client_id', $ctx->clientId() ?? '__none__');
+                $q->where($q->getModel()->getTable().'.client_id', $ctx->clientId() ?? '__none__');
             }
         });
     }

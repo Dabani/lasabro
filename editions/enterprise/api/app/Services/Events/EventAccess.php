@@ -13,17 +13,27 @@ class EventAccess
 {
     public function __construct(private OrganizationContext $ctx) {}
 
-    public function can(string $permission): bool { return $this->ctx->can($permission); }
+    public function can(string $permission): bool
+    {
+        return $this->ctx->can($permission);
+    }
 
-    public function manages(User $u, Event $e): bool { return $e->organizer_id === $u->id || $this->can('event.manage_all'); }
+    public function manages(User $u, Event $e): bool
+    {
+        return $e->organizer_id === $u->id || $this->can('event.manage_all');
+    }
 
-    public function requireManage(User $u, Event $e): void { abort_unless($this->manages($u, $e), 403, 'forbidden'); }
+    public function requireManage(User $u, Event $e): void
+    {
+        abort_unless($this->manages($u, $e), 403, 'forbidden');
+    }
 
     public function scopeVisible(Builder $q, User $u): Builder
     {
         if ($this->can('event.manage_all')) {
             return $q;
         }
+
         return $q->where(fn ($w) => $w->where('organizer_id', $u->id)->orWhere('status_id', '!=', Lookup::id('event_status', 'draft')));
     }
 
@@ -32,6 +42,7 @@ class EventAccess
     {
         $e = $this->scopeVisible(Event::query(), $u)->with($with)->whereKey($id)->first();
         abort_unless($e, 404);
+
         return $e;
     }
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8fefdee7071d842ddfe9b1e8b466622e",
+    "content-hash": "a603b23bd5d67c792b40a66a4af7c272",
     "packages": [
         {
             "name": "brick/math",
@@ -2174,7 +2174,7 @@
             "dist": {
                 "type": "path",
                 "url": "../../../kit/framework",
-                "reference": "7d86144b5856243b02ebb16a19722d8a18a0cfd8"
+                "reference": "20db57b6f678557a0bd09a8995ae671a96334c74"
             },
             "require": {
                 "composer/semver": "^3.4",
@@ -2186,6 +2186,9 @@
             },
             "type": "library",
             "extra": {
+                "branch-alias": {
+                    "dev-main": "1.x-dev"
+                },
                 "laravel": {
                     "providers": [
                         "Lasabro\\Framework\\FrameworkServiceProvider"
@@ -2213,6 +2216,184 @@
                 }
             ],
             "description": "LASABRO startup kit: plugin engine, contracts and CLI for Laravel applications",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "lasabro/leave",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../../../plugins/leave",
+                "reference": "9853e162ad9eb961964c98818d30b82988141f7a"
+            },
+            "require": {
+                "lasabro/framework": "^1.0",
+                "php": "^8.3"
+            },
+            "type": "lasabro-plugin",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.x-dev"
+                },
+                "lasabro": {
+                    "id": "Lasabro.Leave",
+                    "title": "Leave",
+                    "tier": "domain",
+                    "provider": "Lasabro\\Leave\\LeaveServiceProvider",
+                    "requires": {
+                        "Lasabro.Core": "^1.0",
+                        "Lasabro.Approvals": "^1.0",
+                        "Lasabro.Rules": "^1.0",
+                        "Lasabro.Files": "^1.0",
+                        "Lasabro.Hr": "^1.0",
+                        "Lasabro.Attendance": "^1.0"
+                    },
+                    "suggests": [],
+                    "frontends": [],
+                    "declares": [
+                        "seeders",
+                        "menu"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Lasabro\\Leave\\": "src/",
+                    "Lasabro\\Leave\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Robert MAKUTA",
+                    "email": "dabani.rm@gmail.com",
+                    "homepage": "https://dabani.github.io"
+                }
+            ],
+            "description": "Leave policies, statutory minimums, balances and ledger, requests with approval, accrual and year-end jobs, and the leave lookup used by attendance.",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "lasabro/procurement",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../../../plugins/procurement",
+                "reference": "0ff805e908ed3f70cda0ecd05a20e6205abe624d"
+            },
+            "require": {
+                "lasabro/framework": "^1.0",
+                "php": "^8.3"
+            },
+            "type": "lasabro-plugin",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.x-dev"
+                },
+                "lasabro": {
+                    "id": "Lasabro.Procurement",
+                    "title": "Procurement",
+                    "tier": "domain",
+                    "provider": "Lasabro\\Procurement\\ProcurementServiceProvider",
+                    "requires": {
+                        "Lasabro.Core": "^1.0",
+                        "Lasabro.Approvals": "^1.0",
+                        "Lasabro.Rules": "^1.0",
+                        "Lasabro.Files": "^1.0"
+                    },
+                    "suggests": [],
+                    "frontends": [],
+                    "declares": [
+                        "seeders",
+                        "menu"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Lasabro\\Procurement\\": "src/",
+                    "Lasabro\\Procurement\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Robert MAKUTA",
+                    "email": "dabani.rm@gmail.com",
+                    "homepage": "https://dabani.github.io"
+                }
+            ],
+            "description": "Suppliers, purchase requisitions, requests for quotation, purchase orders, goods receipts and supplier invoices, with approval flows and controlled documents.",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "lasabro/trips",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../../../plugins/trips",
+                "reference": "c4e38fcb57b2caca78e4348c48b08371cc71619f"
+            },
+            "require": {
+                "lasabro/framework": "^1.0",
+                "php": "^8.3"
+            },
+            "type": "lasabro-plugin",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.x-dev"
+                },
+                "lasabro": {
+                    "id": "Lasabro.Trips",
+                    "title": "Business trips",
+                    "tier": "domain",
+                    "provider": "Lasabro\\Trips\\TripServiceProvider",
+                    "requires": {
+                        "Lasabro.Core": "^1.0",
+                        "Lasabro.Approvals": "^1.0",
+                        "Lasabro.Rules": "^1.0",
+                        "Lasabro.Files": "^1.0",
+                        "Lasabro.Hr": "^1.0",
+                        "Lasabro.Attendance": "^1.0"
+                    },
+                    "suggests": [],
+                    "frontends": [],
+                    "declares": [
+                        "seeders",
+                        "menu"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Lasabro\\Trips\\": "src/",
+                    "Lasabro\\Trips\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Robert MAKUTA",
+                    "email": "dabani.rm@gmail.com",
+                    "homepage": "https://dabani.github.io"
+                }
+            ],
+            "description": "Business trips: requests with approval, travelers, rates and per-diems, bookings, advances, expenses, settlement and advance reminders.",
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -10324,7 +10505,10 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "lasabro/framework": 20
+        "lasabro/framework": 20,
+        "lasabro/leave": 20,
+        "lasabro/procurement": 20,
+        "lasabro/trips": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

@@ -1,17 +1,10 @@
 <?php
 
-namespace App\Services\Hr\Trips;
+namespace Lasabro\Trips\Services;
 
 use App\Models\Employee;
 use App\Models\FileLink;
 use App\Models\Organization;
-use App\Models\Trip;
-use App\Models\TripAdvance;
-use App\Models\TripDeductionConsent;
-use App\Models\TripExpense;
-use App\Models\TripRate;
-use App\Models\TripSettlement;
-use App\Models\TripTraveler;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\AuditLogger;
@@ -23,6 +16,13 @@ use App\Services\Notifier;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Trips\Models\Trip;
+use Lasabro\Trips\Models\TripAdvance;
+use Lasabro\Trips\Models\TripDeductionConsent;
+use Lasabro\Trips\Models\TripExpense;
+use Lasabro\Trips\Models\TripRate;
+use Lasabro\Trips\Models\TripSettlement;
+use Lasabro\Trips\Models\TripTraveler;
 
 /** Business trips (Guide 5.5): request -> approval -> mission authorization -> advances -> expenses -> report -> review -> settlement. Server-side, transaction-safe, audited. */
 class TripService

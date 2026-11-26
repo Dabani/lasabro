@@ -36,6 +36,7 @@ class MeetingInvitationController extends Controller
             $this->notices->send($m, MeetingInvitation::whereIn('id', collect($added)->pluck('id'))->with('user.language')->get(), 'meeting_invited');
         }
         AuditLogger::log('meeting.invited', $m, [], ['added' => count($added)]);
+
         return response()->json(['data' => ['added' => count($added), 'warnings' => $this->invites->busyElsewhere($m)]], 201);
     }
 
@@ -48,6 +49,7 @@ class MeetingInvitationController extends Controller
         abort_if($inv->user_id !== null && $m->isHost($inv->user), 422, __('meetings.cannot_remove_host'));
         AuditLogger::log('meeting.uninvited', $m, ['invitee' => $inv->displayName()], []);
         $inv->delete();
+
         return response()->noContent();
     }
 
@@ -59,6 +61,7 @@ class MeetingInvitationController extends Controller
         abort_unless($inv, 403, 'forbidden');
         $d = $request->validate(['response' => ['required', Rule::in(['accepted', 'declined', 'proposed'])], 'note' => 'nullable|string|max:1000', 'proposed_starts_at' => 'nullable|date']);
         $inv = $this->svc->respond($inv, $d['response'], $d['note'] ?? null, $d['proposed_starts_at'] ?? null, $request->user());
+
         return ['data' => ['response' => $inv->response->code]];
     }
 }

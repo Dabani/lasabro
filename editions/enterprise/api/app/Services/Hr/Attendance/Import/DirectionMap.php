@@ -9,6 +9,7 @@ namespace App\Services\Hr\Attendance\Import;
 final class DirectionMap
 {
     public const DEFAULT_IN = ['in', 'i', 'entry', 'enter', 'ci', 'c/in', 'check in', 'checkin', 'clock in', 'clockin', 'arrival', 'entree', 'entrée', 'injira'];
+
     public const DEFAULT_OUT = ['out', 'o', 'exit', 'co', 'c/out', 'check out', 'checkout', 'clock out', 'clockout', 'departure', 'sortie', 'sohoka'];
 
     /** @var array<string,string> normalised value => in|out|ignore */
@@ -34,6 +35,7 @@ final class DirectionMap
     public function classify(mixed $raw): ?string
     {
         $v = CellParser::norm($raw);
+
         return $v === '' ? null : ($this->map[$v] ?? 'invalid');
     }
 }

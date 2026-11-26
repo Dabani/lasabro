@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Project;
-use App\Models\ProjectMember;
-use App\Models\TimeEntry;
 use App\Models\Timesheet;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,9 +12,13 @@ use Tests\TestCase;
 /** Currency lookup, rich-text sanitising and the SQLite-safe date storage fix. Needs Bundles 08-12 and CopsTestHelpers. */
 class PolishTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
-    protected function setUp(): void { parent::setUp(); $this->bootCops(); }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->bootCops();
+    }
 
     public function test_currency_must_be_a_value_of_the_currency_lookup(): void
     {

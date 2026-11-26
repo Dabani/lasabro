@@ -16,7 +16,8 @@ class IncidentResource extends JsonResource
     {
         $lang = optional($request->user())->language_id;
         $i = $this->incident;
-        $open = !in_array($this->status->code, ['resolved', 'closed', 'cancelled'], true);
+        $open = ! in_array($this->status->code, ['resolved', 'closed', 'cancelled'], true);
+
         return [
             'id' => $this->id, 'reference' => $this->reference, 'title' => $this->title,
             'status' => $this->lv($this->status, $lang), 'priority' => $this->lv($this->priority, $lang),

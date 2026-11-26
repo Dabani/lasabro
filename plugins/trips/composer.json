@@ -1,0 +1,48 @@
+{
+    "name": "lasabro/trips",
+    "description": "Business trips: requests with approval, travelers, rates and per-diems, bookings, advances, expenses, settlement and advance reminders.",
+    "type": "lasabro-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Robert MAKUTA",
+            "email": "dabani.rm@gmail.com",
+            "homepage": "https://dabani.github.io"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "lasabro/framework": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lasabro\\Trips\\": "src/",
+            "Lasabro\\Trips\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        },
+        "lasabro": {
+            "id": "Lasabro.Trips",
+            "title": "Business trips",
+            "tier": "domain",
+            "provider": "Lasabro\\Trips\\TripServiceProvider",
+            "requires": {
+                "Lasabro.Core": "^1.0",
+                "Lasabro.Approvals": "^1.0",
+                "Lasabro.Rules": "^1.0",
+                "Lasabro.Files": "^1.0",
+                "Lasabro.Hr": "^1.0",
+                "Lasabro.Attendance": "^1.0"
+            },
+            "suggests": {},
+            "frontends": {},
+            "declares": [
+                "seeders",
+                "menu"
+            ]
+        }
+    }
+}

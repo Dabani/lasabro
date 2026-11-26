@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\ClientResource;
 use App\Models\Client;
+use App\Models\ClientContact;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use App\Support\AppliesListQuery;
@@ -23,13 +24,17 @@ class ClientController extends Controller
             ['status_id', 'portal_enabled'], ['code', 'name', 'email', 'phone', 'status', 'portal_enabled']);
     }
 
-    public function show(string $id) { return new ClientResource(Client::with(['status', 'contacts'])->findOrFail($id)); }
+    public function show(string $id)
+    {
+        return new ClientResource(Client::with(['status', 'contacts'])->findOrFail($id));
+    }
 
     public function store(Request $request)
     {
         $d = $this->validated($request);
         $c = Client::create($d + ['status_id' => $d['status_id'] ?? Lookup::id('client_status', 'active')]);
         AuditLogger::log('client.created', $c, [], $d);
+
         return (new ClientResource($c->load(['status', 'contacts'])))->response()->setStatusCode(201);
     }
 
@@ -40,6 +45,7 @@ class ClientController extends Controller
         $old = $c->only(array_keys($d));
         $c->update($d);
         AuditLogger::log('client.updated', $c, $old, $d);
+
         return new ClientResource($c->load(['status', 'contacts']));
     }
 
@@ -48,6 +54,7 @@ class ClientController extends Controller
         $c = Client::findOrFail($id);
         $c->delete();
         AuditLogger::log('client.deleted', $c);
+
         return response()->noContent();
     }
 
@@ -55,22 +62,25 @@ class ClientController extends Controller
     {
         $c = Client::findOrFail($id);
         $d = $request->validate(['name' => 'required|string|max:255', 'email' => 'nullable|email|max:255', 'phone' => 'nullable|string|max:40', 'job_title' => 'nullable|string|max:120', 'is_primary' => 'boolean']);
-        $contact = \App\Models\ClientContact::withoutGlobalScopes()->create($d + ['client_id' => $c->id, 'organization_id' => $c->organization_id]);
+        $contact = ClientContact::withoutGlobalScopes()->create($d + ['client_id' => $c->id, 'organization_id' => $c->organization_id]);
         AuditLogger::log('client.contact_added', $c, [], ['contact' => $contact->name]);
+
         return response()->json(['id' => $contact->id], 201);
     }
 
     public function destroyContact(string $id, string $contactId)
     {
         $c = Client::findOrFail($id);
-        \App\Models\ClientContact::withoutGlobalScopes()->where('client_id', $c->id)->findOrFail($contactId)->delete();
+        ClientContact::withoutGlobalScopes()->where('client_id', $c->id)->findOrFail($contactId)->delete();
         AuditLogger::log('client.contact_removed', $c);
+
         return response()->noContent();
     }
 
     private function validated(Request $r, ?Client $m = null): array
     {
         $org = app(OrganizationContext::class)->organizationId();
+
         return $r->validate([
             // no 'code': the client code is system-generated (CLI-0001)
             'name' => [$m ? 'sometimes' : 'required', 'string', 'max:255'], 'status_id' => ['sometimes', Rule::exists('lookup_values', 'id')],

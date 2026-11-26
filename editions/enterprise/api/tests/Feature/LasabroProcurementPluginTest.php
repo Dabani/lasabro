@@ -11,12 +11,12 @@ use Tests\TestCase;
 /** Lasabro.Procurement as a real plugin: discovered, activated on existing data (--adopt), hidden and shown again. */
 class LasabroProcurementPluginTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
-        config(['lasabro.cache_path' => sys_get_temp_dir() . '/lasabro-proc-' . bin2hex(random_bytes(4)) . '/lasabro.php']);
+        config(['lasabro.cache_path' => sys_get_temp_dir().'/lasabro-proc-'.bin2hex(random_bytes(4)).'/lasabro.php']);
         $this->app->forgetInstance(ManifestSource::class);
         $this->app->forgetInstance(PluginManager::class);
         $this->bootCops();   // DatabaseSeeder seeds the procurement lookups, permissions and menu, as before the extraction

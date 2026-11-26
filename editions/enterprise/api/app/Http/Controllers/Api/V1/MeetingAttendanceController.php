@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Language;
 use App\Models\Meeting;
 use App\Models\MeetingAttendance;
-use App\Models\MeetingInvitation;
 use App\Models\Organization;
 use App\Services\AuditLogger;
 use App\Services\Hr\Attendance\AttendanceService;
@@ -26,21 +25,26 @@ class MeetingAttendanceController extends Controller
 {
     public function __construct(private MeetingAccess $access, private MeetingAttendanceService $svc, private OrganizationContext $ctx) {}
 
-    private function sheetViewer(Request $r, Meeting $m): bool { return $this->access->canManage($r->user(), $m) || $this->access->canChair($r->user(), $m); }
+    private function sheetViewer(Request $r, Meeting $m): bool
+    {
+        return $this->access->canManage($r->user(), $m) || $this->access->canChair($r->user(), $m);
+    }
 
     private function loadRow(Request $r, string $id): MeetingAttendance
     {
         $a = MeetingAttendance::with('meeting.status')->findOrFail($id);
         $this->access->find($r->user(), $a->meeting_id);                        // 404 when the meeting is outside the user's visibility
+
         return $a;
     }
 
     private function rows(Meeting $m, bool $all, string $userId)
     {
         $q = MeetingAttendance::where('meeting_id', $m->id)->with(['user:id,name', 'status', 'method', 'invitation.response', 'invitation.department']);
-        if (!$all) {
+        if (! $all) {
             $q->where('user_id', $userId);
         }
+
         return $q->get()->sortBy(fn ($a) => mb_strtolower($a->displayName()))->values();
     }
 
@@ -55,9 +59,10 @@ class MeetingAttendanceController extends Controller
         $rows = $this->rows($m, $viewer, $r->user()->id);
         $status = $m->status->code;
         $mine = MeetingAttendance::where('meeting_id', $m->id)->where('user_id', $r->user()->id)->with('status')->first();
+
         return [
             'data' => $rows->map(fn ($a) => [
-                'id' => $a->id, 'name' => $a->displayName(), 'is_guest' => !$a->user_id, 'walk_in' => !$a->invitation_id, 'roles' => $this->roles($m, $a->user_id),
+                'id' => $a->id, 'name' => $a->displayName(), 'is_guest' => ! $a->user_id, 'walk_in' => ! $a->invitation_id, 'roles' => $this->roles($m, $a->user_id),
                 'department' => $a->invitation?->department?->name, 'rsvp' => $a->invitation?->response?->code, 'status' => $a->status->code,
                 'arrived_at' => $a->arrived_at?->toIso8601String(), 'method' => $a->method?->code, 'note' => $a->note, 'acknowledged_at' => $a->acknowledged_at?->toIso8601String(),
             ]),
@@ -74,6 +79,7 @@ class MeetingAttendanceController extends Controller
     public function index(Request $request, string $id)
     {
         $m = $this->access->find($request->user(), $id, ['status']);
+
         return $this->payload($request, $m);
     }
 
@@ -83,6 +89,7 @@ class MeetingAttendanceController extends Controller
         $this->access->requireManage($request->user(), $m);
         abort_unless(AttendanceRules::isOpen($m->status->code), 422, __('meetings.attendance_not_open'));
         $this->svc->generate($m, $request->user());
+
         return $this->payload($request, $m);
     }
 
@@ -92,6 +99,7 @@ class MeetingAttendanceController extends Controller
         $this->access->requireManage($request->user(), $a->meeting);
         $d = $request->validate(['status' => ['required', Rule::in(AttendanceRules::STATUSES)], 'note' => 'nullable|string|max:1000', 'reason' => 'nullable|string|max:1000']);
         $this->svc->record($a, $d['status'], $request->user(), $d['note'] ?? null, $d['reason'] ?? null);
+
         return $this->payload($request, $a->meeting->refresh()->load('status'));
     }
 
@@ -105,6 +113,7 @@ class MeetingAttendanceController extends Controller
         foreach ($rows as $a) {
             $this->svc->record($a, $d['status'], $request->user(), null, $d['reason'] ?? null);
         }
+
         return $this->payload($request, $m->refresh()->load('status'));
     }
 
@@ -118,6 +127,7 @@ class MeetingAttendanceController extends Controller
             'guest_name' => 'nullable|required_without:user_id|string|max:150', 'reason' => 'nullable|string|max:1000',
         ]);
         $this->svc->walkIn($m, $d['user_id'] ?? null, $d['guest_name'] ?? null, $request->user(), $d['reason'] ?? null);
+
         return $this->payload($request, $m->refresh()->load('status'));
     }
 
@@ -125,6 +135,7 @@ class MeetingAttendanceController extends Controller
     {
         $m = $this->access->find($request->user(), $id, ['status']);
         $this->svc->acknowledge($m, $request->user());
+
         return $this->payload($request, $m);
     }
 
@@ -133,6 +144,7 @@ class MeetingAttendanceController extends Controller
         $m = $this->access->find($request->user(), $id, ['status']);
         $this->access->requireManage($request->user(), $m);
         $this->svc->rotateCheckinLink($m, $request->user());
+
         return $this->payload($request, $m->refresh()->load('status'));
     }
 
@@ -142,6 +154,7 @@ class MeetingAttendanceController extends Controller
         $m = Meeting::query()->visibleTo($r->user())->with('status')->where('checkin_token', $token)->first();
         abort_unless($m, 404);
         abort_unless($this->access->isParticipant($r->user(), $m), 404);
+
         return $m;
     }
 
@@ -149,6 +162,7 @@ class MeetingAttendanceController extends Controller
     {
         $m = $this->byToken($request, $token);
         $mine = MeetingAttendance::where('meeting_id', $m->id)->where('user_id', $request->user()->id)->with('status')->first();
+
         return ['data' => [
             'id' => $m->id, 'code' => $m->code, 'title' => $m->title, 'timezone' => AttendanceService::tz($m->organization_id), 'starts_at' => $m->starts_at->toIso8601String(), 'ends_at' => $m->ends_at->toIso8601String(),
             'status' => $m->status->code, 'can_check_in' => $m->status->code === 'in_progress', 'my_status' => $mine?->status->code,
@@ -160,6 +174,7 @@ class MeetingAttendanceController extends Controller
         $m = $this->byToken($request, $token);
         $d = $request->validate(['online' => 'nullable|boolean']);
         $a = $this->svc->selfCheckIn($m, $request->user(), (bool) ($d['online'] ?? false));
+
         return ['data' => ['status' => $a->status()->value('code')]];
     }
 
@@ -180,7 +195,7 @@ class MeetingAttendanceController extends Controller
             'acknowledged' => $a->acknowledged_at ? $a->acknowledged_at->setTimezone($tz)->format('Y-m-d H:i') : '', 'note' => (string) $a->note,
         ]);
         AuditLogger::log('meeting.attendance_exported', $m, [], ['format' => $format]);
-        $file = 'attendance-' . $m->code . '-' . now()->format('Ymd-His');
+        $file = 'attendance-'.$m->code.'-'.now()->format('Ymd-His');
         if ($format === 'pdf') {
             $org = Organization::findOrFail($m->organization_id);
             $html = view('pdf.meeting-attendance', ['m' => $m, 'org' => $org, 'lines' => $lines, 'tz' => $tz, 'locale' => app()->getLocale(), 'summary' => AttendanceRules::summary($rows->map(fn ($a) => $a->status->code)->all())])->render();
@@ -188,9 +203,11 @@ class MeetingAttendanceController extends Controller
             $pdf->loadHtml($html, 'UTF-8');
             $pdf->setPaper('A4', 'landscape');
             $pdf->render();
-            return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="' . $file . '.pdf"']);
+
+            return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="'.$file.'.pdf"']);
         }
         $keys = ['name', 'type', 'department', 'status', 'arrived', 'acknowledged', 'note'];
+
         return Excel::download(new ListExport($lines->map(fn ($l) => array_values($l))->all(), array_map(fn ($k) => __("meetings.att_col_$k"), $keys)), "$file.$format");
     }
 }

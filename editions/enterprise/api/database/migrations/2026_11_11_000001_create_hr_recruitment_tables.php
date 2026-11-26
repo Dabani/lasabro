@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Recruitment (requisition -> vacancy -> applicants -> interviews/scorecards -> selection -> offer -> employee) and onboarding. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('hr_requisitions', function (Blueprint $t) {

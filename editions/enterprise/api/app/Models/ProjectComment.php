@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectComment extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['is_client_visible' => 'boolean'];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function clientIdentity() { return $this->belongsTo(ClientIdentity::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function clientIdentity()
+    {
+        return $this->belongsTo(ClientIdentity::class);
+    }
 }

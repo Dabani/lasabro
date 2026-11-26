@@ -9,13 +9,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class ApprovalAction extends Model
 {
-    use HasUlids, BelongsToOrganization, Immutable;
+    use BelongsToOrganization, HasUlids, Immutable;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['acted_at' => 'datetime', 'step_order' => 'integer'];
 
-    public function actor() { return $this->belongsTo(User::class, 'actor_id'); }
-    public function onBehalfOf() { return $this->belongsTo(User::class, 'on_behalf_of_id'); }
-    public function decision() { return $this->belongsTo(LookupValue::class, 'decision_id'); }
+    public function actor()
+    {
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    public function onBehalfOf()
+    {
+        return $this->belongsTo(User::class, 'on_behalf_of_id');
+    }
+
+    public function decision()
+    {
+        return $this->belongsTo(LookupValue::class, 'decision_id');
+    }
 }

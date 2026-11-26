@@ -19,9 +19,10 @@ use Tests\TestCase;
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs bundle 16a. Excel fixtures are in tests/fixtures/attendance. */
 class AttendanceImportProfilesTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private string $tz;
+
     private User $hr;
 
     protected function setUp(): void
@@ -50,6 +51,7 @@ class AttendanceImportProfilesTest extends TestCase
         $u = $this->makeUser($role);
         $e = Employee::create(['first_name' => ucfirst($role), 'last_name' => 'Tester', 'category_id' => Lookup::id('employee_category', 'contracted'),
             'status_id' => Lookup::id('employee_status', 'active'), 'user_id' => $u->id, 'hired_on' => '2026-01-05']);
+
         return [$u, $e];
     }
 
@@ -64,10 +66,13 @@ class AttendanceImportProfilesTest extends TestCase
 
     private function fixture(string $name): UploadedFile
     {
-        return new UploadedFile(base_path('tests/fixtures/attendance/' . $name), $name, null, null, true);
+        return new UploadedFile(base_path('tests/fixtures/attendance/'.$name), $name, null, null, true);
     }
 
-    private function csv(string $content, string $name = 'punches.csv'): UploadedFile { return UploadedFile::fake()->createWithContent($name, $content); }
+    private function csv(string $content, string $name = 'punches.csv'): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent($name, $content);
+    }
 
     private function profile(string $name): string
     {

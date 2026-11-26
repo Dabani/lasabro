@@ -4,9 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ApprovalAction;
 use App\Models\ApprovalDelegation;
-use App\Models\ApprovalRequest;
 use App\Services\Approvals\ApprovalEngine;
-use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -14,11 +12,18 @@ use Tests\TestCase;
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. */
 class ApprovalEngineTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
-    protected function setUp(): void { parent::setUp(); $this->bootCops(); }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->bootCops();
+    }
 
-    private function submit($requester) { return app(ApprovalEngine::class)->submit('contract', '01JTESTSUBJECT0000000000AA', $requester, 'Test contract'); }
+    private function submit($requester)
+    {
+        return app(ApprovalEngine::class)->submit('contract', '01JTESTSUBJECT0000000000AA', $requester, 'Test contract');
+    }
 
     public function test_no_rule_applies_so_the_safe_default_flow_is_used(): void
     {
@@ -26,7 +31,6 @@ class ApprovalEngineTest extends TestCase
         $this->assertTrue($r->used_default_flow);
         $this->assertSame('default_two_level', $r->flow->code);
     }
-
 
     public function test_two_step_chain_and_segregation(): void
     {
@@ -36,10 +40,20 @@ class ApprovalEngineTest extends TestCase
         $engine = app(ApprovalEngine::class);
         $r = $this->submit($staff);                                   // no department head -> fallback to admins for step 1
 
-        try { $engine->act($r->id, $staff, 'approve'); $this->fail('self approval allowed'); } catch (ValidationException $e) { $this->assertArrayHasKey('approval', $e->errors()); }
+        try {
+            $engine->act($r->id, $staff, 'approve');
+            $this->fail('self approval allowed');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('approval', $e->errors());
+        }
 
         $engine->act($r->id, $admin1, 'approve');
-        try { $engine->act($r->id, $admin1, 'approve'); $this->fail('same person approved two steps'); } catch (ValidationException $e) { $this->assertArrayHasKey('approval', $e->errors()); }
+        try {
+            $engine->act($r->id, $admin1, 'approve');
+            $this->fail('same person approved two steps');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('approval', $e->errors());
+        }
 
         $done = $engine->act($r->id, $admin2, 'approve');
         $this->assertSame('approved', $done->status->code);
@@ -52,7 +66,12 @@ class ApprovalEngineTest extends TestCase
         $admin = $this->makeUser('admin');
         $engine = app(ApprovalEngine::class);
         $r = $this->submit($staff);
-        try { $engine->act($r->id, $admin, 'reject'); $this->fail('reject without comment'); } catch (ValidationException $e) { $this->assertArrayHasKey('comment', $e->errors()); }
+        try {
+            $engine->act($r->id, $admin, 'reject');
+            $this->fail('reject without comment');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('comment', $e->errors());
+        }
         $engine->act($r->id, $admin, 'reject', 'Not justified');
         $this->assertSame('rejected', $r->refresh()->status->code);
         $this->expectException(\LogicException::class);

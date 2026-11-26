@@ -68,7 +68,7 @@ class PayrollExportTest extends TestCase
 
     public function test_header_and_trailer_templates_with_count_and_known_placeholders_only(): void
     {
-        $p = $this->profile(['header_template' => "HDR;{run_code};{count}", 'trailer_template' => 'TRL;{total}', 'include_header' => false]);
+        $p = $this->profile(['header_template' => 'HDR;{run_code};{count}', 'trailer_template' => 'TRL;{total}', 'include_header' => false]);
         $this->assertSame("HDR;PAY-0001;2\nE001;Alice A;475000,00;01/12/2026\nE002;Bob B;1234,50;01/12/2026\nTRL;476234.50\n", X::render($p, $this->rows(), ['run_code' => 'PAY-0001', 'total' => '476234.50']));
         $this->assertSame('unknown_placeholder', $this->err(fn () => X::render($p, $this->rows(), ['total' => '1'])));              // {run_code} is not provided: a typo can never slip through
     }
@@ -118,8 +118,8 @@ class PayrollExportTest extends TestCase
     public function test_a_value_that_does_not_fit_is_refused_and_only_flagged_text_is_truncated(): void
     {
         $long = [['employee_name' => 'Alexandria Longname', 'net' => '1', 'paid_on' => '2026-12-01']];
-        $this->assertStringContainsString('Alexandri', 'Alexandri' . X::render($this->fixed(), $long));                                // text with truncate=true is cut to 8
-        $this->assertSame('D0001Alexandr0000000100' . "20261201\n", X::render($this->fixed(), $long));
+        $this->assertStringContainsString('Alexandri', 'Alexandri'.X::render($this->fixed(), $long));                                // text with truncate=true is cut to 8
+        $this->assertSame('D0001Alexandr0000000100'."20261201\n", X::render($this->fixed(), $long));
         $big = [['employee_name' => 'A', 'net' => '1234567890.00', 'paid_on' => '2026-12-01']];                                          // 15 digits in 10: never cut a number
         $this->assertSame('overflow', $this->err(fn () => X::render($this->fixed(), $big)));
         $noTruncate = $this->fixed();
@@ -182,6 +182,7 @@ class PayrollExportTest extends TestCase
         $this->assertTrue($r['balanced']);
         $this->assertSame('100.30', $r['debit']);
     }
+
     // ---- field catalogue ---------------------------------------------------------------------------------------------------------------
     public function test_a_layout_can_only_name_fields_that_exist_for_its_kind(): void
     {

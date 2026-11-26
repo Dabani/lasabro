@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\Hr\Trips\TripMath as T;
+use Lasabro\Trips\Services\TripMath as T;
 use PHPUnit\Framework\TestCase;
 
 /** Pure trip logic. Rates and amounts are TEST INPUTS: real rate tables are entered by finance/HR inside COPS. */

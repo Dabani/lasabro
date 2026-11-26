@@ -16,6 +16,7 @@ class FileResource extends JsonResource
     {
         $lang = optional($request->user())->language_id;
         $previewable = in_array($this->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'application/pdf'], true);
+
         return [
             'id' => $this->id,
             'name' => $this->name,

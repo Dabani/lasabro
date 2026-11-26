@@ -12,8 +12,11 @@ class BusinessDays
         $d = $from->copy();
         while ($days > 0) {
             $d->addDay();
-            if (!$d->isWeekend()) $days--;
+            if (! $d->isWeekend()) {
+                $days--;
+            }
         }
+
         return $d;
     }
 }

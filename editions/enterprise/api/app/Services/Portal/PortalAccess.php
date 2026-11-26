@@ -19,6 +19,7 @@ class PortalAccess
         $q = Task::where('project_id', $projectId)->when($milestoneId, fn ($q) => $q->where('milestone_id', $milestoneId))->whereHas('status', fn ($s) => $s->where('code', '!=', 'cancelled'));
         $total = (clone $q)->count();
         $done = (clone $q)->whereHas('status', fn ($s) => $s->where('code', 'done'))->count();
+
         return ['done' => $done, 'total' => $total, 'percent' => self::percent($done, $total)];
     }
 

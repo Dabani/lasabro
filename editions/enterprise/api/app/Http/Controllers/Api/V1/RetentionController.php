@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArchiveRecord;
-use App\Models\LegalReference;
 use App\Models\LookupType;
 use App\Models\LookupValue;
 use App\Models\RetentionRule;
@@ -35,8 +34,10 @@ class RetentionController extends Controller
         return response()->json(['data' => [
             'rules' => $cats->map(function ($c) use ($rules, $org, $lang) {
                 $set = $rules->get($c->id, collect());
-                $own = $set->firstWhere('organization_id', $org); $global = $set->firstWhere('organization_id', null);
+                $own = $set->firstWhere('organization_id', $org);
+                $global = $set->firstWhere('organization_id', null);
                 $eff = $own ?? $global;
+
                 return [
                     'category' => ['id' => $c->id, 'code' => $c->code, 'label' => $c->label($lang)],
                     'retention_years' => $eff?->retention_years ?? SettingsService::get($org, 'archive.default_retention_years'),
@@ -57,9 +58,16 @@ class RetentionController extends Controller
                 foreach ($recs as $r) {
                     $old = $r->retention_until?->toDateString();
                     RecordRules::recompute($r);
-                    if ($r->isDirty()) { $r->save(); $n++; if ($r->retention_until?->toDateString() !== $old) RecordRules::event($r, 'retention_changed', $old, $r->retention_until?->toDateString(), 'rule'); }
+                    if ($r->isDirty()) {
+                        $r->save();
+                        $n++;
+                        if ($r->retention_until?->toDateString() !== $old) {
+                            RecordRules::event($r, 'retention_changed', $old, $r->retention_until?->toDateString(), 'rule');
+                        }
+                    }
                 }
             });
+
         return $n;
     }
 
@@ -74,6 +82,7 @@ class RetentionController extends Controller
         $rule = RetentionRule::updateOrCreate(['organization_id' => $org, 'category_id' => $categoryId], $d);
         $changed = $this->redate($categoryId);
         AuditLogger::log('retention.rule_saved', $rule, [], ['category' => LookupValue::find($categoryId)->code, 'years' => (string) $d['retention_years'], 'records_redated' => (string) $changed]);
+
         return response()->json(['data' => ['records_redated' => $changed]]);
     }
 
@@ -84,6 +93,7 @@ class RetentionController extends Controller
         $rule->delete();
         $changed = $this->redate($categoryId);
         AuditLogger::log('retention.override_removed', $rule, [], ['records_redated' => (string) $changed]);
+
         return response()->json(['data' => ['records_redated' => $changed]]);
     }
 
@@ -94,9 +104,12 @@ class RetentionController extends Controller
         $old = ['transfer_days' => (string) SettingsService::get($org, 'archive.transfer_days'), 'default_years' => (string) SettingsService::get($org, 'archive.default_retention_years')];
         SettingsService::set($org, 'archive.transfer_days', $d['transfer_days']);
         SettingsService::set($org, 'archive.default_retention_years', $d['default_retention_years']);
-        if (isset($d['training_retention_years'])) SettingsService::set($org, 'training.retention_years', $d['training_retention_years']);
+        if (isset($d['training_retention_years'])) {
+            SettingsService::set($org, 'training.retention_years', $d['training_retention_years']);
+        }
         $changed = $this->redate('*');
         AuditLogger::log('archive.settings_changed', null, $old, ['transfer_days' => (string) $d['transfer_days'], 'default_years' => (string) $d['default_retention_years']]);
+
         return response()->json(['data' => ['records_redated' => $changed]]);
     }
 }

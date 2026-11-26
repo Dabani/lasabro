@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class HrSetting extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_settings';
-    protected $guarded = [];
-    protected $casts = [];
 
+    protected $guarded = [];
+
+    protected $casts = [];
 }

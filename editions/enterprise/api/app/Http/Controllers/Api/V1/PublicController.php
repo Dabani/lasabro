@@ -14,6 +14,7 @@ class PublicController extends Controller
     public function config()
     {
         $org = Organization::whereHas('status', fn ($q) => $q->where('code', 'active'))->orderBy('created_at')->first();
+
         return response()->json(['data' => [
             'app_name' => $org?->name ?? config('app.name'),
             'has_logo' => (bool) $org?->logo_path,
@@ -26,6 +27,7 @@ class PublicController extends Controller
     {
         $org = Organization::whereNotNull('logo_path')->orderBy('created_at')->first();
         abort_unless($org && Storage::disk(FileService::disk())->exists($org->logo_path), 404);
+
         return Storage::disk(FileService::disk())->response($org->logo_path, null, ['X-Content-Type-Options' => 'nosniff']);
     }
 }

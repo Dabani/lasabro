@@ -9,6 +9,6 @@ class ExportFormatError extends RuntimeException
 {
     public function __construct(public readonly string $reason, public readonly string $detail = '')
     {
-        parent::__construct("export format error: $reason" . ($detail !== '' ? " ($detail)" : ''));
+        parent::__construct("export format error: $reason".($detail !== '' ? " ($detail)" : ''));
     }
 }

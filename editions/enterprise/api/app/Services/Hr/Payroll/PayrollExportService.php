@@ -20,16 +20,24 @@ use Illuminate\Validation\ValidationException;
  */
 class PayrollExportService
 {
-    private function fail(string $field, string $key, array $p = []): never { throw ValidationException::withMessages([$field => [__("payexport.err.$key", $p)]]); }
-    private function code(?string $id): ?string { return $id ? LookupValue::find($id)?->code : null; }
+    private function fail(string $field, string $key, array $p = []): never
+    {
+        throw ValidationException::withMessages([$field => [__("payexport.err.$key", $p)]]);
+    }
+
+    private function code(?string $id): ?string
+    {
+        return $id ? LookupValue::find($id)?->code : null;
+    }
 
     /** The layout in the shape ExportFormatter expects. Scheme / component columns read the composite key "source:code". */
     public function profileArray(PayExportProfile $p): array
     {
         $p->loadMissing(['layout', 'columns.scheme', 'columns.component']);
+
         return ['layout' => $p->layout->code, 'delimiter' => $p->delimiter ?? ';', 'quote' => $p->quote_char ?? '', 'line_ending' => $p->line_ending, 'encoding' => $p->encoding, 'decimal_separator' => $p->decimal_separator,
             'date_format' => $p->date_format, 'include_header' => $p->include_header, 'header_template' => $p->header_template, 'trailer_template' => $p->trailer_template,
-            'columns' => $p->columns->map(fn ($c) => ['header' => $c->header, 'source' => ExportFields::needsScheme($c->source) ? $c->source . ':' . $c->scheme->code : (ExportFields::needsComponent($c->source) ? $c->source . ':' . $c->component->code : $c->source),
+            'columns' => $p->columns->map(fn ($c) => ['header' => $c->header, 'source' => ExportFields::needsScheme($c->source) ? $c->source.':'.$c->scheme->code : (ExportFields::needsComponent($c->source) ? $c->source.':'.$c->component->code : $c->source),
                 'format' => $c->format, 'decimals' => $c->decimals ?? 2, 'width' => $c->width, 'align' => $c->align ?? 'left', 'pad_char' => $c->pad_char ?? ' ', 'truncate' => $c->truncate, 'constant' => $c->constant])->all()];
     }
 
@@ -57,6 +65,7 @@ class PayrollExportService
             }
             if ($bank && trim((string) $s->bank_account) === '') {
                 $blockers[] = $s->employee_name;
+
                 continue;
             }
             $row = $vars + ['employee_number' => (string) $s->employee_number, 'employee_name' => $s->employee_name, 'employee_national_id' => $nid[$s->employee_id] ?? '', 'bank_account' => (string) $s->bank_account,
@@ -64,7 +73,7 @@ class PayrollExportService
                 'employee_contributions' => (string) $s->employee_contributions, 'deductions' => (string) $s->deductions, 'net' => (string) $s->net, 'employer_contributions' => (string) $s->employer_contributions,
                 'employer_cost' => (string) $s->employer_cost, 'pay_amount' => $pay, 'currency' => $s->currency_code];
             foreach ($profile['columns'] as $c) {
-                if (!str_contains($c['source'], ':')) {
+                if (! str_contains($c['source'], ':')) {
                     continue;
                 }
                 [$src, $code] = explode(':', $c['source'], 2);
@@ -78,6 +87,7 @@ class PayrollExportService
             $rows[] = $row;
             $total = bcadd($total, $pay, 2);
         }
+
         return ['rows' => $rows, 'blockers' => $blockers, 'total' => $bank ? $total : null];
     }
 
@@ -102,15 +112,20 @@ class PayrollExportService
         foreach ($agg['schemes'] as $c => $v) {
             $agg['schemes'][$c] += ['employee' => '0.00', 'employer' => '0.00'];
         }
+
         return $agg;
     }
 
-    private function accounts(): array { return PayJournalAccount::pluck('account_code', 'account_key')->all(); }
+    private function accounts(): array
+    {
+        return PayJournalAccount::pluck('account_code', 'account_key')->all();
+    }
 
     /** Every journal account key this run needs, with its current mapping. @return array<int,array{key:string,account_code:?string}> */
     public function requiredAccounts(PayRun $run): array
     {
         $r = JournalBuilder::build($this->journalAggregate($run), $this->accounts());
+
         return array_map(fn ($l) => ['key' => $l['key'], 'account_code' => $l['account'] === '' ? null : $l['account']], $r['lines']);
     }
 
@@ -118,10 +133,10 @@ class PayrollExportService
     {
         $kind = $this->code($p->kind_id);
         $status = $this->code($run->status_id);
-        if ($p->verification_status_id !== Lookup::id('rule_verification_status', 'verified') || !$p->is_active) {
+        if ($p->verification_status_id !== Lookup::id('rule_verification_status', 'verified') || ! $p->is_active) {
             $this->fail('profile_id', 'profile_not_verified');
         }
-        if (!in_array($status, ExportFields::runStatuses($kind), true)) {
+        if (! in_array($status, ExportFields::runStatuses($kind), true)) {
             $this->fail('status', 'run_state', ['kind' => $kind, 'allowed' => implode(', ', ExportFields::runStatuses($kind))]);
         }
         if ($run->parent_run_id && $kind !== 'bank_transfer') {
@@ -137,7 +152,7 @@ class PayrollExportService
             if ($j['missing']) {
                 $this->fail('accounts', 'accounts_missing', ['keys' => implode(', ', $j['missing'])]);
             }
-            if (!$j['balanced']) {
+            if (! $j['balanced']) {
                 $this->fail('accounts', 'journal_unbalanced');
             }
             $rows = array_map(fn ($l) => $vars + ['journal_account' => $l['account'], 'journal_label' => $l['label'], 'journal_debit' => $l['debit'], 'journal_credit' => $l['credit']], $j['lines']);
@@ -158,6 +173,7 @@ class PayrollExportService
         $e = PayExport::create(['run_id' => $run->id, 'profile_id' => $p->id, 'kind_code' => $kind, 'profile_name' => $p->name, 'file_name' => $name, 'mime' => $p->file_extension === 'txt' ? 'text/plain' : 'text/csv',
             'row_count' => count($rows), 'total_amount' => $total, 'checksum' => hash('sha256', $content), 'content' => $content, 'generated_by' => $by->id]);
         AuditLogger::log('payroll.export_generated', $e, [], ['run' => $run->code, 'kind' => $kind, 'rows' => count($rows), 'checksum' => $e->checksum]);      // never the content
+
         return $e;
     }
 
@@ -174,7 +190,8 @@ class PayrollExportService
     private function fileName(PayExportProfile $p, array $vars): string
     {
         $base = preg_replace_callback('/\{(\w+)\}/', fn ($m) => $vars[$m[1]] ?? $this->fail('filename_template', 'filename_placeholder', ['name' => $m[1]]), $p->filename_template);
-        return preg_replace('/[^A-Za-z0-9._-]+/', '-', $base) . '.' . ltrim($p->file_extension, '.');
+
+        return preg_replace('/[^A-Za-z0-9._-]+/', '-', $base).'.'.ltrim($p->file_extension, '.');
     }
 
     /** Synthetic rows (invented names and numbers, never real data) so the accountant can check a layout with the bank before it is verified. */
@@ -188,10 +205,11 @@ class PayrollExportService
             foreach ([['600100', 'basic', '500000.00', '0.00'], ['420000', 'net pay', '0.00', '500000.00']] as [$a, $l, $d, $c]) {
                 $rows[] = $vars + ['journal_account' => $a, 'journal_label' => $l, 'journal_debit' => $d, 'journal_credit' => $c];
             }
+
             return ['rows' => $rows, 'vars' => $vars + ['total' => '500000.00'], 'profile' => $profile];
         }
         foreach ([1, 2, 3] as $i) {
-            $row = $vars + ['employee_number' => 'S00' . $i, 'employee_name' => 'SAMPLE EMPLOYEE ' . $i, 'employee_national_id' => '10000000000000' . $i, 'bank_account' => '000000000000' . $i, 'category_code' => 'sample',
+            $row = $vars + ['employee_number' => 'S00'.$i, 'employee_name' => 'SAMPLE EMPLOYEE '.$i, 'employee_national_id' => '10000000000000'.$i, 'bank_account' => '000000000000'.$i, 'category_code' => 'sample',
                 'gross' => '500000.00', 'taxable_earnings' => '500000.00', 'pensionable_earnings' => '500000.00', 'employee_contributions' => '25000.00', 'deductions' => '0.00', 'net' => '475000.00',
                 'employer_contributions' => '25000.00', 'employer_cost' => '525000.00', 'pay_amount' => '475000.00'];
             foreach ($profile['columns'] as $c) {
@@ -201,6 +219,7 @@ class PayrollExportService
             }
             $rows[] = $row;
         }
+
         return ['rows' => $rows, 'vars' => $vars + ['total' => '1425000.00'], 'profile' => $profile];
     }
 }

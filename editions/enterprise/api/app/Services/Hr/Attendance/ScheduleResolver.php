@@ -25,11 +25,13 @@ class ScheduleResolver
             $date = $d->format('Y-m-d');
             if ($overrides->has($date)) {
                 $out[$date] = $overrides[$date]->shift;
+
                 continue;
             }
             $current = $assignments->last(fn ($a) => $a->effective_from->toDateString() <= $date);
             $out[$date] = $current ? ($days[$current->schedule_id][(int) $d->format('N')] ?? null)?->shift : null;
         }
+
         return $out;
     }
 }

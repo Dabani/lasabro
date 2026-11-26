@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Event expenses against the event budget, approved through the approval engine; receipts are controlled files (link type "event_expense"). */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('event_expenses', function (Blueprint $t) {
@@ -29,5 +30,8 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void { Schema::dropIfExists('event_expenses'); }
+    public function down(): void
+    {
+        Schema::dropIfExists('event_expenses');
+    }
 };

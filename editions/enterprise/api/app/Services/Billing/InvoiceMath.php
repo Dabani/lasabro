@@ -18,6 +18,7 @@ class InvoiceMath
         $minutes = bcdiv((string) $seconds, '60', 8);
         $rounded = $incrementMinutes > 1 ? MoneyService::roundToIncrement($minutes, (string) $incrementMinutes, $mode) : MoneyService::round($minutes, 0, $mode);
         $billed = MoneyService::round($rounded, 2, $mode);                                      // minutes, two decimals
+
         return [
             'raw_seconds' => $seconds,
             'rounded_minutes' => $billed,
@@ -35,8 +36,11 @@ class InvoiceMath
     public static function totals(array $lineAmounts, ?string $taxPercent): array
     {
         $subtotal = '0.00';
-        foreach ($lineAmounts as $a) $subtotal = MoneyService::add($subtotal, $a);
+        foreach ($lineAmounts as $a) {
+            $subtotal = MoneyService::add($subtotal, $a);
+        }
         $tax = $taxPercent === null ? '0.00' : MoneyService::round(MoneyService::percent($subtotal, $taxPercent), 2);
+
         return ['subtotal' => $subtotal, 'tax_total' => $tax, 'total' => MoneyService::add($subtotal, $tax)];
     }
 
@@ -50,9 +54,16 @@ class InvoiceMath
     public static function settlement(string $total, string $paid, string $credited, ?string $due, string $today): string
     {
         $balance = self::balance($total, $paid, $credited);
-        if (MoneyService::compare($credited, $total) >= 0 && MoneyService::compare($paid, '0') <= 0) return 'cancelled';   // fully credited, nothing paid
-        if (MoneyService::compare($balance, '0') <= 0) return 'paid';
-        if ($due !== null && $due < $today) return 'overdue';
+        if (MoneyService::compare($credited, $total) >= 0 && MoneyService::compare($paid, '0') <= 0) {
+            return 'cancelled';
+        }   // fully credited, nothing paid
+        if (MoneyService::compare($balance, '0') <= 0) {
+            return 'paid';
+        }
+        if ($due !== null && $due < $today) {
+            return 'overdue';
+        }
+
         return MoneyService::compare($paid, '0') > 0 ? 'partially_paid' : 'issued';
     }
 

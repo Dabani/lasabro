@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use App\Support\BelongsToOrganization;
+use App\Support\Lookup;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
 
 class TimeEntry extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['work_date' => 'date:Y-m-d', 'started_at' => 'datetime', 'ended_at' => 'datetime', 'approved_at' => 'datetime', 'duration_seconds' => 'integer',
         'is_manual' => 'boolean', 'is_billable' => 'boolean', 'auto_stopped' => 'boolean'];
 
@@ -37,12 +39,31 @@ class TimeEntry extends Model
     /** @return string[] */
     public static function lockedStatusIds(): array
     {
-        return [\App\Support\Lookup::id('time_entry_status', 'approved'), \App\Support\Lookup::id('time_entry_status', 'invoiced')];
+        return [Lookup::id('time_entry_status', 'approved'), Lookup::id('time_entry_status', 'invoiced')];
     }
 
-    public function project() { return $this->belongsTo(Project::class); }
-    public function task() { return $this->belongsTo(Task::class); }
-    public function user() { return $this->belongsTo(User::class); }
-    public function status() { return $this->belongsTo(LookupValue::class, 'status_id'); }
-    public function segments() { return $this->hasMany(TimeEntrySegment::class)->orderBy('started_at'); }
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    public function task()
+    {
+        return $this->belongsTo(Task::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(LookupValue::class, 'status_id');
+    }
+
+    public function segments()
+    {
+        return $this->hasMany(TimeEntrySegment::class)->orderBy('started_at');
+    }
 }

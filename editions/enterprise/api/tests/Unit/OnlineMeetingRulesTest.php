@@ -63,10 +63,10 @@ class OnlineMeetingRulesTest extends TestCase
 
     public function test_room_names(): void
     {
-        $this->assertTrue(R::validRoom('cops-' . str_repeat('a1', 12)));
+        $this->assertTrue(R::validRoom('cops-'.str_repeat('a1', 12)));
         $this->assertFalse(R::validRoom('cops-short'));
-        $this->assertFalse(R::validRoom('room-' . str_repeat('a', 24)));
-        $this->assertFalse(R::validRoom('cops-' . str_repeat('A', 24)));
+        $this->assertFalse(R::validRoom('room-'.str_repeat('a', 24)));
+        $this->assertFalse(R::validRoom('cops-'.str_repeat('A', 24)));
     }
 
     public function test_token_is_a_valid_hs256_jwt(): void

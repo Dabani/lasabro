@@ -33,10 +33,14 @@ class MeetingMinutesController extends Controller
         $v = MeetingMinuteVersion::with(['status', 'visibility', 'minutes'])->findOrFail($id);
         $m = Meeting::with(['status', 'confidentiality'])->findOrFail($v->minutes->meeting_id);
         abort_unless($this->access->canRead($r->user(), $m, $v), 404);
+
         return [$v, $m];
     }
 
-    private function writer(Request $r, Meeting $m): void { abort_unless($this->access->isWriter($r->user(), $m), 403, 'forbidden'); }
+    private function writer(Request $r, Meeting $m): void
+    {
+        abort_unless($this->access->isWriter($r->user(), $m), 403, 'forbidden');
+    }
 
     private function row(MeetingMinuteVersion $v): array
     {
@@ -53,8 +57,9 @@ class MeetingMinutesController extends Controller
         $versions = $minutes ? $minutes->versions()->with(['status', 'visibility'])->get()->filter(fn ($v) => $this->access->canRead($u, $m, $v))->values() : collect();
         $writer = $this->access->isWriter($u, $m);
         $latest = $minutes?->versions()->with('status')->orderByDesc('version_no')->first();
+
         return ['data' => $versions->sortByDesc('version_no')->map(fn ($v) => $this->row($v))->values(), 'meta' => [
-            'exists' => (bool) $minutes, 'can_create' => $writer && !$minutes && MinutesRules::canStart($m->status->code),
+            'exists' => (bool) $minutes, 'can_create' => $writer && ! $minutes && MinutesRules::canStart($m->status->code),
             'can_revise' => $writer && $latest?->status->code === 'published', 'is_writer' => $writer,
         ]];
     }
@@ -64,6 +69,7 @@ class MeetingMinutesController extends Controller
         $m = $this->meetings->find($request->user(), $id, ['status', 'confidentiality']);
         $this->writer($request, $m);
         $v = $this->svc->create($m, $request->user());
+
         return response(['data' => $this->detail($request, $v, $m)], 201);
     }
 
@@ -73,6 +79,7 @@ class MeetingMinutesController extends Controller
         $this->writer($request, $m);
         $d = $request->validate(['reason' => 'required|string|min:3|max:1000']);
         $v = $this->svc->revise($m, $d['reason'], $request->user());
+
         return response(['data' => $this->detail($request, $v, $m)], 201);
     }
 
@@ -85,6 +92,7 @@ class MeetingMinutesController extends Controller
         $writer = $this->access->isWriter($u, $m);
         $chair = $this->access->isChair($u, $m);
         $inCircle = $writer || $chair || $this->access->isReviewer($u, $m ? $v : $v);
+
         return $this->row($v) + [
             'timezone' => AttendanceService::tz($m->organization_id), 'body' => $v->body, 'revision' => $v->revision,
             'meeting' => ['id' => $m->id, 'code' => $m->code, 'title' => $m->title, 'status' => $m->status->code, 'confidential' => $m->isConfidential(), 'starts_at' => $m->starts_at->toIso8601String(), 'can_open' => Meeting::query()->visibleTo($u)->whereKey($m->id)->exists()],
@@ -103,6 +111,7 @@ class MeetingMinutesController extends Controller
     public function show(Request $request, string $id)
     {
         [$v, $m] = $this->load($request, $id);
+
         return ['data' => $this->detail($request, $v, $m)];
     }
 
@@ -112,6 +121,7 @@ class MeetingMinutesController extends Controller
         $this->writer($request, $m);
         $d = $request->validate(['minutes_body' => 'required|string|max:400000', 'revision' => 'required|integer|min:1']);
         $this->svc->saveBody($v, $d['minutes_body'], (int) $d['revision'], $request->user());
+
         return ['data' => $this->detail($request, $v->refresh()->load('status'), $m)];
     }
 
@@ -121,6 +131,7 @@ class MeetingMinutesController extends Controller
         $this->writer($request, $m);
         $d = $request->validate(['user_ids' => 'present|array|max:100', 'user_ids.*' => 'string']);
         $this->svc->setReviewers($v, $m, $d['user_ids'], $request->user());
+
         return ['data' => $this->detail($request, $v->refresh()->load('status'), $m)];
     }
 
@@ -131,6 +142,7 @@ class MeetingMinutesController extends Controller
         abort_unless($this->access->isWriter($u, $m) || $this->access->isChair($u, $m) || $this->access->isReviewer($u, $v), 403, 'forbidden');
         $d = $request->validate(['body' => 'required|string|min:1|max:3000', 'anchor_text' => 'nullable|string|max:500']);
         $this->svc->addComment($v, $u, $d['body'], $d['anchor_text'] ?? null);
+
         return response(['data' => $this->detail($request, $v->refresh()->load('status'), $m)], 201);
     }
 
@@ -140,6 +152,7 @@ class MeetingMinutesController extends Controller
         [$v, $m] = $this->load($request, $c->version_id);
         abort_unless($this->access->isWriter($request->user(), $m) || $c->user_id === $request->user()->id, 403, 'forbidden');
         $this->svc->resolveComment($c, $request->user());
+
         return ['data' => $this->detail($request, $v, $m)];
     }
 
@@ -148,6 +161,7 @@ class MeetingMinutesController extends Controller
         [$v, $m] = $this->load($request, $id);
         $this->writer($request, $m);
         $v = $this->svc->submit($v, $m, $request->user());
+
         return ['data' => $this->detail($request, $v, $m)];
     }
 
@@ -161,6 +175,7 @@ class MeetingMinutesController extends Controller
             'user_ids' => 'nullable|array|max:200', 'user_ids.*' => ['string', Rule::exists('organization_memberships', 'user_id')->where('organization_id', $this->ctx->organizationId())],
         ]);
         $v = $this->svc->publish($v, $m, $d['visibility'], $d['department_ids'] ?? [], $d['user_ids'] ?? [], $request->user());
+
         return ['data' => $this->detail($request, $v->load('status'), $m->refresh()->load(['status', 'confidentiality']))];
     }
 
@@ -174,7 +189,8 @@ class MeetingMinutesController extends Controller
         abort_unless($ver && FileService::exists($ver), 410, __('api.file_not_available'));
         MeetingMinuteDistribution::where('version_id', $v->id)->where('user_id', $request->user()->id)->whereNull('downloaded_at')->update(['downloaded_at' => now()]);
         AuditLogger::log('meeting.minutes_downloaded', $v, [], ['version' => $v->version_no]);
-        return Storage::disk(FileService::disk())->download($ver->storage_path, 'minutes-' . $m->code . '-v' . $v->version_no . '.pdf', ['Content-Type' => 'application/pdf']);
+
+        return Storage::disk(FileService::disk())->download($ver->storage_path, 'minutes-'.$m->code.'-v'.$v->version_no.'.pdf', ['Content-Type' => 'application/pdf']);
     }
 
     // ---- library ----------------------------------------------------------------------------------------------------------------
@@ -182,12 +198,13 @@ class MeetingMinutesController extends Controller
     {
         $u = $request->user();
         $q = $this->access->scopeLibrary(MeetingMinuteVersion::query(), $u)->with(['status', 'visibility', 'minutes.meeting.confidentiality'])->orderByDesc('published_at');
-        if (!$request->boolean('all_versions')) {
+        if (! $request->boolean('all_versions')) {
             $q->whereHas('status', fn ($s) => $s->where('code', 'published'));
         }
         if ($s = trim((string) $request->query('search'))) {
             $q->whereHas('minutes.meeting', fn ($m) => $m->where('title', 'like', "%$s%")->orWhere('code', 'like', "%$s%"));
         }
+
         return MinutesLibraryResource::collection($q->paginate(min(100, max(5, (int) $request->query('per_page', 25)))));
     }
 }

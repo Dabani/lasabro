@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Schema;
  * and a DIFFERENT person verifies it. Everything is effective-dated; a verified row is never edited (it is ended and a new one entered).
  * Money DECIMAL(15,2), rates DECIMAL(9,6) as percentages. No enums, no JSON.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('pay_components', function (Blueprint $t) {

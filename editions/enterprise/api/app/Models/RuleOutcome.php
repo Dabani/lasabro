@@ -8,12 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class RuleOutcome extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['value_decimal' => 'decimal:2', 'value_integer' => 'integer', 'value_boolean' => 'boolean'];
 
-    public function flow() { return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id'); }
+    public function flow()
+    {
+        return $this->belongsTo(ApprovalFlow::class, 'approval_flow_id');
+    }
 
     /** The single typed value this outcome carries. */
     public function value(): mixed

@@ -250,8 +250,4 @@ return [
         'body' => 'Amafaranga ":what" ya ":title" yemejwe.',
     ],
     // COPS Phase 5b trips
-    'trip_advance_overdue' => [
-        'title' => 'Avansi itarasobanuwe: :trip',
-        'body' => 'Avansi ya :name y\'urugendo ":trip" yarenze itariki yo gusobanura ho iminsi :days.',
-    ],
 ];

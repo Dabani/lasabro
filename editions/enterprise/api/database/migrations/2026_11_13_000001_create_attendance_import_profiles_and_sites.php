@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Configurable import profiles for any device or spreadsheet, device codes, work sites (geolocation). */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('hr_attendance_import_profiles', function (Blueprint $t) {

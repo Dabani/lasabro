@@ -21,9 +21,10 @@ use Tests\TestCase;
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundle 16. Times are built in the organization's own timezone, whatever it is. */
 class AttendanceTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private string $tz;
+
     private User $hr;
 
     protected function setUp(): void
@@ -48,13 +49,17 @@ class AttendanceTest extends TestCase
         Carbon::setTestNow(CarbonImmutable::createFromTimestampUTC(AttendanceCalculator::localToUtc($this->tz, $date, $time)));
     }
 
-    private function admin(): User { return User::where('email', 'admin@example.com')->firstOrFail(); }
+    private function admin(): User
+    {
+        return User::where('email', 'admin@example.com')->firstOrFail();
+    }
 
     private function person(string $role = 'staff', array $extra = []): array
     {
         $u = $this->makeUser($role);
         $e = Employee::create($extra + ['first_name' => ucfirst($role), 'last_name' => 'Tester', 'category_id' => Lookup::id('employee_category', 'contracted'),
             'status_id' => Lookup::id('employee_status', 'active'), 'user_id' => $u->id, 'hired_on' => '2026-01-05']);
+
         return [$u, $e];
     }
 
@@ -65,6 +70,7 @@ class AttendanceTest extends TestCase
         $shift = $this->postJson('/api/v1/attendance/shifts', ['name' => 'Day', 'start_time' => '08:00', 'end_time' => '17:00', 'break_minutes' => 60, 'grace_minutes' => 10])->assertCreated()->assertJsonPath('data.code', 'SHF-0001')->json('data.id');
         $sched = $this->postJson('/api/v1/attendance/schedules', ['name' => 'Office week', 'days' => array_map(fn ($d) => ['weekday' => $d, 'shift_id' => $shift], [1, 2, 3, 4, 5])])->assertCreated()->json('data.id');
         $this->postJson('/api/v1/attendance/schedule-assignments', ['schedule_id' => $sched, 'effective_from' => '2026-11-01', 'employee_ids' => array_map(fn ($e) => $e->id, $employees)])->assertCreated();
+
         return $shift;
     }
 
@@ -73,7 +79,10 @@ class AttendanceTest extends TestCase
         return AttendanceDay::where('employee_id', $e->id)->whereDate('work_date', $date)->first();
     }
 
-    private function csv(string $content): UploadedFile { return UploadedFile::fake()->createWithContent('punches.csv', $content); }
+    private function csv(string $content): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent('punches.csv', $content);
+    }
 
     public function test_clocking_in_and_out_with_the_server_clock(): void
     {

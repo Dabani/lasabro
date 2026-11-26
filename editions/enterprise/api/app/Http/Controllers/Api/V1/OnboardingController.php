@@ -14,7 +14,10 @@ use Illuminate\Validation\Rule;
 /** Onboarding checklist template (HR) and each new employee's checklist, generated at conversion. */
 class OnboardingController extends Controller
 {
-    private function ctx(): OrganizationContext { return app(OrganizationContext::class); }
+    private function ctx(): OrganizationContext
+    {
+        return app(OrganizationContext::class);
+    }
 
     private function itemShape(OnboardingItem $i): array
     {
@@ -27,11 +30,15 @@ class OnboardingController extends Controller
     }
 
     // ---- template -------------------------------------------------------------------------------------------------------
-    public function template() { return ['data' => OnboardingTemplateItem::orderBy('sort_order')->get()->map(fn ($t) => $this->tplShape($t))]; }
+    public function template()
+    {
+        return ['data' => OnboardingTemplateItem::orderBy('sort_order')->get()->map(fn ($t) => $this->tplShape($t))];
+    }
 
     private function tplRules(bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return ['title' => "$req|string|max:200", 'offset_days' => 'sometimes|integer|min:-30|max:365', 'sort_order' => 'sometimes|integer|min:0|max:9999', 'is_active' => 'sometimes|boolean'];
     }
 
@@ -39,6 +46,7 @@ class OnboardingController extends Controller
     {
         $t = OnboardingTemplateItem::create($request->validate($this->tplRules(true)) + ['sort_order' => (int) OnboardingTemplateItem::max('sort_order') + 1]);
         AuditLogger::log('onboarding.template_created', $t);
+
         return response()->json(['data' => $this->tplShape($t->refresh())], 201);
     }
 
@@ -47,6 +55,7 @@ class OnboardingController extends Controller
         $t = OnboardingTemplateItem::findOrFail($id);
         $t->update($request->validate($this->tplRules(false)));
         AuditLogger::log('onboarding.template_updated', $t);
+
         return ['data' => $this->tplShape($t->refresh())];
     }
 
@@ -55,6 +64,7 @@ class OnboardingController extends Controller
         $t = OnboardingTemplateItem::findOrFail($id);
         $t->delete();
         AuditLogger::log('onboarding.template_deleted', $t);
+
         return response()->noContent();
     }
 
@@ -68,6 +78,7 @@ class OnboardingController extends Controller
     {
         $e = Employee::query()->visibleTo($request->user())->find($id) ?? Employee::where('user_id', $request->user()->id)->where('id', $id)->first();
         abort_unless($e && $this->allowed($request, $e), 404);
+
         return ['data' => OnboardingItem::where('employee_id', $e->id)->orderBy('due_on')->orderBy('created_at')->get()->map(fn ($i) => $this->itemShape($i))];
     }
 
@@ -76,10 +87,11 @@ class OnboardingController extends Controller
         $i = OnboardingItem::with('employee')->findOrFail($id);
         $ok = $i->assignee_user_id === $request->user()->id || $i->employee?->user_id === $request->user()->id || $this->ctx()->can('hr.recruitment.manage');
         abort_unless($ok, 404);
-        if (!$i->done_at) {
+        if (! $i->done_at) {
             $i->update(['done_at' => now(), 'done_by' => $request->user()->id]);
             AuditLogger::log('onboarding.item_done', $i);
         }
+
         return ['data' => $this->itemShape($i->refresh())];
     }
 
@@ -88,6 +100,7 @@ class OnboardingController extends Controller
         $i = OnboardingItem::findOrFail($id);
         $d = $request->validate(['title' => 'sometimes|string|max:200', 'due_on' => 'nullable|date_format:Y-m-d', 'assignee_user_id' => ['nullable', Rule::exists('users', 'id')]]);
         $i->update($d);
+
         return ['data' => $this->itemShape($i->refresh())];
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\V1 as V1;
+use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
 /* Chat and polls for external guests. Public (the personal link is the credential) and rate limited. Required from routes/api.php next to meetings-online-public.php. */

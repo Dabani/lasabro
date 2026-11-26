@@ -9,7 +9,7 @@ class OutcomeDispatcher
 {
     public function handle(ApprovalFinalised $e): void
     {
-        $class = config('cops.approval_handlers.' . $e->request->subjectType->code);
+        $class = config('cops.approval_handlers.'.$e->request->subjectType->code);
         if ($class) {
             app($class)->{$e->outcome}($e->request);
         }

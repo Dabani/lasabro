@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalRequest;
+use App\Models\LookupValue;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
-use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -50,7 +50,7 @@ class ApprovalFlowController extends Controller
             'steps.*.escalate_after_hours' => 'nullable|integer|min:1|max:2000',
         ]);
         foreach ($d['steps'] as $s) {   // each step must carry what its type needs
-            $type = \App\Models\LookupValue::find($s['step_type_id'])?->code;
+            $type = LookupValue::find($s['step_type_id'])?->code;
             if (($type === 'role' && empty($s['role_id'])) || ($type === 'user' && empty($s['user_id']))) {
                 throw ValidationException::withMessages(['steps' => [__('foundation.approval.step_incomplete')]]);
             }
@@ -65,9 +65,11 @@ class ApprovalFlowController extends Controller
             foreach ($d['steps'] as $i => $s) {
                 $f->steps()->create($s + ['step_order' => $i + 1, 'organization_id' => $f->organization_id]);
             }
+
             return $f;
         });
         AuditLogger::log('approval_flow.created', $flow, [], ['code' => $flow->code, 'version' => $flow->version]);
+
         return response()->json(['data' => $this->shape($flow->load(['steps.type', 'steps.role', 'subjectType']))], 201);
     }
 
@@ -83,6 +85,7 @@ class ApprovalFlowController extends Controller
             $f->update(['is_active' => true]);
         });
         AuditLogger::log('approval_flow.activated', $f, [], ['code' => $f->code, 'version' => $f->version]);
+
         return ['data' => $this->shape($f->refresh()->load(['steps.type', 'steps.role', 'subjectType']))];
     }
 
@@ -93,6 +96,7 @@ class ApprovalFlowController extends Controller
         abort_if(ApprovalRequest::where('flow_id', $f->id)->exists() || $f->is_active, 422, __('api.in_use'));
         $f->delete();
         AuditLogger::log('approval_flow.deleted', $f);
+
         return response()->noContent();
     }
 }

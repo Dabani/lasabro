@@ -27,8 +27,15 @@ class EventService
         throw ValidationException::withMessages([$field => [__("events.$key", $p)]]);
     }
 
-    private function st(string $code): string { return Lookup::id('event_status', $code); }
-    private function rst(string $code): string { return Lookup::id('event_registration_status', $code); }
+    private function st(string $code): string
+    {
+        return Lookup::id('event_status', $code);
+    }
+
+    private function rst(string $code): string
+    {
+        return Lookup::id('event_registration_status', $code);
+    }
 
     private function history(Event $e, ?string $from, string $to, ?User $by, ?string $note): void
     {
@@ -39,10 +46,12 @@ class EventService
     public function create(array $d, User $by): Event
     {
         $this->checkWindow($d);
+
         return DB::transaction(function () use ($d, $by) {
             $e = Event::create($this->clean($d) + ['status_id' => $this->st('draft'), 'organizer_id' => $d['organizer_id'] ?? $by->id, 'public_token' => Str::random(48)]);
             $this->history($e, null, $e->status_id, $by, null);
             AuditLogger::log('event.created', $e, [], ['code' => $e->code, 'title' => $e->title]);
+
             return $e;
         });
     }
@@ -50,7 +59,7 @@ class EventService
     public function update(Event $e, array $d, User $by): Event
     {
         $e->loadMissing('status');
-        if (!EventRules::editable($e->status->code)) {
+        if (! EventRules::editable($e->status->code)) {
             $this->fail('status', 'event_not_editable');
         }
         $this->checkWindow($d + ['starts_at' => $e->starts_at, 'ends_at' => $e->ends_at]);
@@ -61,6 +70,7 @@ class EventService
         $e->update($this->clean($d));
         AuditLogger::log('event.updated', $e, array_map(fn ($v) => (string) $v, $old), array_map(fn ($v) => (string) $v, $e->only(array_keys($old))));
         $this->promoteWaitlist($e);                                 // a bigger room may free seats
+
         return $e->refresh();
     }
 
@@ -70,6 +80,7 @@ class EventService
             $d['description'] = Html::clean($d['description']);
         }
         unset($d['organizer_id'], $d['status']);
+
         return $d;
     }
 
@@ -80,8 +91,8 @@ class EventService
         if ($s && $e && $e <= $s) {
             $this->fail('ends_at', 'event_bad_times');
         }
-        $o = !empty($d['registration_opens_at']) ? strtotime((string) $d['registration_opens_at']) : null;
-        $c = !empty($d['registration_closes_at']) ? strtotime((string) $d['registration_closes_at']) : null;
+        $o = ! empty($d['registration_opens_at']) ? strtotime((string) $d['registration_opens_at']) : null;
+        $c = ! empty($d['registration_closes_at']) ? strtotime((string) $d['registration_closes_at']) : null;
         if ($o && $c && $c <= $o) {
             $this->fail('registration_closes_at', 'event_bad_window');
         }
@@ -91,7 +102,7 @@ class EventService
     {
         $e->loadMissing('status');
         $from = $e->status->code;
-        if (!EventRules::allowed($from, $to)) {
+        if (! EventRules::allowed($from, $to)) {
             $this->fail('status', 'event_bad_move');
         }
         if ($to === 'cancelled' && mb_strlen(trim((string) $note)) < 3) {
@@ -107,6 +118,7 @@ class EventService
         if ($to === 'cancelled') {
             $this->notifyAll($e, 'event_cancelled', ['reason' => (string) $note]);
         }
+
         return $e->refresh();
     }
 
@@ -114,6 +126,7 @@ class EventService
     {
         $e->update(['public_token' => Str::random(48)]);
         AuditLogger::log('event.link_rotated', $e, [], []);
+
         return $e;
     }
 
@@ -125,18 +138,19 @@ class EventService
 
     /**
      * Register a person (a user, or an external guest when guest data is given). $byManager skips the registration window and lets the organizer add people.
-     * @param array{name?:string,email?:string,phone?:string,organization?:string}|null $guest
+     *
+     * @param  array{name?:string,email?:string,phone?:string,organization?:string}|null  $guest
      */
     public function register(Event $e, ?User $user, ?array $guest, ?User $by, bool $byManager = false, ?string $note = null): EventRegistration
     {
         return DB::transaction(function () use ($e, $user, $guest, $by, $byManager, $note) {
             $e = Event::withoutGlobalScopes()->whereKey($e->id)->lockForUpdate()->with('status')->firstOrFail();   // capacity is checked under a lock
             $code = $e->status->code;
-            if ($byManager ? !in_array($code, ['draft', 'open', 'closed', 'in_progress'], true)
-                : !EventRules::registrationOpen($code, time(), $e->registration_opens_at?->getTimestamp(), $e->registration_closes_at?->getTimestamp())) {
+            if ($byManager ? ! in_array($code, ['draft', 'open', 'closed', 'in_progress'], true)
+                : ! EventRules::registrationOpen($code, time(), $e->registration_opens_at?->getTimestamp(), $e->registration_closes_at?->getTimestamp())) {
                 $this->fail('status', $code === 'open' ? 'event_registration_window' : 'event_registration_closed');
             }
-            if ($user === null && !$e->allow_guests && !$byManager) {
+            if ($user === null && ! $e->allow_guests && ! $byManager) {
                 $this->fail('email', 'event_guests_not_allowed');
             }
             $dup = EventRegistration::where('event_id', $e->id)->where('status_id', '!=', $this->rst('cancelled'))
@@ -155,6 +169,7 @@ class EventService
             ]);
             AuditLogger::log('event.registered', $reg, [], ['event' => $e->code, 'status' => $seat, 'who' => $reg->displayName()]);
             $this->notifyOne($e, $reg, $seat === 'registered' ? 'event_registered' : 'event_waitlisted');
+
             return $reg;
         });
     }
@@ -175,6 +190,7 @@ class EventService
         $r->update(['status_id' => $this->rst('cancelled'), 'cancelled_at' => now()]);
         AuditLogger::log('event.registration_cancelled', $r, [], ['event' => $e->code, 'who' => $r->displayName(), 'by' => $by?->id]);
         $this->promoteWaitlist($e);
+
         return $r->refresh();
     }
 
@@ -196,6 +212,7 @@ class EventService
                 $n++;
             }
         });
+
         return $n;
     }
 
@@ -204,7 +221,7 @@ class EventService
     {
         $e->loadMissing('status');
         $r->loadMissing('status');
-        if (!EventRules::canCheckIn($e->status->code, $isManager)) {
+        if (! EventRules::canCheckIn($e->status->code, $isManager)) {
             $this->fail('status', 'event_not_running');
         }
         if ($r->status->code !== 'registered') {
@@ -216,6 +233,7 @@ class EventService
         }
         $a = EventAttendance::create(['event_id' => $e->id, 'registration_id' => $r->id, 'method_id' => Lookup::id('event_checkin_method', $method), 'checked_in_at' => now(), 'checked_in_by' => $by->id, 'note' => $note ? mb_substr($note, 0, 500) : null]);
         AuditLogger::log('event.checked_in', $a, [], ['event' => $e->code, 'who' => $r->displayName(), 'method' => $method, 'after_completion' => $e->status->code === 'completed']);
+
         return $a;
     }
 
@@ -237,6 +255,7 @@ class EventService
         $by = EventRegistration::where('event_id', $e->id)->select('status_id', DB::raw('count(*) as n'))->groupBy('status_id')->pluck('n', 'status_id');
         $reg = (int) ($by[$this->rst('registered')] ?? 0);
         $att = EventAttendance::where('event_id', $e->id)->count();
+
         return ['registered' => $reg, 'waitlisted' => (int) ($by[$this->rst('waitlisted')] ?? 0), 'cancelled' => (int) ($by[$this->rst('cancelled')] ?? 0), 'attended' => $att,
             'no_shows' => max(0, $reg - $att), 'attendance_rate' => EventRules::attendanceRate($reg, $att), 'capacity' => $e->capacity, 'free_seats' => $e->capacity === null ? null : max(0, $e->capacity - $reg)];
     }
@@ -245,7 +264,8 @@ class EventService
     public function whenText(Event $e): string
     {
         $tz = AttendanceService::tz($e->organization_id);
-        return $e->starts_at->copy()->setTimezone($tz)->format('Y-m-d H:i') . ' (' . $tz . ')';
+
+        return $e->starts_at->copy()->setTimezone($tz)->format('Y-m-d H:i').' ('.$tz.')';
     }
 
     private function params(Event $e, array $extra = []): array
@@ -253,16 +273,20 @@ class EventService
         return $extra + ['title' => $e->title, 'ref' => $e->code, 'when' => $this->whenText($e), 'where' => $e->venue ?: ($e->online_url ?: '-')];
     }
 
-    public function ticketUrl(EventRegistration $r): string { return rtrim((string) config('ops.frontend_url'), '/') . '/event-ticket/' . $r->ticket_token; }
+    public function ticketUrl(EventRegistration $r): string
+    {
+        return rtrim((string) config('ops.frontend_url'), '/').'/event-ticket/'.$r->ticket_token;
+    }
 
     private function notifyOne(Event $e, EventRegistration $r, string $key, array $extra = []): void
     {
         $params = $this->params($e, $extra);
         if ($r->user_id) {
-            Notifier::send(User::whereKey($r->user_id)->with('language')->get(), $key, $params, null, ['in_app', 'email'], '/events/' . $e->id, $e->organization_id);
+            Notifier::send(User::whereKey($r->user_id)->with('language')->get(), $key, $params, null, ['in_app', 'email'], '/events/'.$e->id, $e->organization_id);
+
             return;
         }
-        if (!$r->guest_email) {
+        if (! $r->guest_email) {
             return;
         }
         $locale = (string) config('ops.default_language', 'en');

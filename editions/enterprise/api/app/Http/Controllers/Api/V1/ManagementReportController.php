@@ -20,7 +20,10 @@ class ManagementReportController extends Controller
     {
         $lang = $request->user()->language_id;
         $q = ManagementReport::with(['kind.translations', 'submitter'])->orderByDesc('submitted_at');
-        if ($k = data_get($request->query('filter'), 'kind_id')) $q->where('kind_id', $k);
+        if ($k = data_get($request->query('filter'), 'kind_id')) {
+            $q->where('kind_id', $k);
+        }
+
         return response()->json(['data' => $q->limit(200)->get()->map(fn ($r) => [
             'id' => $r->id, 'title' => $r->title, 'period_label' => $r->period_label, 'body' => $r->body,
             'kind' => ['id' => $r->kind->id, 'code' => $r->kind->code, 'label' => $r->kind->label($lang), 'color' => $r->kind->color],
@@ -37,6 +40,7 @@ class ManagementReportController extends Controller
             'submitted_by' => $by->id, 'recipients_count' => $to->count(), 'source_id' => $sourceId]);
         AuditLogger::log('management_report.submitted', $r, [], ['title' => $title, 'recipients' => (string) $to->count()]);
         Notifier::send($to, 'management_report', ['title' => $title, 'period' => $period ?? '', 'user' => $by->name], null, ['in_app', 'email'], '/compliance/reports', $ctx->organizationId());
+
         return $r;
     }
 }

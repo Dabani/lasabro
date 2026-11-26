@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Meeting;
-use App\Models\MeetingIntervention;
 use App\Models\MeetingInvitation;
 use App\Models\Organization;
 use App\Services\Meetings\OnlineMeetingService;
@@ -29,6 +28,7 @@ class MeetingOnlinePublicController extends Controller
         $m = Meeting::withoutGlobalScopes()->with(['status', 'confidentiality'])->find($inv->meeting_id);
         abort_unless($m && $m->status->code !== 'draft', 404);
         app(OrganizationContext::class)->resolveForOrganization(Organization::findOrFail($inv->organization_id));
+
         return $inv->setRelation('meeting', $m);
     }
 
@@ -39,16 +39,21 @@ class MeetingOnlinePublicController extends Controller
         $allowed = $m->online_room && OnlineRules::guestMayJoin((bool) $m->online_allow_guests, $m->isConfidential(), $inv->response?->code);
         $queue = $allowed ? $this->svc->queue($m, null, $inv) : null;
         $mine = $queue ? collect([$queue['speaking']])->merge($queue['waiting'])->filter()->firstWhere('mine', true) : null;
+
         return ['data' => ['title' => $m->title, 'status' => $m->status->code, 'guest' => $inv->guest_name, 'enabled' => $allowed, 'window_open' => $allowed && $this->svc->windowOpen($m),
-            'kinds' => OnlineRules::KINDS, 'me' => ['can_join' => $allowed && $this->svc->windowOpen($m), 'can_request' => $allowed && OnlineRules::mayRequest($m->status->code) && !$mine],
+            'kinds' => OnlineRules::KINDS, 'me' => ['can_join' => $allowed && $this->svc->windowOpen($m), 'can_request' => $allowed && OnlineRules::mayRequest($m->status->code) && ! $mine],
             'queue' => $queue ? ['speaking' => $queue['speaking'], 'waiting' => $queue['waiting']] : null]];
     }
 
-    public function show(string $token) { return $this->state($this->find($token)); }
+    public function show(string $token)
+    {
+        return $this->state($this->find($token));
+    }
 
     public function join(string $token)
     {
         $inv = $this->find($token);
+
         return ['data' => $this->svc->joinGuest($inv->meeting, $inv)];
     }
 
@@ -56,6 +61,7 @@ class MeetingOnlinePublicController extends Controller
     {
         $inv = $this->find($token);
         $this->svc->leave($inv->meeting, null, $inv);
+
         return response()->noContent();
     }
 
@@ -65,6 +71,7 @@ class MeetingOnlinePublicController extends Controller
         $d = $request->validate(['kind' => ['required', Rule::in(OnlineRules::KINDS)], 'topic' => 'nullable|string|max:200']);
         abort_unless($this->state($inv)['data']['enabled'], 403, 'forbidden');
         $this->svc->request($inv->meeting, null, $inv, $d['kind'], $d['topic'] ?? null, null);
+
         return $this->state($inv);
     }
 
@@ -72,6 +79,7 @@ class MeetingOnlinePublicController extends Controller
     {
         $inv = $this->find($token);
         $this->svc->withdraw($interventionId, null, $inv);
+
         return $this->state($inv);
     }
 }

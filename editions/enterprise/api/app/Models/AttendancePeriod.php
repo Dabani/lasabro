@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttendancePeriod extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_attendance_periods';
-    protected $guarded = [];
-    protected $casts = ['month' => 'date:Y-m-d', 'validated_at' => UtcDateTime::class, 'reopened_at' => UtcDateTime::class];
 
+    protected $guarded = [];
+
+    protected $casts = ['month' => 'date:Y-m-d', 'validated_at' => UtcDateTime::class, 'reopened_at' => UtcDateTime::class];
 }

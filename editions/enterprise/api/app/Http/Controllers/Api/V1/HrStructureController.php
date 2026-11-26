@@ -16,12 +16,20 @@ use Illuminate\Validation\ValidationException;
 /** Position and grade framework and career-progression criteria (Guide 5.2). Pay bands need hr.salary.view. */
 class HrStructureController extends Controller
 {
-    private function org(): ?string { return app(OrganizationContext::class)->organizationId(); }
-    private function salaryVisible(): bool { return app(OrganizationContext::class)->can('hr.salary.view'); }
+    private function org(): ?string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
+
+    private function salaryVisible(): bool
+    {
+        return app(OrganizationContext::class)->can('hr.salary.view');
+    }
 
     private function gradeShape(HrGrade $g): array
     {
         $o = ['id' => $g->id, 'code' => $g->code, 'name' => $g->name, 'level' => $g->level, 'is_active' => $g->is_active];
+
         return $this->salaryVisible() ? $o + ['salary_min' => $g->salary_min, 'salary_max' => $g->salary_max, 'currency_code' => $g->currency_code] : $o;
     }
 
@@ -32,7 +40,10 @@ class HrStructureController extends Controller
     }
 
     // ---- grades --------------------------------------------------------------------------------------------------------
-    public function grades() { return ['data' => HrGrade::orderBy('level')->orderBy('name')->get()->map(fn ($g) => $this->gradeShape($g))]; }
+    public function grades()
+    {
+        return ['data' => HrGrade::orderBy('level')->orderBy('name')->get()->map(fn ($g) => $this->gradeShape($g))];
+    }
 
     private function gradeData(Request $r, bool $create): array
     {
@@ -45,9 +56,10 @@ class HrStructureController extends Controller
         if (array_key_exists('level', $d) && $d['level'] === null) {
             unset($d['level']);                                            // the column default (1) applies
         }
-        if (array_intersect(array_keys($d), ['salary_min', 'salary_max', 'currency_code']) && !$this->salaryVisible()) {
+        if (array_intersect(array_keys($d), ['salary_min', 'salary_max', 'currency_code']) && ! $this->salaryVisible()) {
             abort(403, 'forbidden');
         }
+
         return $d;
     }
 
@@ -55,6 +67,7 @@ class HrStructureController extends Controller
     {
         $g = HrGrade::create($this->gradeData($request, true));
         AuditLogger::log('hr.grade_created', $g);
+
         return response()->json(['data' => $this->gradeShape($g->refresh())], 201);
     }
 
@@ -63,15 +76,20 @@ class HrStructureController extends Controller
         $g = HrGrade::findOrFail($id);
         $g->update($this->gradeData($request, false));
         AuditLogger::log('hr.grade_updated', $g);
+
         return ['data' => $this->gradeShape($g->refresh())];
     }
 
     // ---- positions -----------------------------------------------------------------------------------------------------
-    public function positions() { return ['data' => HrPosition::with(['department', 'grade'])->orderBy('title')->get()->map(fn ($p) => $this->positionShape($p))]; }
+    public function positions()
+    {
+        return ['data' => HrPosition::with(['department', 'grade'])->orderBy('title')->get()->map(fn ($p) => $this->positionShape($p))];
+    }
 
     private function positionData(Request $r, bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return $r->validate([
             'title' => [$req, 'string', 'max:150'], 'description' => 'nullable|string|max:10000', 'is_active' => 'sometimes|boolean',
             'department_id' => ['nullable', Rule::exists('departments', 'id')->where('organization_id', $this->org())],
@@ -83,6 +101,7 @@ class HrStructureController extends Controller
     {
         $p = HrPosition::create($this->positionData($request, true));
         AuditLogger::log('hr.position_created', $p);
+
         return response()->json(['data' => $this->positionShape($p->refresh()->load(['department', 'grade']))], 201);
     }
 
@@ -91,6 +110,7 @@ class HrStructureController extends Controller
         $p = HrPosition::findOrFail($id);
         $p->update($this->positionData($request, false));
         AuditLogger::log('hr.position_updated', $p);
+
         return ['data' => $this->positionShape($p->refresh()->load(['department', 'grade']))];
     }
 
@@ -101,7 +121,10 @@ class HrStructureController extends Controller
             'min_months_in_grade' => $c->min_months_in_grade, 'min_rating_level' => $c->min_rating_level, 'notes' => $c->notes];
     }
 
-    public function criteria() { return ['data' => HrProgressionCriterion::with(['fromGrade', 'toGrade'])->get()->map(fn ($c) => $this->criterionShape($c))]; }
+    public function criteria()
+    {
+        return ['data' => HrProgressionCriterion::with(['fromGrade', 'toGrade'])->get()->map(fn ($c) => $this->criterionShape($c))];
+    }
 
     public function storeCriterion(Request $request)
     {
@@ -119,6 +142,7 @@ class HrStructureController extends Controller
         }
         $c = HrProgressionCriterion::create($d);
         AuditLogger::log('hr.criterion_created', $c);
+
         return response()->json(['data' => $this->criterionShape($c->load(['fromGrade', 'toGrade']))], 201);
     }
 
@@ -127,6 +151,7 @@ class HrStructureController extends Controller
         $c = HrProgressionCriterion::findOrFail($id);
         $c->delete();
         AuditLogger::log('hr.criterion_deleted', $c);
+
         return response()->noContent();
     }
 }

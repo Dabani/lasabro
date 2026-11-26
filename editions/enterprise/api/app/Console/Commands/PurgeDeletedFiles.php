@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 class PurgeDeletedFiles extends Command
 {
     protected $signature = 'files:purge-deleted';
+
     protected $description = 'Physically remove the content of files deleted longer ago than the retention window (metadata and audit trail are kept).';
 
     public function handle(): int
@@ -28,6 +29,7 @@ class PurgeDeletedFiles extends Command
         });
 
         $this->info("Purged {$n} file version(s).");
+
         return self::SUCCESS;
     }
 }

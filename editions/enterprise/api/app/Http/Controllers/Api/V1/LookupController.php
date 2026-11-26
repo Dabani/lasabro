@@ -8,6 +8,7 @@ use App\Models\Language;
 use App\Models\LookupType;
 use App\Models\LookupValue;
 use App\Services\AuditLogger;
+use App\Services\CodeGenerator;
 use App\Services\OrganizationContext;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
@@ -27,9 +28,10 @@ class LookupController extends Controller
         $request->validate(['type' => 'required|string']);
         $q = LookupValue::visible()->with(['type', 'translations.language'])
             ->whereHas('type', fn ($t) => $t->where('code', $request->type))->orderBy('sort_order');
-        if (!($request->boolean('all') && app(OrganizationContext::class)->can('lookup.manage'))) {
+        if (! ($request->boolean('all') && app(OrganizationContext::class)->can('lookup.manage'))) {
             $q->where('is_active', true);
         }
+
         return LookupValueResource::collection($q->get());
     }
 
@@ -49,10 +51,12 @@ class LookupController extends Controller
                 'sort_order' => $d['sort_order'] ?? 0, 'is_active' => $d['is_active'] ?? true,
             ]);
             $this->saveLabels($v, $d['labels']);
+
             return $v;
         });
         AuditLogger::log('lookup.created', $value, [], ['code' => $value->code]);
         Lookup::flush();
+
         return (new LookupValueResource($value->load(['type', 'translations.language'])))->response()->setStatusCode(201);
     }
 
@@ -67,13 +71,14 @@ class LookupController extends Controller
         $this->saveLabels($v, $d['labels']);
         AuditLogger::log('lookup.updated', $v, $old, $attrs);
         Lookup::flush();
+
         return new LookupValueResource($v->load(['type', 'translations.language']));
     }
 
     public function destroy(string $id)
     {
         $v = $this->ownedOrGlobal($id);
-        abort_if($v->is_system || !$v->organization_id, 422, __('api.system_value_locked'));
+        abort_if($v->is_system || ! $v->organization_id, 422, __('api.system_value_locked'));
         try {
             $v->delete();
         } catch (\Throwable $e) {
@@ -81,18 +86,20 @@ class LookupController extends Controller
         }
         AuditLogger::log('lookup.deleted', $v);
         Lookup::flush();
+
         return response()->noContent();
     }
 
     private function isCurrency(?string $typeId): bool
     {
-        return $typeId && \App\Models\LookupType::where('id', $typeId)->value('code') === 'currency';
+        return $typeId && LookupType::where('id', $typeId)->value('code') === 'currency';
     }
 
     private function generatedKey(string $label, string $typeId): string
     {
         $org = app(OrganizationContext::class)->organizationId();
-        return \App\Services\CodeGenerator::key($label, fn ($c) => LookupValue::withoutGlobalScopes()->where('lookup_type_id', $typeId)->where('organization_id', $org)->where('code', $c)->exists());
+
+        return CodeGenerator::key($label, fn ($c) => LookupValue::withoutGlobalScopes()->where('lookup_type_id', $typeId)->where('organization_id', $org)->where('code', $c)->exists());
     }
 
     private function ownedOrGlobal(string $id): LookupValue
@@ -104,6 +111,7 @@ class LookupController extends Controller
     {
         $typeId = $v?->lookup_type_id ?? $r->input('lookup_type_id');
         $org = app(OrganizationContext::class)->organizationId();
+
         return $r->validate([
             'lookup_type_id' => [$v ? 'nullable' : 'required', 'exists:lookup_types,id'],
             // typed only for the currency list (ISO 4217); every other value gets a generated key from its English label, and keys never change
@@ -124,7 +132,7 @@ class LookupController extends Controller
     {
         $langs = Language::pluck('id', 'code');
         foreach ($labels as $code => $label) {
-            if (!isset($langs[$code]) || $label === null || $label === '') {
+            if (! isset($langs[$code]) || $label === null || $label === '') {
                 continue;
             }
             $v->translations()->updateOrCreate(['language_id' => $langs[$code]], ['label' => $label]);

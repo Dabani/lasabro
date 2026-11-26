@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
 }

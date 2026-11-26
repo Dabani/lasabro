@@ -36,6 +36,7 @@ class LookupSeeder extends Seeder
     private function data(): array
     {
         $same = fn ($code, $label) => [$code, 'gray', null, $label, $label, $label, $label];
+
         return [
             'organization_status' => ['Organization status', [
                 ['active', 'green', null, 'Active', 'Actif', 'Ikora', 'Inatumika'],

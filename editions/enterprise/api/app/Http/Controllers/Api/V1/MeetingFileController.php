@@ -25,7 +25,10 @@ class MeetingFileController extends Controller
 {
     public function __construct(private MeetingAccess $access) {}
 
-    private function with(): array { return ['classification.translations', 'status.translations', 'owner']; }
+    private function with(): array
+    {
+        return ['classification.translations', 'status.translations', 'owner'];
+    }
 
     /** @return array{0:Meeting,1:string,2:string,3:bool} meeting, link type, link id, may upload */
     private function target(Request $r, string $kind, string $id): array
@@ -33,11 +36,13 @@ class MeetingFileController extends Controller
         $u = $r->user();
         if ($kind === 'meeting') {
             $m = $this->access->find($u, $id, ['status']);
+
             return [$m, 'meeting', $m->id, $this->access->canManage($u, $m)];
         }
         $item = MeetingAgendaItem::findOrFail($id);
         $m = $this->access->find($u, $item->meeting_id, ['status']);
         abort_unless($this->access->canSeeItem($u, $m, $item), 404);
+
         return [$m, 'meeting_agenda_item', $item->id, $this->access->canManage($u, $m) || $item->presenter_id === $u->id];
     }
 
@@ -47,6 +52,7 @@ class MeetingFileController extends Controller
         [, $type, $linkId] = $this->target($request, $kind, $id);
         $q = FileAccess::scopeVisible(FileAsset::query())->with($this->with())->whereHas('status', fn ($s) => $s->where('code', 'active'))
             ->whereHas('links', fn ($l) => $l->where('link_type_id', Lookup::id('file_link_type', $type))->where('link_id', $linkId))->orderByDesc('created_at');
+
         return FileResource::collection($q->get());
     }
 
@@ -61,6 +67,7 @@ class MeetingFileController extends Controller
 
         $asset = FileService::store($request->file('file'), $request->user(), $d, ['type' => $type, 'id' => $linkId])->load($this->with());
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, $type => $linkId, 'sha256' => $asset->currentVersion->sha256]);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 }

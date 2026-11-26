@@ -8,12 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingAgendaItem extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['is_confidential' => 'boolean', 'position' => 'integer', 'duration_minutes' => 'integer'];
 
-    public function meeting() { return $this->belongsTo(Meeting::class); }
-    public function presenter() { return $this->belongsTo(User::class, 'presenter_id'); }
-    public function priority() { return $this->belongsTo(LookupValue::class, 'priority_id'); }
+    public function meeting()
+    {
+        return $this->belongsTo(Meeting::class);
+    }
+
+    public function presenter()
+    {
+        return $this->belongsTo(User::class, 'presenter_id');
+    }
+
+    public function priority()
+    {
+        return $this->belongsTo(LookupValue::class, 'priority_id');
+    }
 }

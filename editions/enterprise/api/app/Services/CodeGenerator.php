@@ -17,12 +17,16 @@ class CodeGenerator
         'meeting' => 'MTG', 'resolution' => 'RES', 'meeting_action' => 'ACT', 'event' => 'EVT', 'supplier' => 'SUP', 'purchase_requisition' => 'PRQ', 'purchase_order' => 'PO', 'goods_receipt' => 'GRN', 'rfq' => 'RFQ', 'supplier_invoice' => 'SINV', 'obligation' => 'OBL', 'legal_reference' => 'LEG', 'rule_set' => 'RUL', 'approval_flow' => 'FLW',
     ];
 
-    public static function format(string $prefix, int $n): string { return sprintf('%s-%04d', $prefix, $n); }
+    public static function format(string $prefix, int $n): string
+    {
+        return sprintf('%s-%04d', $prefix, $n);
+    }
 
     /** @param \Closure(string): bool $exists true when the candidate is already used (covers codes typed by hand before this change) */
     public static function next(string $organizationId, string $entity, \Closure $exists): string
     {
         $prefix = config("cops.code_prefixes.$entity") ?? self::PREFIXES[$entity] ?? strtoupper(substr($entity, 0, 3));
+
         return DB::transaction(function () use ($organizationId, $entity, $prefix, $exists) {
             $key = ['organization_id' => $organizationId, 'scope' => "code:$entity", 'year' => 0];
             DB::table('reference_counters')->insertOrIgnore($key + ['last_number' => 0]);
@@ -33,6 +37,7 @@ class CodeGenerator
                 $code = self::format($prefix, $n);
             } while ($exists($code));
             DB::table('reference_counters')->where('id', $row->id)->update(['last_number' => $n]);
+
             return $code;
         });
     }
@@ -43,7 +48,10 @@ class CodeGenerator
         $base = Str::slug($label, '_') ?: 'value';
         $base = mb_substr($base, 0, 50);
         $code = $base;
-        for ($i = 2; $exists($code); $i++) $code = "{$base}_$i";
+        for ($i = 2; $exists($code); $i++) {
+            $code = "{$base}_$i";
+        }
+
         return $code;
     }
 }

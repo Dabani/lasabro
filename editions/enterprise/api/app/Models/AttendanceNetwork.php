@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttendanceNetwork extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_attendance_networks';
-    protected $guarded = [];
-    protected $casts = ['is_active' => 'boolean'];
 
+    protected $guarded = [];
+
+    protected $casts = ['is_active' => 'boolean'];
 }

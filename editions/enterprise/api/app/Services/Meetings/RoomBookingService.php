@@ -13,7 +13,10 @@ use Illuminate\Validation\ValidationException;
 /** Room booking with conflict detection (Guide 6.2). Back-to-back meetings are allowed; any real overlap is refused. */
 class RoomBookingService
 {
-    private function stamp(CarbonInterface $t): string { return $t->copy()->utc()->format('Y-m-d H:i:s'); }
+    private function stamp(CarbonInterface $t): string
+    {
+        return $t->copy()->utc()->format('Y-m-d H:i:s');
+    }
 
     /** Active bookings of the room that overlap the period, optionally ignoring one meeting (its own booking while it is being moved). */
     public function conflicts(string $roomId, CarbonInterface $start, CarbonInterface $end, ?string $ignoreMeetingId = null): Collection
@@ -30,11 +33,11 @@ class RoomBookingService
      */
     public function book(Meeting $m): void
     {
-        if (!$m->room_id) {
+        if (! $m->room_id) {
             return;
         }
         $room = MeetingRoom::whereKey($m->room_id)->lockForUpdate()->first();
-        if (!$room || !$room->is_active) {
+        if (! $room || ! $room->is_active) {
             throw ValidationException::withMessages(['room_id' => [__('meetings.room_unavailable')]]);
         }
         $clash = $this->conflicts($room->id, $m->starts_at, $m->ends_at, $m->id)->first();

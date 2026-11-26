@@ -9,7 +9,6 @@ use App\Models\FileAsset;
 use App\Models\FileComment;
 use App\Models\FileDeletionRequest;
 use App\Models\LookupType;
-use App\Models\LookupValue;
 use App\Models\SupportCase;
 use App\Services\AuditLogger;
 use App\Services\FileAccess;
@@ -100,6 +99,7 @@ class FileController extends Controller
         $asset = FileService::store($request->file('file'), $request->user(), $d);
         $asset->load($this->with());
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, 'classification' => $asset->classification->code, 'size' => $asset->size_bytes, 'sha256' => $asset->currentVersion->sha256]);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 
@@ -115,6 +115,7 @@ class FileController extends Controller
         $old = $f->only(array_keys($d));
         $f->update($d);
         AuditLogger::log('file.updated', $f, $old, $d);
+
         return new FileResource($f->refresh()->load($this->with()));
     }
 
@@ -124,6 +125,7 @@ class FileController extends Controller
     {
         $v = $versionId ? $f->versions()->findOrFail($versionId) : $f->currentVersion()->firstOrFail();
         abort_unless(FileService::exists($v), 410, __('api.file_not_available'));
+
         return $v;
     }
 
@@ -158,6 +160,7 @@ class FileController extends Controller
         $request->validate(['file' => 'required|file']);
         $v = FileService::addVersion($f, $request->file('file'), $request->user());
         AuditLogger::log('file.replaced', $f, [], ['version' => (string) $v->version_number, 'sha256' => $v->sha256]);
+
         return new FileResource($f->refresh()->load($this->with()));
     }
 
@@ -169,6 +172,7 @@ class FileController extends Controller
         abort_unless(FileAccess::abilities($f)['archive'], 403);
         $f->update(['status_id' => Lookup::id('file_status', 'archived'), 'archived_at' => now()]);
         AuditLogger::log('file.archived', $f);
+
         return new FileResource($f->refresh()->load($this->with()));
     }
 
@@ -178,6 +182,7 @@ class FileController extends Controller
         abort_unless(FileAccess::abilities($f)['restore'], 403);
         $f->update(['status_id' => Lookup::id('file_status', 'active'), 'archived_at' => null]);
         AuditLogger::log('file.restored', $f);
+
         return new FileResource($f->refresh()->load($this->with()));
     }
 
@@ -187,6 +192,7 @@ class FileController extends Controller
         $d = $request->validate(['on' => 'required|boolean']);
         $f->update(['legal_hold' => $d['on']]);
         AuditLogger::log($d['on'] ? 'file.legal_hold_set' : 'file.legal_hold_released', $f);
+
         return new FileResource($f->refresh()->load($this->with()));
     }
 
@@ -196,6 +202,7 @@ class FileController extends Controller
     {
         $f = $this->find($id);
         $c = $f->comments()->with(['user', 'kind'])->orderBy('created_at')->get();
+
         return response()->json(['data' => $c->map(fn ($x) => [
             'id' => $x->id, 'kind' => $x->kind->code, 'body' => $x->body, 'created_at' => $x->created_at->toIso8601String(),
             'user' => ['id' => $x->user->id, 'name' => $x->user->name, 'has_avatar' => (bool) $x->user->avatar_path],
@@ -208,6 +215,7 @@ class FileController extends Controller
         $d = $request->validate(['body' => 'required|string|max:20000']);
         $c = FileComment::create(['file_id' => $f->id, 'user_id' => $request->user()->id, 'kind_id' => Lookup::id('file_comment_kind', 'comment'), 'body' => $d['body']]);
         AuditLogger::log('file.commented', $f);
+
         return response()->json(['data' => ['id' => $c->id]], 201);
     }
 
@@ -216,6 +224,7 @@ class FileController extends Controller
         $f = $this->find($id);
         $rows = AuditLog::with('user')->where('organization_id', $this->ctx->organizationId())
             ->where('entity_type', 'FileAsset')->where('entity_id', $f->id)->orderByDesc('created_at')->limit(50)->get();
+
         return response()->json(['data' => $rows->map(fn ($r) => ['id' => $r->id, 'action' => $r->action, 'user' => $r->user?->name, 'created_at' => $r->created_at->toIso8601String()])]);
     }
 
@@ -232,6 +241,7 @@ class FileController extends Controller
         $user = $request->user();
         $req = DB::transaction(function () use ($f, $d, $user) {
             $c = FileComment::create(['file_id' => $f->id, 'user_id' => $user->id, 'kind_id' => Lookup::id('file_comment_kind', 'deletion_request'), 'body' => $d['body']]);
+
             return FileDeletionRequest::create([
                 'file_id' => $f->id, 'requested_by' => $user->id, 'comment_id' => $c->id, 'status_id' => Lookup::id('deletion_status', 'pending'),
             ]);
@@ -240,7 +250,7 @@ class FileController extends Controller
 
         // Owner + administrators decide.
         $deciders = Notifier::usersWithPermission($this->ctx->organizationId(), 'file.delete_approve')->push($f->owner->loadMissing('language'))->reject(fn ($u) => $u->id === $user->id);
-        Notifier::send($deciders, 'file_delete_requested', ['file' => $f->name, 'user' => $user->name], null, ['in_app', 'email'], '/files?open=' . $f->id, $this->ctx->organizationId());
+        Notifier::send($deciders, 'file_delete_requested', ['file' => $f->name, 'user' => $user->name], null, ['in_app', 'email'], '/files?open='.$f->id, $this->ctx->organizationId());
 
         return response()->json(['data' => ['id' => $req->id]], 201);
     }
@@ -252,7 +262,7 @@ class FileController extends Controller
         $status = $request->query('status', 'pending');
         $q = FileDeletionRequest::with(['file.owner', 'requester', 'status.translations', 'comment', 'decider'])
             ->whereHas('status', fn ($s) => $s->where('code', $status));
-        if (!$this->ctx->can('file.delete_approve')) {
+        if (! $this->ctx->can('file.delete_approve')) {
             $q->where(fn ($w) => $w->where('requested_by', $me)->orWhereHas('file', fn ($f) => $f->where('owner_id', $me)));
         }
         $lang = $request->user()->language_id;
@@ -280,6 +290,7 @@ class FileController extends Controller
         });
         AuditLogger::log('file.deleted', $f, [], ['request' => $req->id], $d['note'] ?? null);
         $this->notifyDecision($req, $f, 'approved', $request);
+
         return response()->noContent();
     }
 
@@ -292,6 +303,7 @@ class FileController extends Controller
         FileComment::create(['file_id' => $f->id, 'user_id' => $request->user()->id, 'kind_id' => Lookup::id('file_comment_kind', 'decision'), 'body' => e($d['note'] ?? 'rejected')]);
         AuditLogger::log('file.deletion_rejected', $f, [], ['request' => $req->id], $d['note'] ?? null);
         $this->notifyDecision($req, $f, 'rejected', $request);
+
         return response()->noContent();
     }
 
@@ -300,7 +312,8 @@ class FileController extends Controller
         $req = FileDeletionRequest::with(['file', 'status', 'requester'])->findOrFail($id);
         abort_unless($req->status->code === 'pending', 422, __('api.request_not_pending'));
         $f = $req->file;
-        abort_unless($f && !$f->trashed() && ($f->owner_id === $request->user()->id || $this->ctx->can('file.delete_approve')), 403);
+        abort_unless($f && ! $f->trashed() && ($f->owner_id === $request->user()->id || $this->ctx->can('file.delete_approve')), 403);
+
         return [$req, $f];
     }
 
@@ -315,10 +328,11 @@ class FileController extends Controller
     private function caseFor(string $id): SupportCase
     {
         $q = SupportCase::query();
-        if (!$this->ctx->can('case.view_all')) {
+        if (! $this->ctx->can('case.view_all')) {
             $me = request()->user()->id;
             $q->where(fn ($w) => $w->where('requester_id', $me)->orWhere('assignee_id', $me));
         }
+
         return $q->with('status')->findOrFail($id);
     }
 
@@ -329,19 +343,21 @@ class FileController extends Controller
             ->whereHas('status', fn ($s) => $s->where('code', 'active'))
             ->whereHas('links', fn ($l) => $l->where('link_type_id', Lookup::id('file_link_type', 'case'))->where('link_id', $case->id))
             ->orderByDesc('created_at');
+
         return FileResource::collection($q->get());
     }
 
     public function caseUpload(Request $request, string $id)
     {
         $case = $this->caseFor($id);
-        abort_if(!$this->ctx->can('case.view_all') && in_array($case->status->code, ['closed', 'cancelled'], true), 422, __('api.in_use'));
+        abort_if(! $this->ctx->can('case.view_all') && in_array($case->status->code, ['closed', 'cancelled'], true), 422, __('api.in_use'));
         $d = $request->validate(['file' => 'required|file', 'classification_id' => ['nullable', $this->classificationRule()]]);
         abort_if(($d['classification_id'] ?? null) === Lookup::id('file_classification', 'restricted'), 422, __('api.file_case_not_restricted'));
 
         $asset = FileService::store($request->file('file'), $request->user(), $d, ['type' => 'case', 'id' => $case->id]);
         $asset->load($this->with());
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, 'case' => $case->reference, 'sha256' => $asset->currentVersion->sha256]);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 }

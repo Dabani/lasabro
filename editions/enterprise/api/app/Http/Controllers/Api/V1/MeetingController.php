@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MeetingRowResource;
-use App\Models\Department;
 use App\Models\LookupType;
 use App\Models\Meeting;
-use App\Models\MeetingInvitation;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Meetings\MeetingAccess;
@@ -18,6 +16,7 @@ use App\Services\Projects\ProjectAccess;
 use App\Support\AppliesListQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /** Meetings and events: schedule, change, invite, run (Guide module C, 6.1-6.4). Permission and data scope are checked on every route. */
@@ -34,7 +33,7 @@ class MeetingController extends Controller
 
     private function lookup(string $type)
     {
-        return Rule::exists('lookup_values', 'id')->where(fn($q) => $q->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id')));
+        return Rule::exists('lookup_values', 'id')->where(fn ($q) => $q->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id')));
     }
 
     private function member()
@@ -46,6 +45,7 @@ class MeetingController extends Controller
     {
         $org = $this->org();
         $req = $create ? 'required' : 'sometimes';
+
         return [
             'title' => [$req, 'string', 'max:200'],
             'purpose' => 'nullable|string|max:20000',
@@ -100,7 +100,7 @@ class MeetingController extends Controller
             'organizer',
             'chair',
             'agendaStatus',
-            'invitations' => fn($i) => $i->where('user_id', $u->id)->with('response')
+            'invitations' => fn ($i) => $i->where('user_id', $u->id)->with('response'),
         ]);
         if ($from = $request->query('from')) {
             $q->where('ends_at', '>=', CarbonImmutable::parse($from)->utc()->format('Y-m-d H:i:s'));
@@ -109,11 +109,12 @@ class MeetingController extends Controller
             $q->where('starts_at', '<=', CarbonImmutable::parse($to)->utc()->format('Y-m-d H:i:s'));
         }
         if ($status = $request->query('status')) {
-            $q->whereHas('status', fn($s) => $s->whereIn('code', explode(',', (string) $status)));
+            $q->whereHas('status', fn ($s) => $s->whereIn('code', explode(',', (string) $status)));
         }
         if ($request->boolean('mine')) {
-            $q->where(fn($w) => $w->where('organizer_id', $u->id)->orWhere('chair_id', $u->id)->orWhere('secretary_id', $u->id)->orWhereHas('invitations', fn($i) => $i->where('user_id', $u->id)));
+            $q->where(fn ($w) => $w->where('organizer_id', $u->id)->orWhere('chair_id', $u->id)->orWhere('secretary_id', $u->id)->orWhereHas('invitations', fn ($i) => $i->where('user_id', $u->id)));
         }
+
         return $this->respondList(
             $request,
             $q,
@@ -150,7 +151,7 @@ class MeetingController extends Controller
             'statusHistory.to',
             'statusHistory.changedBy',
             'scheduleHistory.changedBy',
-            'scheduleHistory.oldRoom'
+            'scheduleHistory.oldRoom',
         ]);
         $manage = $this->access->canManage($u, $m);
         $mine = $m->invitations->firstWhere('user_id', $u->id);
@@ -185,7 +186,7 @@ class MeetingController extends Controller
             'secretary' => $this->person($m->secretary),
             'facilitator' => $this->person($m->facilitator),
             'series' => $m->recurrence ? ['frequency' => $m->recurrence->frequency?->code, 'interval' => $m->recurrence->interval_count, 'count' => Meeting::where('recurrence_id', $m->recurrence_id)->count()] : null,
-            'agenda' => $m->agendaItems->filter(fn($i) => $this->access->canSeeItem($u, $m, $i))->values()->map(fn($i) => [
+            'agenda' => $m->agendaItems->filter(fn ($i) => $this->access->canSeeItem($u, $m, $i))->values()->map(fn ($i) => [
                 'id' => $i->id,
                 'position' => $i->position,
                 'title' => $i->title,
@@ -195,9 +196,9 @@ class MeetingController extends Controller
                 'duration_minutes' => $i->duration_minutes,
                 'priority' => $i->priority?->code,
                 'expected_decision' => $i->expected_decision,
-                'is_confidential' => $i->is_confidential
+                'is_confidential' => $i->is_confidential,
             ]),
-            'invitations' => $m->invitations->map(fn($i) => [
+            'invitations' => $m->invitations->map(fn ($i) => [
                 'id' => $i->id,
                 'name' => $i->displayName(),
                 'is_guest' => $i->user_id === null,
@@ -205,15 +206,15 @@ class MeetingController extends Controller
                 'department' => $i->department?->name,
                 'responded_at' => $i->responded_at?->toIso8601String(),
             ] + ($manage || $this->access->canChair($u, $m) ? ['email' => $i->email(), 'note' => $i->response_note, 'proposed_starts_at' => $i->proposed_starts_at?->toIso8601String()] : []))->values(),
-            'history' => $m->statusHistory->map(fn($h) => ['status' => $h->to?->code, 'note' => $h->note, 'by' => $h->changedBy?->name, 'at' => $h->created_at->toIso8601String()])->values(),
-            'schedule_history' => $m->scheduleHistory->map(fn($h) => [
+            'history' => $m->statusHistory->map(fn ($h) => ['status' => $h->to?->code, 'note' => $h->note, 'by' => $h->changedBy?->name, 'at' => $h->created_at->toIso8601String()])->values(),
+            'schedule_history' => $m->scheduleHistory->map(fn ($h) => [
                 'starts_at' => $h->old_starts_at->toIso8601String(),
                 'ends_at' => $h->old_ends_at->toIso8601String(),
                 'room' => $h->oldRoom?->name,
                 'venue' => $h->old_venue,
                 'reason' => $h->reason,
                 'by' => $h->changedBy?->name,
-                'at' => $h->created_at->toIso8601String()
+                'at' => $h->created_at->toIso8601String(),
             ])->values(),
             'me' => [
                 'is_organizer' => $m->organizer_id === $u->id,
@@ -242,6 +243,7 @@ class MeetingController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         $this->access->auditOverride($request->user(), $m);
+
         return $this->detail($request, $m);
     }
 
@@ -251,13 +253,14 @@ class MeetingController extends Controller
         $d = $request->validate($this->rules(true) + $this->participantRules() + [
             'recurrence' => 'nullable|array',
             'recurrence.frequency' => ['required_with:recurrence', Rule::in(['daily', 'weekly', 'monthly'])],
-            'recurrence.ends_on' => ['nullable', 'date', Rule::requiredIf(fn() => is_array($request->input('recurrence')) && empty($request->input('recurrence.occurrences')))],
+            'recurrence.ends_on' => ['nullable', 'date', Rule::requiredIf(fn () => is_array($request->input('recurrence')) && empty($request->input('recurrence.occurrences')))],
             'recurrence.occurrences' => 'nullable|integer|min:2|max:52',
         ]);
         $this->checkProject($request, $d['project_id'] ?? null);
         $r = $this->svc->create($d, $request->user());
         $payload = $this->detail($request, $r['meetings'][0]);
         $payload['meta'] = ['created' => count($r['meetings']), 'warnings' => $r['warnings']];
+
         return response()->json($payload, 201);
     }
 
@@ -268,6 +271,7 @@ class MeetingController extends Controller
         $d = $request->validate($this->rules(false));
         $this->checkProject($request, $d['project_id'] ?? null);
         $r = $this->svc->update($m, $d, $request->user());
+
         return ['data' => $this->detail($request, $r['meeting'])['data'], 'meta' => ['warnings' => $r['warnings']]];
     }
 
@@ -275,6 +279,7 @@ class MeetingController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         $this->access->requireManage($request->user(), $m);
+
         return $this->detail($request, $this->svc->schedule($m, $request->user()));
     }
 
@@ -283,6 +288,7 @@ class MeetingController extends Controller
         $m = $this->access->find($request->user(), $id);
         $this->access->requireManage($request->user(), $m);
         $d = $request->validate(['reason' => 'required|string|min:3|max:1000']);
+
         return $this->detail($request, $this->svc->cancel($m, $d['reason'], $request->user()));
     }
 
@@ -290,6 +296,7 @@ class MeetingController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         $this->access->requireManage($request->user(), $m);
+
         return $this->detail($request, $this->svc->start($m, $request->user()));
     }
 
@@ -297,6 +304,7 @@ class MeetingController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         $this->access->requireManage($request->user(), $m);
+
         return $this->detail($request, $this->svc->hold($m, $request->user()));
     }
 
@@ -305,17 +313,19 @@ class MeetingController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         $inv = $this->access->invitation($request->user(), $m);
-        return response($this->notices->ics($m, $inv), 200, ['Content-Type' => 'text/calendar; charset=utf-8', 'Content-Disposition' => 'attachment; filename="' . $m->code . '.ics"']);
+
+        return response($this->notices->ics($m, $inv), 200, ['Content-Type' => 'text/calendar; charset=utf-8', 'Content-Disposition' => 'attachment; filename="'.$m->code.'.ics"']);
     }
 
     /** People who can be picked as chair, secretary, guests of honour or invitees: active members of the organization (name and e-mail only). */
     public function people(Request $request)
     {
-        $q = User::query()->whereHas('status', fn($s) => $s->where('code', 'active'))
-            ->whereIn('id', \Illuminate\Support\Facades\DB::table('organization_memberships')->where('organization_id', $this->org())->pluck('user_id'));
+        $q = User::query()->whereHas('status', fn ($s) => $s->where('code', 'active'))
+            ->whereIn('id', DB::table('organization_memberships')->where('organization_id', $this->org())->pluck('user_id'));
         if ($s = trim((string) $request->query('search', ''))) {
-            $q->where(fn($w) => $w->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"));
+            $q->where(fn ($w) => $w->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"));
         }
-        return ['data' => $q->orderBy('name')->limit(100)->get(['id', 'name', 'email'])->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email])];
+
+        return ['data' => $q->orderBy('name')->limit(100)->get(['id', 'name', 'email'])->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email])];
     }
 }

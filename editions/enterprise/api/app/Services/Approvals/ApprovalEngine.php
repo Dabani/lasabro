@@ -68,6 +68,7 @@ class ApprovalEngine
             }
             AuditLogger::log('approval.submitted', $req, [], ['flow' => $flow->code, 'rule_version_id' => $resolved?->versionId, 'default_flow' => $usedDefault]);
             $this->notify($first, 'approval_requested', $req, ['requester' => $requester->name]);
+
             return $req;
         });
     }
@@ -82,8 +83,12 @@ class ApprovalEngine
         $outcome = null;
         $req = DB::transaction(function () use ($requestId, $actor, $decision, $comment, &$outcome) {
             $r = ApprovalRequest::lockForUpdate()->with(['flow.steps', 'subjectType', 'status', 'requester'])->findOrFail($requestId);
-            if (!$r->isPending()) $this->fail('not_pending');
-            if ($r->requester_id === $actor->id) $this->fail('self_approval');
+            if (! $r->isPending()) {
+                $this->fail('not_pending');
+            }
+            if ($r->requester_id === $actor->id) {
+                $this->fail('self_approval');
+            }
 
             $step = $r->currentStep();
             $eligible = $this->approversFor($r, $step);
@@ -93,7 +98,9 @@ class ApprovalEngine
                 $earlier = ApprovalAction::where('request_id', $r->id)->where('step_order', '!=', $step->step_order)
                     ->whereHas('decision', fn ($q) => $q->where('code', 'approve'))
                     ->where(fn ($q) => $q->where('actor_id', $actor->id)->orWhere('on_behalf_of_id', $actor->id))->exists();
-                if ($earlier) $this->fail('segregation');
+                if ($earlier) {
+                    $this->fail('segregation');
+                }
             }
 
             ApprovalAction::create([
@@ -108,7 +115,9 @@ class ApprovalEngine
                 if ($next) {
                     $r->update(['current_step' => $next->step_order, 'step_started_at' => now()]);
                     $approvers = $this->approversFor($r->refresh()->load('flow.steps'), $next);
-                    if ($approvers->isEmpty()) $this->fail('no_approver');
+                    if ($approvers->isEmpty()) {
+                        $this->fail('no_approver');
+                    }
                     $this->notify($approvers, 'approval_requested', $r, ['requester' => $r->requester->name]);
                 } else {
                     $r->update(['status_id' => Lookup::id('approval_status', 'approved'), 'completed_at' => now()]);
@@ -120,6 +129,7 @@ class ApprovalEngine
                 $outcome = $code;
             }
             AuditLogger::log("approval.$decision", $r, [], ['step' => $step->step_order, 'comment_given' => $comment !== null && $comment !== '']);
+
             return $r;
         });
 
@@ -128,6 +138,7 @@ class ApprovalEngine
             Notifier::send($req->requester, $key, ['title' => $req->title, 'actor' => $actor->name, 'comment' => (string) $comment], null, ['in_app', 'email'], '/approvals', $req->organization_id);
             event(new ApprovalFinalised($req->refresh()->load('subjectType'), $outcome));
         }
+
         return $req->refresh();
     }
 
@@ -136,12 +147,17 @@ class ApprovalEngine
         return DB::transaction(function () use ($requestId, $user, $comment) {
             $r = ApprovalRequest::lockForUpdate()->with(['flow.steps', 'subjectType', 'status'])->findOrFail($requestId);
             abort_unless($r->requester_id === $user->id, 403, 'forbidden');
-            if ($r->status->code !== 'returned') $this->fail('not_returned');
+            if ($r->status->code !== 'returned') {
+                $this->fail('not_returned');
+            }
             $r->update(['status_id' => Lookup::id('approval_status', 'pending'), 'current_step' => 1, 'step_started_at' => now(), 'requester_comment' => $comment ?? $r->requester_comment]);
             $approvers = $this->approversFor($r->refresh()->load('flow.steps'), $r->flow->steps->first());
-            if ($approvers->isEmpty()) $this->fail('no_approver');
+            if ($approvers->isEmpty()) {
+                $this->fail('no_approver');
+            }
             $this->notify($approvers, 'approval_requested', $r, ['requester' => $user->name]);
             AuditLogger::log('approval.resubmitted', $r);
+
             return $r;
         });
     }
@@ -151,12 +167,16 @@ class ApprovalEngine
         $r = DB::transaction(function () use ($requestId, $user) {
             $r = ApprovalRequest::lockForUpdate()->with(['status', 'subjectType'])->findOrFail($requestId);
             abort_unless($r->requester_id === $user->id, 403, 'forbidden');
-            if (!in_array($r->status->code, ['pending', 'returned'], true)) $this->fail('not_pending');
+            if (! in_array($r->status->code, ['pending', 'returned'], true)) {
+                $this->fail('not_pending');
+            }
             $r->update(['status_id' => Lookup::id('approval_status', 'cancelled'), 'completed_at' => now()]);
             AuditLogger::log('approval.cancelled', $r);
+
             return $r;
         });
         event(new ApprovalFinalised($r->refresh()->load('subjectType'), 'cancelled'));
+
         return $r;
     }
 
@@ -169,7 +189,7 @@ class ApprovalEngine
         if ($set->filter(fn ($u) => $u->id !== $r->requester_id)->isEmpty()) {
             $set = $this->fallbackUsers($orgId);                       // nobody resolvable -> highest authority level
         }
-        $perm = config('cops.approval_permissions.' . $r->subjectType->code);
+        $perm = config('cops.approval_permissions.'.$r->subjectType->code);
 
         $out = collect();
         foreach ($set as $u) {
@@ -179,11 +199,12 @@ class ApprovalEngine
         $delegations = ApprovalDelegation::where('is_active', true)->whereIn('delegator_id', $set->pluck('id'))
             ->whereDate('valid_from', '<=', $today)->whereDate('valid_to', '>=', $today)->with('delegate')->get();
         foreach ($delegations as $d) {
-            if (!$out->has($d->delegate_id) && $d->delegate) {
+            if (! $out->has($d->delegate_id) && $d->delegate) {
                 $out[$d->delegate_id] = ['user' => $d->delegate, 'on_behalf_of' => $d->delegator_id];
             }
         }
-        return $out->filter(fn ($row, $id) => $id !== $r->requester_id && (!$perm || $this->hasPermission($row['user'], $perm, $orgId)));
+
+        return $out->filter(fn ($row, $id) => $id !== $r->requester_id && (! $perm || $this->hasPermission($row['user'], $perm, $orgId)));
     }
 
     /** Pending requests whose current step the user may act on (oldest first). */
@@ -202,8 +223,12 @@ class ApprovalEngine
         $pending = ApprovalRequest::with(['flow.steps', 'subjectType', 'requester'])->whereHas('status', fn ($q) => $q->where('code', 'pending'))->get();
         foreach ($pending as $r) {
             $step = $r->currentStep();
-            if (!$step?->escalate_after_hours || $r->step_started_at->gt(now()->subHours($step->escalate_after_hours))) continue;
-            if ($r->last_escalated_at && $r->last_escalated_at->gte($r->step_started_at)) continue;
+            if (! $step?->escalate_after_hours || $r->step_started_at->gt(now()->subHours($step->escalate_after_hours))) {
+                continue;
+            }
+            if ($r->last_escalated_at && $r->last_escalated_at->gte($r->step_started_at)) {
+                continue;
+            }
             $recipients = $this->approversFor($r, $step)->pluck('user')->merge($this->fallbackUsers($r->organization_id))->unique('id')->values();
             $this->notify($recipients, 'approval_escalated', $r, ['requester' => $r->requester->name, 'hours' => $step->escalate_after_hours]);
             Notifier::send($r->requester, 'approval_escalated', ['title' => $r->title, 'requester' => $r->requester->name, 'hours' => $step->escalate_after_hours], null, ['in_app'], '/approvals', $r->organization_id);
@@ -211,6 +236,7 @@ class ApprovalEngine
             AuditLogger::log('approval.escalated', $r);
             $n++;
         }
+
         return $n;
     }
 
@@ -229,6 +255,7 @@ class ApprovalEngine
         }
         if ($type === 'line_manager') {
             $mgr = Employee::where('user_id', $r->requester_id)->first()?->manager;
+
             return $mgr?->user_id ? User::query()->tap($active)->whereKey($mgr->user_id)->get() : collect();
         }
         if ($type === 'department_head' && $r->department_id) {
@@ -236,12 +263,15 @@ class ApprovalEngine
             for ($dept = $r->department_id, $guard = 0; $dept && $guard < 20; $dept = $parents[$dept] ?? null, $guard++) {
                 $ids = UserDepartmentAssignment::where('department_id', $dept)->where('is_head', true)->pluck('user_id');
                 $users = $ids->isEmpty() ? collect() : User::query()->tap($active)->whereKey($ids)->get();
-                if ($users->isNotEmpty()) return $users;
+                if ($users->isNotEmpty()) {
+                    return $users;
+                }
             }
         }
         if ($resolver = config("cops.step_resolvers.$type")) {
             return app($resolver)->users($r, $step);      // module-defined step types (Phase 1: project_reviewer)
         }
+
         return collect();
     }
 
@@ -249,7 +279,10 @@ class ApprovalEngine
     private function fallbackUsers(string $orgId): Collection
     {
         $max = DB::table('roles')->where('organization_id', $orgId)->where('is_active', true)->max('level');
-        if ($max === null) return collect();
+        if ($max === null) {
+            return collect();
+        }
+
         return User::query()->whereHas('status', fn ($s) => $s->where('code', 'active'))
             ->whereHas('memberships', fn ($m) => $m->where('organization_id', $orgId)->whereHas('roles', fn ($q) => $q->where('roles.level', $max)))->get();
     }
@@ -266,8 +299,11 @@ class ApprovalEngine
 
     private function usableFlow(?string $flowId): ?ApprovalFlow
     {
-        if (!$flowId) return null;
+        if (! $flowId) {
+            return null;
+        }
         $today = now()->toDateString();
+
         return ApprovalFlow::where('id', $flowId)->where('is_active', true)->whereDate('effective_from', '<=', $today)
             ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))->has('steps')->first();
     }
@@ -275,6 +311,7 @@ class ApprovalEngine
     private function flowForSubject(string $typeId): ?ApprovalFlow
     {
         $today = now()->toDateString();
+
         return ApprovalFlow::where('subject_type_id', $typeId)->where('is_active', true)->whereDate('effective_from', '<=', $today)
             ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))->has('steps')
             ->orderByDesc('version')->first();
@@ -284,6 +321,7 @@ class ApprovalEngine
     {
         $flow = ApprovalFlow::where('code', 'default_two_level')->where('is_active', true)->orderByDesc('version')->first();
         abort_unless($flow, 500, 'default approval flow missing - run CopsFoundationSeeder');
+
         return $flow;
     }
 

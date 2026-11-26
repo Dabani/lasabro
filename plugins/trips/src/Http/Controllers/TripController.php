@@ -1,28 +1,28 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace Lasabro\Trips\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\FileResource;
 use App\Models\Employee;
 use App\Models\FileAsset;
 use App\Models\LookupType;
-use App\Models\Trip;
-use App\Models\TripAdvance;
-use App\Models\TripBooking;
-use App\Models\TripExpense;
-use App\Models\TripSettlement;
-use App\Models\TripTraveler;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\AuditLogger;
 use App\Services\FileAccess;
 use App\Services\FileService;
-use App\Services\Hr\Trips\TripMath;
-use App\Services\Hr\Trips\TripService;
 use App\Services\OrganizationContext;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Lasabro\Trips\Models\Trip;
+use Lasabro\Trips\Models\TripAdvance;
+use Lasabro\Trips\Models\TripBooking;
+use Lasabro\Trips\Models\TripExpense;
+use Lasabro\Trips\Models\TripSettlement;
+use Lasabro\Trips\Models\TripTraveler;
+use Lasabro\Trips\Services\TripMath;
+use Lasabro\Trips\Services\TripService;
 
 /**
  * Business trips and expenses (Guide 5.5).

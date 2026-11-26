@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\DepartmentResource;
 use App\Models\Department;
+use App\Models\Membership;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use App\Support\AppliesListQuery;
@@ -26,6 +27,7 @@ class DepartmentController extends Controller
         $d = $this->validated($request);
         $m = Department::create($d);
         AuditLogger::log('department.created', $m, [], $d);
+
         return (new DepartmentResource($m->load('parent')))->response()->setStatusCode(201);
     }
 
@@ -37,21 +39,24 @@ class DepartmentController extends Controller
         $old = $m->only(array_keys($d));
         $m->update($d);
         AuditLogger::log('department.updated', $m, $old, $d);
+
         return new DepartmentResource($m->load('parent'));
     }
 
     public function destroy(string $id)
     {
         $m = Department::findOrFail($id);
-        abort_if(\App\Models\Membership::where('department_id', $m->id)->exists(), 422, __('api.in_use'));
+        abort_if(Membership::where('department_id', $m->id)->exists(), 422, __('api.in_use'));
         $m->delete();
         AuditLogger::log('department.deleted', $m);
+
         return response()->noContent();
     }
 
     private function validated(Request $r, ?Department $m = null): array
     {
         $org = app(OrganizationContext::class)->organizationId();
+
         return $r->validate([
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:2000',

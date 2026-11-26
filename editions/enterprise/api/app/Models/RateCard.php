@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class RateCard extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['is_active' => 'boolean'];
 
-    public function lines() { return $this->hasMany(RateCardLine::class)->orderByDesc('effective_from'); }
+    public function lines()
+    {
+        return $this->hasMany(RateCardLine::class)->orderByDesc('effective_from');
+    }
 }

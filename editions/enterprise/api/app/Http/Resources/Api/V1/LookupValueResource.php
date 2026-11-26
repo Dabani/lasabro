@@ -12,6 +12,7 @@ class LookupValueResource extends JsonResource
         foreach ($this->translations as $t) {
             $labels[$t->language->code ?? $t->language_id] = $t->label;
         }
+
         return [
             'id' => $this->id,
             'type' => $this->whenLoaded('type', fn () => $this->type->code),

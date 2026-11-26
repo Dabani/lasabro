@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Attendance and working time. Raw clock events are append-only; daily records are derived and frozen once a month is validated. All instants are UTC. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('hr_shifts', function (Blueprint $t) {

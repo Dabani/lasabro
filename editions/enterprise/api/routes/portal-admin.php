@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\V1 as V1;
+use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
 /* Staff routes - required inside the authenticated "org.context" group by apply-bundle-12.py. */

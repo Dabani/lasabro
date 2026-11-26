@@ -11,7 +11,10 @@ use App\Models\ApprovalRequest;
 interface ApprovalOutcomeHandler
 {
     public function approved(ApprovalRequest $request): void;
+
     public function rejected(ApprovalRequest $request): void;
+
     public function returned(ApprovalRequest $request): void;
+
     public function cancelled(ApprovalRequest $request): void;
 }

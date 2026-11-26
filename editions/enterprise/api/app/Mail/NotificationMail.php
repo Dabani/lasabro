@@ -18,6 +18,7 @@ class NotificationMail extends Mailable
     public function content(): Content
     {
         app()->setLocale($this->mailLocale);
+
         return new Content(view: 'mail.notification');
     }
 }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\AccessGrantResource;
 use App\Models\AccessGrant;
 use App\Models\LookupType;
-use App\Models\Membership;
 use App\Services\AuditLogger;
 use App\Services\Notifier;
 use App\Services\OrganizationContext;
@@ -21,7 +20,10 @@ class AccessGrantController extends Controller
 
     public function __construct(private OrganizationContext $ctx) {}
 
-    private function with(): array { return ['user', 'resource.translations', 'level.translations', 'grantedBy', 'revokedBy']; }
+    private function with(): array
+    {
+        return ['user', 'resource.translations', 'level.translations', 'grantedBy', 'revokedBy'];
+    }
 
     private function lookupRule(string $type)
     {
@@ -40,6 +42,7 @@ class AccessGrantController extends Controller
         if ($request->boolean('review_due')) {      // not reviewed in the last 12 months
             $q->whereNull('revoked_at')->where(fn ($w) => $w->whereNull('last_reviewed_at')->orWhere('last_reviewed_at', '<', now()->subYear()));
         }
+
         return $this->respondList($request, $q, AccessGrantResource::class, ['user.name', 'user.email'], ['granted_at', 'expires_on', 'created_at'],
             ['user_id', 'resource_id', 'access_level_id'], ['user_name', 'resource_label', 'level_label', 'granted_by_name', 'granted_at', 'expires_on', 'state', 'revoked_at', 'revocation_reason']);
     }
@@ -64,6 +67,7 @@ class AccessGrantController extends Controller
         $g->load($this->with());
         AuditLogger::log('access.granted', $g, [], ['user' => $g->user->name, 'resource' => $g->resource->code, 'level' => $g->level->code]);
         Notifier::send($g->user->loadMissing('language'), 'access_granted', ['res' => $g->resource->label(), 'level' => $g->level->label(), 'user' => $request->user()->name], null, ['in_app', 'email'], null, $this->ctx->organizationId());
+
         return (new AccessGrantResource($g))->response()->setStatusCode(201);
     }
 
@@ -75,6 +79,7 @@ class AccessGrantController extends Controller
         $g->update(['revoked_at' => now(), 'revoked_by' => $request->user()->id, 'revocation_reason' => $d['reason']]);
         AuditLogger::log('access.revoked', $g, [], ['user' => $g->user->name, 'resource' => $g->resource->code], $d['reason']);
         Notifier::send($g->user->loadMissing('language'), 'access_revoked', ['res' => $g->resource->label(), 'user' => $request->user()->name], null, ['in_app', 'email'], null, $this->ctx->organizationId());
+
         return new AccessGrantResource($g->refresh()->load($this->with()));
     }
 
@@ -85,6 +90,7 @@ class AccessGrantController extends Controller
         abort_if($g->revoked_at, 422);
         $g->update(['last_reviewed_at' => now(), 'reviewed_by' => $request->user()->id]);
         AuditLogger::log('access.reviewed', $g, [], ['user' => $g->user->name, 'resource' => $g->resource->code]);
+
         return new AccessGrantResource($g->refresh()->load($this->with()));
     }
 }

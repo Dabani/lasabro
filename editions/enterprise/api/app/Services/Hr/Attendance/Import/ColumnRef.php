@@ -11,6 +11,7 @@ final class ColumnRef
         foreach (str_split(strtoupper($letters)) as $c) {
             $n = $n * 26 + (ord($c) - 64);
         }
+
         return $n - 1;
     }
 
@@ -18,13 +19,14 @@ final class ColumnRef
     {
         $s = '';
         for ($n = $index + 1; $n > 0; $n = intdiv($n - 1, 26)) {
-            $s = chr(65 + ($n - 1) % 26) . $s;
+            $s = chr(65 + ($n - 1) % 26).$s;
         }
+
         return $s;
     }
 
     /**
-     * @param array<int,string> $headers normalised header names (CellParser::norm)
+     * @param  array<int,string>  $headers  normalised header names (CellParser::norm)
      * @return ?int column index, or null when the reference (or every synonym) matches nothing
      */
     public static function find(array $headers, ?string $ref, array $synonyms = []): ?int
@@ -39,6 +41,7 @@ final class ColumnRef
             if (preg_match('/^#(\d+)$/', $r, $m) && (int) $m[1] >= 1) {
                 return (int) $m[1] - 1;
             }
+
             return preg_match('/^[a-z]{1,3}$/', $r) ? self::letterIndex($r) : null;
         }
         foreach ($synonyms as $s) {
@@ -47,6 +50,7 @@ final class ColumnRef
                 return $i;
             }
         }
+
         return null;
     }
 }

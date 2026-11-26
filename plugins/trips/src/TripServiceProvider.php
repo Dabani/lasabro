@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Providers;
+namespace Lasabro\Trips;
 
-use App\Console\Commands\TripsRemind;
-use App\Services\Hr\Trips\TripApprovalHandler;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Support\ServiceProvider;
+use Lasabro\Framework\PluginServiceProvider;
+use Lasabro\Trips\Console\TripsRemind;
+use Lasabro\Trips\Services\TripApprovalHandler;
 
 /** Trip approval handler and permission, code prefixes (trip, mission authorization), daily reminder of unretired advances. */
-class TripServiceProvider extends ServiceProvider
+class TripServiceProvider extends PluginServiceProvider
 {
-    public function boot(): void
+    protected function bootPlugin(): void
     {
         config([
             'cops.approval_handlers' => array_merge(config('cops.approval_handlers', []), ['trip' => TripApprovalHandler::class]),

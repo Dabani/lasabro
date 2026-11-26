@@ -20,7 +20,7 @@ final class FingerprintDiff
     /**
      * @param  array<string, mixed>  $baseline
      * @param  array<string, mixed>  $current
-     * @return array<string, array{removed: list<string>, added: list<string>}>  only the sections that differ
+     * @return array<string, array{removed: list<string>, added: list<string>}> only the sections that differ
      */
     public static function compare(array $baseline, array $current): array
     {

@@ -84,12 +84,13 @@ final class FingerprintCollector
         foreach ($route->gatherMiddleware() as $middleware) {
             if (! is_string($middleware)) {
                 $parts[] = 'closure';
+
                 continue;
             }
             [$name, $args] = array_pad(explode(':', $middleware, 2), 2, null);
             // Class-based middleware may move between namespaces; compare by short name.
             $name = str_contains($name, '\\') ? class_basename($name) : $name;
-            $parts[] = $args === null ? $name : $name . ':' . $args;
+            $parts[] = $args === null ? $name : $name.':'.$args;
         }
         sort($parts);
 
@@ -103,7 +104,7 @@ final class FingerprintCollector
         }
         [$class, $method] = array_pad(explode('@', $action, 2), 2, '__invoke');
 
-        return class_basename($class) . '@' . $method;
+        return class_basename($class).'@'.$method;
     }
 
     private function permissions(): array
@@ -184,7 +185,7 @@ final class FingerprintCollector
         foreach (DB::table('lookup_types')->orderBy('code')->get(['id', 'code']) as $type) {
             $values = DB::table('lookup_values')->where('lookup_type_id', $type->id)->whereNull('organization_id')
                 ->orderBy('code')->pluck('code')->all();
-            $lines[] = $type->code . ' => ' . implode(',', $values);
+            $lines[] = $type->code.' => '.implode(',', $values);
         }
 
         return $this->normalise($lines);
@@ -234,7 +235,7 @@ final class FingerprintCollector
         $lines = [];
         foreach (app(Schedule::class)->events() as $event) {
             $what = $event->command ? preg_replace("/^.*artisan'?\\s+/", '', $event->command) : ($event->description ?: 'closure');
-            $lines[] = $event->expression . ' | ' . $what;
+            $lines[] = $event->expression.' | '.$what;
         }
 
         return $this->normalise($lines);

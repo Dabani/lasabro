@@ -18,10 +18,16 @@ final class EventRules
         'cancelled' => [],
     ];
 
-    public static function allowed(string $from, string $to): bool { return in_array($to, self::TRANSITIONS[$from] ?? [], true); }
+    public static function allowed(string $from, string $to): bool
+    {
+        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
+    }
 
     /** Title, time, place, capacity and registration window can change until the event starts. */
-    public static function editable(string $status): bool { return in_array($status, ['draft', 'open', 'closed'], true); }
+    public static function editable(string $status): bool
+    {
+        return in_array($status, ['draft', 'open', 'closed'], true);
+    }
 
     /** Registration is possible while the event is open and "now" is inside the optional window. Arguments are timestamps. */
     public static function registrationOpen(string $status, int $now, ?int $opensAt, ?int $closesAt): bool
@@ -35,20 +41,36 @@ final class EventRules
         if ($capacity === null || $taken < $capacity) {
             return 'registered';
         }
+
         return $waitlistEnabled ? 'waitlisted' : 'full';
     }
 
     /** How many waitlisted people can be promoted now. */
-    public static function freeSeats(?int $capacity, int $taken): int { return $capacity === null ? PHP_INT_MAX : max(0, $capacity - $taken); }
+    public static function freeSeats(?int $capacity, int $taken): int
+    {
+        return $capacity === null ? PHP_INT_MAX : max(0, $capacity - $taken);
+    }
 
     /** Check-in happens while the event is running; the organizer can still record a late check-in after it completed (corrections are audited). */
-    public static function canCheckIn(string $status, bool $isManager): bool { return $status === 'in_progress' || ($status === 'completed' && $isManager); }
+    public static function canCheckIn(string $status, bool $isManager): bool
+    {
+        return $status === 'in_progress' || ($status === 'completed' && $isManager);
+    }
 
-    public static function ticketValid(string $token): bool { return strlen($token) >= 40 && ctype_alnum($token); }
+    public static function ticketValid(string $token): bool
+    {
+        return strlen($token) >= 40 && ctype_alnum($token);
+    }
 
     /** Share of registered people who attended, as a whole percentage. */
-    public static function attendanceRate(int $registered, int $attended): int { return $registered > 0 ? (int) round($attended * 100 / $registered) : 0; }
+    public static function attendanceRate(int $registered, int $attended): int
+    {
+        return $registered > 0 ? (int) round($attended * 100 / $registered) : 0;
+    }
 
     /** Registered people without a check-in. */
-    public static function noShows(array $registeredIds, array $checkedInIds): array { return array_values(array_diff($registeredIds, $checkedInIds)); }
+    public static function noShows(array $registeredIds, array $checkedInIds): array
+    {
+        return array_values(array_diff($registeredIds, $checkedInIds));
+    }
 }

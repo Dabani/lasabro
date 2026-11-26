@@ -11,19 +11,24 @@ use App\Support\AppliesListQuery;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /** Canonical person record. Every query is department-scoped (visibleTo); sensitive fields have their own audited endpoint. */
 class EmployeeController extends Controller
 {
     use AppliesListQuery;
 
-    private function q(Request $r) { return Employee::query()->visibleTo($r->user()); }
+    private function q(Request $r)
+    {
+        return Employee::query()->visibleTo($r->user());
+    }
 
     public function index(Request $request)
     {
         if ($request->query('export')) {
             AuditLogger::log('employee.exported', null, [], ['format' => $request->query('export')]);
         }
+
         return $this->respondList($request, $this->q($request)->with(['category', 'status', 'department', 'manager']), EmployeeResource::class,
             ['first_name', 'last_name', 'employee_number', 'email', 'position_title'], ['last_name', 'employee_number', 'hired_on', 'created_at'],
             ['category_id', 'status_id', 'department_id'], ['employee_number', 'full_name', 'email', 'phone', 'position_title', 'category', 'status', 'department', 'hired_on']);
@@ -39,6 +44,7 @@ class EmployeeController extends Controller
         $d = $this->validated($request);
         $e = Employee::create($d);
         AuditLogger::log('employee.created', $e, [], collect($d)->except(['national_id', 'bank_account'])->all());
+
         return (new EmployeeResource($e->load(['category', 'status', 'department', 'manager'])))->response()->setStatusCode(201);
     }
 
@@ -51,7 +57,7 @@ class EmployeeController extends Controller
             if (array_key_exists($f, $d)) {
                 $cur = $e->{$f} instanceof \DateTimeInterface ? $e->{$f}->format('Y-m-d') : $e->{$f};
                 if (($d[$f] ?: null) !== ($cur ?: null)) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([$f => [__('hr.employment.use_change')]]);
+                    throw ValidationException::withMessages([$f => [__('hr.employment.use_change')]]);
                 }
                 unset($d[$f]);
             }
@@ -59,6 +65,7 @@ class EmployeeController extends Controller
         $old = $e->only(array_keys(collect($d)->except(['national_id', 'bank_account'])->all()));
         $e->update($d);
         AuditLogger::log('employee.updated', $e, $old, collect($d)->except(['national_id', 'bank_account'])->all());
+
         return new EmployeeResource($e->load(['category', 'status', 'department', 'manager']));
     }
 
@@ -67,6 +74,7 @@ class EmployeeController extends Controller
         $e = $this->q($request)->findOrFail($id);
         $e->delete();
         AuditLogger::log('employee.deleted', $e);
+
         return response()->noContent();
     }
 
@@ -78,6 +86,7 @@ class EmployeeController extends Controller
         $e = $this->q($request)->findOrFail($id);
         $e->update(['user_id' => $d['user_id'] ?? null]);
         AuditLogger::log($d['user_id'] ?? null ? 'employee.user_linked' : 'employee.user_unlinked', $e);
+
         return new EmployeeResource($e);
     }
 
@@ -86,6 +95,7 @@ class EmployeeController extends Controller
     {
         $e = $this->q($request)->findOrFail($id);
         AuditLogger::log('employee.sensitive_viewed', $e);
+
         return ['national_id' => $e->national_id, 'bank_account' => $e->bank_account];
     }
 
@@ -106,9 +116,10 @@ class EmployeeController extends Controller
             $rules += ['national_id' => 'nullable|string|max:60', 'bank_account' => 'nullable|string|max:80'];
         }
         $d = $r->validate($rules);
-        if (!$m) {
+        if (! $m) {
             $d['status_id'] ??= Lookup::id('employee_status', 'active');
         }
+
         return $d;
     }
 }

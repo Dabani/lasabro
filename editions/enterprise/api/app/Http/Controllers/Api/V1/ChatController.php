@@ -23,11 +23,12 @@ class ChatController extends Controller
     public function mine(Request $request)
     {
         $c = $this->myOpen($request);
-        if (!$c) {
+        if (! $c) {
             $c = ChatConversation::create(['user_id' => $request->user()->id, 'status_id' => Lookup::id('chat_status', 'bot'), 'last_message_at' => now()]);
             [$text] = ChatBot::reply('hello', $this->locale($request));
             $this->say($c, 'bot', null, $text);
         }
+
         return $this->payload($c);
     }
 
@@ -43,22 +44,32 @@ class ChatController extends Controller
 
         if ($c->status->code === 'bot') {
             [$reply, $action] = ChatBot::reply($text, $this->locale($request));
-            if ($reply !== '') $this->say($c, 'bot', null, $reply);
-            if ($action === 'escalate') { $this->escalateConversation($c, $request); } elseif ($action === 'suggest_case') { $suggestion = 'suggest_case'; }
+            if ($reply !== '') {
+                $this->say($c, 'bot', null, $reply);
+            }
+            if ($action === 'escalate') {
+                $this->escalateConversation($c, $request);
+            } elseif ($action === 'suggest_case') {
+                $suggestion = 'suggest_case';
+            }
         } elseif ($c->status->code === 'waiting_agent') {
             // already queued for an agent: nothing else to do
         }
 
         $c->update(['last_message_at' => now()]);
         Realtime::emit(new ChatMessageSent($c));
+
         return $this->payload($c->refresh(), $suggestion);
     }
 
     public function escalate(Request $request)
     {
         $c = $this->myOpen($request) ?? abort(404);
-        if ($c->status->code === 'bot') $this->escalateConversation($c, $request);
+        if ($c->status->code === 'bot') {
+            $this->escalateConversation($c, $request);
+        }
         Realtime::emit(new ChatMessageSent($c));
+
         return $this->payload($c->refresh());
     }
 
@@ -67,6 +78,7 @@ class ChatController extends Controller
         $c = $this->myOpen($request) ?? abort(404);
         $c->update(['status_id' => Lookup::id('chat_status', 'closed')]);
         Realtime::emit(new ChatMessageSent($c));
+
         return response()->noContent();
     }
 
@@ -82,6 +94,7 @@ class ChatController extends Controller
 
         return response()->json(['data' => $rows->map(function ($c) {
             $last = $c->messages()->latest('id')->first();
+
             return [
                 'id' => $c->id, 'status' => $c->status->code, 'user' => $c->user->name, 'agent' => $c->agent?->name,
                 'preview' => $last ? mb_substr($last->body, 0, 80) : '', 'last_message_at' => $c->last_message_at?->toIso8601String(),
@@ -103,6 +116,7 @@ class ChatController extends Controller
         $this->say($c, 'agent', $request->user()->id, trim(strip_tags($d['message'])));
         $c->update(['status_id' => Lookup::id('chat_status', 'with_agent'), 'agent_id' => $c->agent_id ?? $request->user()->id, 'last_message_at' => now()]);
         Realtime::emit(new ChatMessageSent($c));
+
         return $this->payload($c->refresh(), null, true);
     }
 
@@ -111,6 +125,7 @@ class ChatController extends Controller
         $c = ChatConversation::findOrFail($id);
         $c->update(['status_id' => Lookup::id('chat_status', 'closed')]);
         Realtime::emit(new ChatMessageSent($c));
+
         return response()->noContent();
     }
 

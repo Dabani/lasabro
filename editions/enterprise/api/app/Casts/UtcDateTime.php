@@ -19,6 +19,7 @@ class UtcDateTime implements CastsAttributes
         if ($value === null) {
             return null;
         }
+
         return ($value instanceof \DateTimeInterface ? CarbonImmutable::instance($value) : CarbonImmutable::parse($value, 'UTC'))->utc()->format('Y-m-d H:i:s');
     }
 }

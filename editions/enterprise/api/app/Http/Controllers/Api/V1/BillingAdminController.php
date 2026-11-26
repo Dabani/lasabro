@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\LookupValue;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\TaxRate;
@@ -32,8 +33,11 @@ class BillingAdminController extends Controller
         $d = $request->validate(['name' => 'required|string|max:100', 'rate_percent' => 'required|numeric|min:0|max:100', 'valid_from' => 'required|date', 'valid_to' => 'nullable|date|after_or_equal:valid_from',
             'is_default' => 'boolean', 'source_citation' => 'required|string|max:255']);
         $t = TaxRate::create($d + ['verification_status_id' => Lookup::id('rule_verification_status', 'unverified')]);
-        if ($t->is_default) TaxRate::where('id', '!=', $t->id)->update(['is_default' => false]);
+        if ($t->is_default) {
+            TaxRate::where('id', '!=', $t->id)->update(['is_default' => false]);
+        }
         AuditLogger::log('tax_rate.created', $t, [], $d);
+
         return response()->json(['id' => $t->id], 201);
     }
 
@@ -43,6 +47,7 @@ class BillingAdminController extends Controller
         $t = TaxRate::findOrFail($id);
         $t->update(['verification_status_id' => Lookup::id('rule_verification_status', 'verified'), 'verified_by' => $request->user()->id, 'verified_at' => now()]);
         AuditLogger::log('tax_rate.verified', $t, ['verification' => 'unverified'], ['verification' => 'verified']);
+
         return response()->noContent();
     }
 
@@ -51,8 +56,9 @@ class BillingAdminController extends Controller
     {
         [$p] = $this->access->find($request->user(), $id);
         $p->load('milestones');
+
         return ['data' => [
-            'billing_model_id' => $p->billing_model_id, 'billing_model' => $p->billing_model_id ? \App\Models\LookupValue::find($p->billing_model_id)?->code : null,
+            'billing_model_id' => $p->billing_model_id, 'billing_model' => $p->billing_model_id ? LookupValue::find($p->billing_model_id)?->code : null,
             'currency_code' => $p->currency_code, 'budget_amount' => $p->budget_amount, 'rate_card_id' => $p->rate_card_id, 'client_id' => $p->client_id,
             'milestones' => $p->milestones->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'completed' => $m->completed_at !== null, 'billing_amount' => $m->billing_amount]),
         ]];
@@ -65,6 +71,7 @@ class BillingAdminController extends Controller
         $p->update(['billing_model_id' => $d['billing_model_id'], 'currency_code' => isset($d['currency_code']) ? strtoupper($d['currency_code']) : $p->currency_code,
             'budget_amount' => $d['budget_amount'] ?? $p->budget_amount]);
         AuditLogger::log('project.billing_set', $p, [], $d);
+
         return response()->noContent();
     }
 
@@ -74,6 +81,7 @@ class BillingAdminController extends Controller
         $m = Milestone::where('project_id', Project::findOrFail($id)->id)->findOrFail($milestoneId);
         $m->update(['billing_amount' => $d['billing_amount'] ?? null]);
         AuditLogger::log('milestone.billing_set', $m, [], $d);
+
         return response()->noContent();
     }
 
@@ -83,6 +91,7 @@ class BillingAdminController extends Controller
         [$p, $level] = $this->access->find($request->user(), $id);
         abort_unless(ProjectAccess::isManager($level), 403, 'forbidden');
         $r = $this->lifecycle->deliver($p, $request->user());
+
         return ['data' => ['status' => 'delivered', 'invoice_id' => $r['invoice']?->id, 'invoice_error' => $r['invoice_error']]];
     }
 
@@ -91,8 +100,9 @@ class BillingAdminController extends Controller
         [$p, $level] = $this->access->find($request->user(), $id);
         abort_unless(ProjectAccess::isManager($level), 403, 'forbidden');
         $d = $request->validate(['exception_reason' => 'nullable|string|min:5|max:1000']);
-        abort_if(!empty($d['exception_reason']) && !$this->ctx->can('billing.close_exception'), 403, 'forbidden');
+        abort_if(! empty($d['exception_reason']) && ! $this->ctx->can('billing.close_exception'), 403, 'forbidden');
         $this->lifecycle->close($p, $d['exception_reason'] ?? null);
+
         return ['data' => ['status' => 'closed']];
     }
 }

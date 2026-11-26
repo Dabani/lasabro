@@ -13,9 +13,10 @@ class PayrollGoldenTest extends TestCase
 {
     private function fixtures(): array
     {
-        $dir = dirname(__DIR__) . '/fixtures/payroll';
-        $files = glob($dir . '/*.json') ?: [];
+        $dir = dirname(__DIR__).'/fixtures/payroll';
+        $files = glob($dir.'/*.json') ?: [];
         sort($files);
+
         return $files;
     }
 
@@ -48,9 +49,9 @@ class PayrollGoldenTest extends TestCase
         foreach ($this->fixtures() as $file) {
             $fx = json_decode((string) file_get_contents($file), true);
             if (str_starts_with(basename($file), 'synthetic-')) {
-                $this->assertFalse($fx['signed_off'], basename($file) . ' is invented data and cannot be signed off');
+                $this->assertFalse($fx['signed_off'], basename($file).' is invented data and cannot be signed off');
             } else {
-                $this->assertNotEmpty($fx['signed_off_by'] ?? '', basename($file) . ' needs signed_off_by');
+                $this->assertNotEmpty($fx['signed_off_by'] ?? '', basename($file).' needs signed_off_by');
             }
         }
     }

@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Client portal: invitations, MFA, visibility flags, client comments and shared deliverables. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::table('client_identities', function (Blueprint $t) {

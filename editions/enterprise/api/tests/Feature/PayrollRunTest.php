@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Employee;
 use App\Models\EmploymentRecord;
+use App\Models\PayComponent;
 use App\Models\PayPayslip;
 use App\Models\PayRun;
 use App\Models\User;
@@ -20,14 +21,20 @@ use Tests\TestCase;
  */
 class PayrollRunTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $prep;
+
     private User $rev;
+
     private User $fin;
+
     private User $md;
+
     private User $lock;
+
     private User $staffUser;
+
     private Employee $emp;
 
     protected function setUp(): void
@@ -51,7 +58,7 @@ class PayrollRunTest extends TestCase
 
     private function employee(?User $u, string $hired, ?string $salary): Employee
     {
-        $e = Employee::create(['first_name' => 'Pay', 'last_name' => 'Tester' . uniqid(), 'category_id' => Lookup::id('employee_category', 'contracted'), 'status_id' => Lookup::id('employee_status', 'active'), 'user_id' => $u?->id, 'hired_on' => $hired]);
+        $e = Employee::create(['first_name' => 'Pay', 'last_name' => 'Tester'.uniqid(), 'category_id' => Lookup::id('employee_category', 'contracted'), 'status_id' => Lookup::id('employee_status', 'active'), 'user_id' => $u?->id, 'hired_on' => $hired]);
         if ($salary !== null) {
             EmploymentRecord::create([
                 'employee_id' => $e->id,
@@ -61,9 +68,10 @@ class PayrollRunTest extends TestCase
                 'category_id' => Lookup::id('employee_category', 'contracted'),
                 'salary_amount' => $salary,
                 'salary_currency' => 'RWF',
-                'created_by' => $this->prep->id
+                'created_by' => $this->prep->id,
             ]);
         }
+
         return $e;
     }
 
@@ -87,7 +95,7 @@ class PayrollRunTest extends TestCase
             'base_kind_id' => Lookup::id('pay_scheme_base', 'pensionable_earnings'),
             'reduces_taxable_base' => false,
             'rounding_id' => Lookup::id('pay_rounding', 'nearest'),
-            'decimals' => 0
+            'decimals' => 0,
         ])->assertCreated()->json('data.id');
         $v = $this->postJson("/api/v1/payroll/schemes/$s/versions", ['employee_rate' => 5, 'employer_rate' => 5, 'valid_from' => '2026-01-01', 'source_citation' => 'Test schedule'])->assertCreated()->json('data.id');
         $a = $this->postJson('/api/v1/payroll/assignments', ['scheme_id' => $s, 'category_id' => Lookup::id('employee_category', 'contracted'), 'applies' => true, 'valid_from' => '2026-01-01'])->assertCreated()->json('data.id');
@@ -99,17 +107,21 @@ class PayrollRunTest extends TestCase
     private function runPayroll(array $o = []): string
     {
         $this->as($this->prep);
+
         return $this->postJson('/api/v1/payroll/runs', $o + ['period_from' => '2026-11-01', 'period_to' => '2026-11-30', 'currency_id' => Lookup::id('currency', 'RWF')])->assertCreated()->assertJsonPath('data.status', 'draft')->json('data.id');
     }
 
     private function calc(string $id): array
     {
         $this->as($this->prep);
+
         return $this->postJson("/api/v1/payroll/runs/$id/calculate")->assertOk()->json('data');
     }
+
     private function step(User $u, string $id, string $action, array $body = [], int $status = 200)
     {
         $this->as($u);
+
         return $this->postJson("/api/v1/payroll/runs/$id/$action", $body)->assertStatus($status);
     }
 
@@ -206,7 +218,7 @@ class PayrollRunTest extends TestCase
         $this->toLocked($id);
         $this->step($this->prep, $id, 'calculate', [], 422);
         $this->as($this->prep);
-        $this->postJson("/api/v1/payroll/runs/$id/inputs", ['employee_id' => $this->emp->id, 'component_id' => \App\Models\PayComponent::where('code', 'overtime')->value('id'), 'amount' => 1000])->assertStatus(422);
+        $this->postJson("/api/v1/payroll/runs/$id/inputs", ['employee_id' => $this->emp->id, 'component_id' => PayComponent::where('code', 'overtime')->value('id'), 'amount' => 1000])->assertStatus(422);
         $slip = PayPayslip::where('run_id', $id)->firstOrFail();
         $this->expectException(RuntimeException::class);                            // the model itself refuses: a bug in a service cannot change a locked payslip
         $slip->update(['net' => '1.00']);
@@ -216,9 +228,9 @@ class PayrollRunTest extends TestCase
     {
         $id = $this->runPayroll();
         $this->calc($id);
-        $ot = \App\Models\PayComponent::where('code', 'overtime')->value('id');
+        $ot = PayComponent::where('code', 'overtime')->value('id');
         $this->as($this->prep);
-        $this->postJson("/api/v1/payroll/runs/$id/inputs", ['employee_id' => $this->emp->id, 'component_id' => \App\Models\PayComponent::where('code', 'basic')->value('id'), 'amount' => 1])->assertStatus(422);   // not a variable component
+        $this->postJson("/api/v1/payroll/runs/$id/inputs", ['employee_id' => $this->emp->id, 'component_id' => PayComponent::where('code', 'basic')->value('id'), 'amount' => 1])->assertStatus(422);   // not a variable component
         $this->postJson("/api/v1/payroll/runs/$id/inputs", ['employee_id' => $this->emp->id, 'component_id' => $ot, 'amount' => 40000])->assertCreated();
         $d = $this->calc($id);
         $this->assertSame('540000.00', $d['totals']['gross']);                      // 500000 + 40000 overtime
@@ -234,7 +246,7 @@ class PayrollRunTest extends TestCase
         $this->toLocked($id);
         $this->as($this->prep);
         $adj = $this->postJson("/api/v1/payroll/runs/$id/adjustments", ['employee_ids' => [$this->emp->id], 'note' => 'Overtime forgotten'])->assertCreated()->assertJsonPath('data.kind', 'adjustment')->json('data.id');
-        $this->postJson("/api/v1/payroll/runs/$adj/inputs", ['employee_id' => $this->emp->id, 'component_id' => \App\Models\PayComponent::where('code', 'overtime')->value('id'), 'amount' => 10000])->assertCreated();
+        $this->postJson("/api/v1/payroll/runs/$adj/inputs", ['employee_id' => $this->emp->id, 'component_id' => PayComponent::where('code', 'overtime')->value('id'), 'amount' => 10000])->assertCreated();
         $d = $this->calc($adj);
         $this->assertSame('10000.00', $d['totals']['net_difference']);
         $slip = PayPayslip::where('run_id', $adj)->firstOrFail();

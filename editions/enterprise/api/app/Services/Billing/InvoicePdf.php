@@ -18,7 +18,7 @@ class InvoicePdf
     {
         $i = Invoice::with(['lines.kind', 'lines.sources.timeEntry.user:id,name', 'lines.sources.timeEntry.task:id,number,title', 'status', 'project:id,code,name', 'payments', 'creditNotes.status'])->findOrFail($invoice->id);
         $org = app(OrganizationContext::class)->organization() ?? Organization::findOrFail($i->organization_id);
-        $annex = !$withAnnex ? collect() : $i->lines->flatMap(fn ($l) => $l->sources->map(fn (InvoiceLineSource $s) => [
+        $annex = ! $withAnnex ? collect() : $i->lines->flatMap(fn ($l) => $l->sources->map(fn (InvoiceLineSource $s) => [
             'date' => $s->timeEntry->work_date->toDateString(), 'person' => $s->timeEntry->user?->name,
             'task' => $s->timeEntry->task ? "#{$s->timeEntry->task->number} {$s->timeEntry->task->title}" : '-', 'hours' => number_format($s->seconds / 3600, 2, '.', ''),
         ]))->sortBy('date')->values();
@@ -28,6 +28,7 @@ class InvoicePdf
         $pdf->loadHtml($html, 'UTF-8');
         $pdf->setPaper('A4');
         $pdf->render();
+
         return $pdf->output();
     }
 }

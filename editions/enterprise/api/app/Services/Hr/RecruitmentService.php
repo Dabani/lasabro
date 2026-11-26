@@ -7,11 +7,12 @@ use App\Models\ApplicantStageHistory;
 use App\Models\AppNotification;
 use App\Models\ApprovalRequest;
 use App\Models\Employee;
+use App\Models\HrGrade;
 use App\Models\Interview;
 use App\Models\Membership;
+use App\Models\Offer;
 use App\Models\OnboardingItem;
 use App\Models\OnboardingTemplateItem;
-use App\Models\Offer;
 use App\Models\ReferenceCheck;
 use App\Models\Requisition;
 use App\Models\Role;
@@ -21,6 +22,7 @@ use App\Models\Vacancy;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\AuditLogger;
 use App\Services\MoneyService;
+use App\Support\Html;
 use App\Support\Lookup;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -43,8 +45,15 @@ class RecruitmentService
         throw ValidationException::withMessages([$field => [__("recruitment.$key", $params)]]);
     }
 
-    private function id(string $type, string $code): string { return Lookup::id($type, $code); }
-    private function stageCode(Applicant $a): string { return $a->loadMissing('stage')->stage->code; }
+    private function id(string $type, string $code): string
+    {
+        return Lookup::id($type, $code);
+    }
+
+    private function stageCode(Applicant $a): string
+    {
+        return $a->loadMissing('stage')->stage->code;
+    }
 
     // ---- requisitions -------------------------------------------------------------------------------------------------
     public function createRequisition(array $d, User $by): Requisition
@@ -54,6 +63,7 @@ class RecruitmentService
             AuditLogger::log('requisition.created', $r, [], ['headcount' => $r->headcount]);
             $req = $this->approvals->submit('workforce_requisition', $r->id, $by, __('recruitment.approval_title.requisition', ['title' => $r->title]), ['department_id' => $r->department_id]);
             $r->update(['approval_request_id' => $req->id]);
+
             return $r->refresh();
         });
     }
@@ -61,7 +71,7 @@ class RecruitmentService
     public function requisitionOutcome(string $id, string $outcome): void
     {
         $r = Requisition::withoutGlobalScopes()->find($id);
-        if (!$r || $r->status_id !== $this->id('requisition_status', 'pending_approval')) {
+        if (! $r || $r->status_id !== $this->id('requisition_status', 'pending_approval')) {
             return;
         }
         $r->update(['status_id' => $this->id('requisition_status', $outcome)]);
@@ -73,7 +83,7 @@ class RecruitmentService
         $status = $r->loadMissing('status')->status->code;
         if ($status === 'pending_approval' && $r->approval_request_id) {
             $this->approvals->cancel($r->approval_request_id, $by);          // the handler marks it cancelled
-        } elseif ($status === 'approved' && !$r->vacancy()->exists()) {
+        } elseif ($status === 'approved' && ! $r->vacancy()->exists()) {
             $r->update(['status_id' => $this->id('requisition_status', 'cancelled')]);
             AuditLogger::log('requisition.cancelled', $r);
         } else {
@@ -93,6 +103,7 @@ class RecruitmentService
         $v = Vacancy::create(['requisition_id' => $r->id, 'title' => $d['title'] ?? $r->title, 'description' => $d['description'] ?? null,
             'status_id' => $this->id('vacancy_status', 'open'), 'opened_on' => now()->toDateString(), 'closes_on' => $d['closes_on'] ?? null]);
         AuditLogger::log('vacancy.opened', $v);
+
         return $v;
     }
 
@@ -135,6 +146,7 @@ class RecruitmentService
             'consent_recorded_at' => now(), 'retention_until' => now()->addMonthsNoOverflow($months)->toDateString()]);
         $this->record($a, null, $a->stage_id, null, $by);
         AuditLogger::log('applicant.created', $a);
+
         return $a->refresh();
     }
 
@@ -144,7 +156,7 @@ class RecruitmentService
         if (in_array($cur, ['offer', 'hired', 'rejected'], true)) {
             $this->fail('stage', 'stage_locked');
         }
-        if (!in_array($to, self::MANUAL_STAGES, true)) {
+        if (! in_array($to, self::MANUAL_STAGES, true)) {
             $this->fail('stage', 'stage_not_allowed');
         }
         if ($to !== $cur) {
@@ -163,7 +175,7 @@ class RecruitmentService
             Offer::where('applicant_id', $a->id)->whereIn('status_id', [$this->id('offer_status', 'draft'), $this->id('offer_status', 'issued'), $this->id('offer_status', 'accepted')])
                 ->get()->each(fn ($o) => $o->update(['status_id' => $this->id('offer_status', 'withdrawn')]));
             $a->update(['rejection_reason' => $reason, 'retention_until' => now()->addMonthsNoOverflow(HrSettings::get($a->organization_id, 'applicant_retention_months'))->toDateString(), 'retention_flagged_at' => null]);
-            $this->setStage($a, 'rejected', \App\Support\Html::plain($reason), $by);
+            $this->setStage($a, 'rejected', Html::plain($reason), $by);
         });
         AuditLogger::log('applicant.rejected', $a, ['stage' => $cur]);
     }
@@ -172,9 +184,10 @@ class RecruitmentService
     public function schedule(Applicant $a, array $d, User $by): Interview
     {
         $cur = $this->stageCode($a);
-        if (!in_array($cur, self::MANUAL_STAGES, true)) {
+        if (! in_array($cur, self::MANUAL_STAGES, true)) {
             $this->fail('applicant', 'stage_not_allowed');
         }
+
         return DB::transaction(function () use ($a, $d, $by, $cur) {
             $i = Interview::create(['applicant_id' => $a->id, 'type_id' => $this->id('interview_type', $d['type']), 'status_id' => $this->id('interview_status', 'scheduled'),
                 'scheduled_at' => $d['scheduled_at'], 'location' => $d['location'] ?? null, 'notes' => $d['notes'] ?? null, 'created_by' => $by->id]);
@@ -185,6 +198,7 @@ class RecruitmentService
                 $this->setStage($a, 'assessment', null, $by);
             }
             AuditLogger::log('interview.scheduled', $i, [], ['applicant_id' => $a->id, 'type' => $d['type']]);
+
             return $i;
         });
     }
@@ -200,7 +214,7 @@ class RecruitmentService
 
     public function submitScorecard(Interview $i, Employee $panelist, array $d): Scorecard
     {
-        if (!$i->panel()->where('hr_employees.id', $panelist->id)->exists()) {
+        if (! $i->panel()->where('hr_employees.id', $panelist->id)->exists()) {
             abort(404);
         }
         if ($i->loadMissing('status')->status->code === 'cancelled') {
@@ -215,6 +229,7 @@ class RecruitmentService
             $i->update(['status_id' => $this->id('interview_status', 'completed')]);      // everyone on the panel has scored
         }
         AuditLogger::log('scorecard.submitted', $s, [], ['interview_id' => $i->id]);
+
         return $s;
     }
 
@@ -223,6 +238,7 @@ class RecruitmentService
         $r = ReferenceCheck::create(['applicant_id' => $a->id, 'referee_name' => $d['referee_name'], 'referee_contact' => $d['referee_contact'] ?? null, 'relationship' => $d['relationship'] ?? null,
             'result_id' => $this->id('reference_result', $d['result'] ?? 'pending'), 'notes' => $d['notes'] ?? null, 'checked_on' => $d['checked_on'] ?? null, 'checked_by' => $by->id]);
         AuditLogger::log('reference.recorded', $r, [], ['applicant_id' => $a->id]);
+
         return $r;
     }
 
@@ -234,10 +250,10 @@ class RecruitmentService
 
     public function requestSelection(Applicant $a, User $by): ApprovalRequest
     {
-        if (!in_array($this->stageCode($a), ['interview', 'assessment'], true)) {
+        if (! in_array($this->stageCode($a), ['interview', 'assessment'], true)) {
             $this->fail('applicant', 'stage_not_allowed');
         }
-        if (!Scorecard::whereIn('interview_id', Interview::where('applicant_id', $a->id)->select('id'))->exists()) {
+        if (! Scorecard::whereIn('interview_id', Interview::where('applicant_id', $a->id)->select('id'))->exists()) {
             $this->fail('applicant', 'scorecard_required');
         }
         $pending = ApprovalRequest::where('subject_type_id', $this->id('approval_subject_type', 'applicant_selection'))->where('subject_id', $a->id)
@@ -250,19 +266,21 @@ class RecruitmentService
             $this->fail('applicant', 'headcount_reached');
         }
         AuditLogger::log('applicant.selection_requested', $a);
+
         return $this->approvals->submit('applicant_selection', $a->id, $by, __('recruitment.approval_title.selection', ['name' => "$a->first_name $a->last_name", 'title' => $v->title]), ['department_id' => $v->requisition->department_id]);
     }
 
     public function selectionOutcome(string $applicantId, string $outcome): void
     {
         $a = Applicant::withoutGlobalScopes()->find($applicantId);
-        if (!$a || !in_array($this->stageCode($a), ['interview', 'assessment'], true)) {
+        if (! $a || ! in_array($this->stageCode($a), ['interview', 'assessment'], true)) {
             return;
         }
         if ($outcome === 'approved') {
             $v = $a->vacancy()->withoutGlobalScopes()->with('requisition')->first();
             if ($this->taken($v) >= $v->requisition->headcount) {                 // another selection filled the last place meanwhile
                 AuditLogger::log('applicant.selection_blocked', $a, [], ['reason' => 'headcount_reached']);
+
                 return;
             }
             $this->setStage($a, 'offer', __('recruitment.selection_approved'), null);
@@ -277,11 +295,12 @@ class RecruitmentService
         if (empty($d['grade_id'])) {
             return false;
         }
-        $g = \App\Models\HrGrade::find($d['grade_id']);
-        if (!$g || ($g->currency_code && $g->currency_code !== $d['salary_currency'])) {
+        $g = HrGrade::find($d['grade_id']);
+        if (! $g || ($g->currency_code && $g->currency_code !== $d['salary_currency'])) {
             return false;
         }
         $amount = MoneyService::round((string) $d['salary_amount'], 2);
+
         return ($g->salary_min !== null && MoneyService::compare($amount, (string) $g->salary_min) < 0) || ($g->salary_max !== null && MoneyService::compare($amount, (string) $g->salary_max) > 0);
     }
 
@@ -303,6 +322,7 @@ class RecruitmentService
             'probation_months' => $d['probation_months'] ?? 0, 'contract_end_on' => $d['contract_end_on'] ?? null, 'salary_amount' => MoneyService::round((string) $d['salary_amount'], 2),
             'salary_currency' => $d['salary_currency'], 'salary_period' => $d['salary_period'] ?? 'monthly', 'terms' => $d['terms'] ?? null, 'band_exception_reason' => $outside ? $d['band_exception_reason'] : null, 'created_by' => $by->id]);
         AuditLogger::log('offer.created', $o, [], ['outside_band' => $outside]);
+
         return $o;
     }
 
@@ -335,7 +355,7 @@ class RecruitmentService
     {
         $status = $o->loadMissing('status')->status->code;
         $a = $o->applicant()->first();
-        if (!in_array($status, ['draft', 'issued', 'accepted'], true) || $a->converted_employee_id) {
+        if (! in_array($status, ['draft', 'issued', 'accepted'], true) || $a->converted_employee_id) {
             $this->fail('offer', 'cannot_withdraw');
         }
         $this->reject($a, __('recruitment.offer_withdrawn'), $by);                 // also marks the offer withdrawn
@@ -352,9 +372,10 @@ class RecruitmentService
             $this->fail('applicant', 'not_selected');
         }
         $o = Offer::with('position')->where('applicant_id', $a->id)->where('status_id', $this->id('offer_status', 'accepted'))->first();
-        if (!$o) {
+        if (! $o) {
             $this->fail('applicant', 'offer_not_accepted');
         }
+
         return DB::transaction(function () use ($a, $d, $by, $o) {
             $start = CarbonImmutable::parse($o->start_date->toDateString());
             $extras = ['salary_amount' => $o->salary_amount, 'salary_currency' => $o->salary_currency, 'contract_type_id' => $o->contract_type_id, 'reason' => __('recruitment.hired_reason', ['code' => $a->code])];
@@ -375,6 +396,7 @@ class RecruitmentService
                 $this->closeVacancy($v);
             }
             AuditLogger::log('applicant.converted', $a, [], ['employee_id' => $e->id]);
+
             return $e;
         });
     }
@@ -396,6 +418,7 @@ class RecruitmentService
             }
             Applicant::withoutGlobalScopes()->whereIn('id', $rows->pluck('id'))->update(['retention_flagged_at' => now()]);
         }
+
         return $due->count();
     }
 
@@ -405,7 +428,7 @@ class RecruitmentService
             $this->fail('until', 'retention_date_future');
         }
         $a->update(['retention_until' => $until, 'retention_flagged_at' => null]);
-        AuditLogger::log('applicant.retention_extended', $a, [], ['until' => $until, 'reason' => \App\Support\Html::plain($reason)]);
+        AuditLogger::log('applicant.retention_extended', $a, [], ['until' => $until, 'reason' => Html::plain($reason)]);
     }
 
     /** Erase the personal data of a closed application. Stage history and scores stay for statistics, without identity. */
@@ -415,11 +438,11 @@ class RecruitmentService
             $this->fail('applicant', 'anonymize_hired');
         }
         $closed = $this->stageCode($a) === 'rejected' || ($a->retention_until && $a->retention_until->toDateString() <= now()->toDateString());
-        if (!$closed) {
+        if (! $closed) {
             $this->fail('applicant', 'anonymize_not_allowed');
         }
         DB::transaction(function () use ($a) {
-            $a->update(['first_name' => 'Anonymised', 'last_name' => '-', 'email' => 'anonymised-' . strtolower($a->id) . '@invalid.local', 'phone' => null, 'notes' => null,
+            $a->update(['first_name' => 'Anonymised', 'last_name' => '-', 'email' => 'anonymised-'.strtolower($a->id).'@invalid.local', 'phone' => null, 'notes' => null,
                 'rejection_reason' => null, 'source' => null, 'anonymized_at' => now(), 'retention_until' => null]);
             ReferenceCheck::where('applicant_id', $a->id)->delete();
             Scorecard::whereIn('interview_id', Interview::where('applicant_id', $a->id)->select('id'))->update(['strengths' => null, 'concerns' => null]);

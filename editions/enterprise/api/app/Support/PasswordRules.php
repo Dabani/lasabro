@@ -16,9 +16,12 @@ class PasswordRules
         $local = $email ? mb_strtolower(explode('@', $email)[0]) : '';
         if (mb_strlen($local) >= 4) {
             $rules[] = function (string $attribute, mixed $value, Closure $fail) use ($local) {
-                if (str_contains(mb_strtolower((string) $value), $local)) $fail(__('users.password_contains_email'));
+                if (str_contains(mb_strtolower((string) $value), $local)) {
+                    $fail(__('users.password_contains_email'));
+                }
             };
         }
+
         return $rules;
     }
 }

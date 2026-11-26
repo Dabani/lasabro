@@ -18,11 +18,16 @@ trait HasGeneratedCode
     {
         static::creating(function ($m) {
             $col = property_exists(static::class, 'codeColumn') ? static::$codeColumn : 'code';
-            if (filled($m->{$col})) return;
+            if (filled($m->{$col})) {
+                return;
+            }
             $org = $m->organization_id ?: app(OrganizationContext::class)->organizationId();
             $m->{$col} = CodeGenerator::next($org, static::$codeEntity, function (string $c) use ($org, $col) {
                 $q = static::withoutGlobalScopes();
-                if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) $q->withTrashed();
+                if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
+                    $q->withTrashed();
+                }
+
                 return $q->where('organization_id', $org)->where($col, $c)->exists();
             });
         });

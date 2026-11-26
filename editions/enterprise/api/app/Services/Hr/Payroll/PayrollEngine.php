@@ -27,9 +27,9 @@ final class PayrollEngine
         foreach ($in['earnings'] ?? [] as $e) {
             $a = bcadd((string) $e['amount'], '0', 2);
             $gross = bcadd($gross, $a, self::S);
-            $taxable = !empty($e['taxable']) ? bcadd($taxable, $a, self::S) : $taxable;
-            $pensionable = !empty($e['pensionable']) ? bcadd($pensionable, $a, self::S) : $pensionable;
-            $lines[] = ['kind' => 'earning', 'code' => $e['code'], 'base' => null, 'rate' => null, 'amount' => $a, 'taxable' => !empty($e['taxable']), 'pensionable' => !empty($e['pensionable'])];
+            $taxable = ! empty($e['taxable']) ? bcadd($taxable, $a, self::S) : $taxable;
+            $pensionable = ! empty($e['pensionable']) ? bcadd($pensionable, $a, self::S) : $pensionable;
+            $lines[] = ['kind' => 'earning', 'code' => $e['code'], 'base' => null, 'rate' => null, 'amount' => $a, 'taxable' => ! empty($e['taxable']), 'pensionable' => ! empty($e['pensionable'])];
         }
 
         $schemes = $in['schemes'] ?? [];
@@ -45,14 +45,14 @@ final class PayrollEngine
                 'taxable_after_deductions' => bcsub($taxable, $deductible, self::S),
             };
             $base = bccomp($raw, '0', self::S) < 0 ? '0' : $raw;
-            if (!empty($s['base_cap']) && bccomp($base, (string) $s['base_cap'], self::S) > 0) {
+            if (! empty($s['base_cap']) && bccomp($base, (string) $s['base_cap'], self::S) > 0) {
                 $base = (string) $s['base_cap'];
             }
             $dec = (int) ($s['decimals'] ?? 0);
             $mode = $s['rounding'] ?? PayRound::NEAREST;
             $bands = [];
             if (($s['mode'] ?? 'flat') === 'brackets') {
-                $emp = self::bracketTax($base, $s['brackets'] ?? [], $mode, $dec, !empty($s['round_each_band']), $bands);
+                $emp = self::bracketTax($base, $s['brackets'] ?? [], $mode, $dec, ! empty($s['round_each_band']), $bands);
                 $rate = null;
             } else {
                 $rate = (string) ($s['employee_rate'] ?? '0');
@@ -62,7 +62,7 @@ final class PayrollEngine
             $er = bccomp($erate, '0', self::S) === 0 ? PayRound::apply('0', $mode, $dec) : PayRound::apply(bcdiv(bcmul($base, $erate, self::S), '100', self::S), $mode, $dec);
             $employee = bcadd($employee, $emp, self::S);
             $employer = bcadd($employer, $er, self::S);
-            if (!empty($s['reduces_taxable_base'])) {
+            if (! empty($s['reduces_taxable_base'])) {
                 $deductible = bcadd($deductible, $emp, self::S);
             }
             $lines[] = ['kind' => 'scheme_employee', 'code' => $s['code'], 'type' => $s['type'] ?? null, 'base' => bcadd($base, '0', $dec ?: 2), 'rate' => $rate, 'amount' => $emp, 'bands' => $bands,
@@ -82,6 +82,7 @@ final class PayrollEngine
         $net = bcsub(bcsub($gross, $employee, self::S), $ded, self::S);
         $totals = ['gross' => self::fix($gross), 'taxable_earnings' => self::fix($taxable), 'pensionable_earnings' => self::fix($pensionable), 'employee_contributions' => self::fix($employee),
             'deductions' => self::fix($ded), 'net' => self::fix($net), 'employer_contributions' => self::fix($employer), 'employer_cost' => self::fix(bcadd($gross, $employer, self::S))];
+
         return ['lines' => $lines, 'totals' => $totals, 'warnings' => bccomp($net, '0', self::S) < 0 ? ['negative_net'] : []];
     }
 
@@ -103,8 +104,12 @@ final class PayrollEngine
             $sum = bcadd($sum, $amt, self::S);
             $bands[] = ['lower' => $lower, 'upper' => $upper, 'rate' => (string) $b['rate'], 'part' => bcadd($part, '0', 2), 'amount' => $eachBand ? $amt : bcadd($raw, '0', 4)];
         }
+
         return PayRound::apply($sum, $mode, $dec);
     }
 
-    private static function fix(string $v): string { return bcadd($v, '0', 2); }
+    private static function fix(string $v): string
+    {
+        return bcadd($v, '0', 2);
+    }
 }

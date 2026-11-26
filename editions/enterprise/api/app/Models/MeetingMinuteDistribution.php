@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingMinuteDistribution extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['notified_at' => UtcDateTime::class, 'downloaded_at' => UtcDateTime::class];
 }

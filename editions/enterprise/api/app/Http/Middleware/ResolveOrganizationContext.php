@@ -17,9 +17,10 @@ class ResolveOrganizationContext
         $requested = $request->header('X-Organization-Id') ?: ($request->hasSession() ? $request->session()->get('active_organization_id') : null);
         $ctx = app(OrganizationContext::class);
 
-        if (!$ctx->resolve($user, $requested) && !$ctx->resolve($user)) {
+        if (! $ctx->resolve($user, $requested) && ! $ctx->resolve($user)) {
             abort(403, 'no_active_membership');
         }
+
         return $next($request);
     }
 }

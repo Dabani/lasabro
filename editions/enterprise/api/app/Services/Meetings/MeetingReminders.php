@@ -30,6 +30,7 @@ class MeetingReminders
         }
         $out = array_values(array_unique($out));
         rsort($out);
+
         return $out;
     }
 
@@ -45,7 +46,7 @@ class MeetingReminders
         $sent = 0;
         foreach (Organization::all() as $org) {
             $offsets = self::parseOffsets((string) SettingsService::get($org->id, 'meeting.reminder_offsets'));
-            if (!$offsets) {
+            if (! $offsets) {
                 continue;
             }
             $sms = (bool) SettingsService::get($org->id, 'meeting.reminder_sms');
@@ -59,7 +60,7 @@ class MeetingReminders
             foreach ($meetings as $m) {
                 $left = (int) floor($now->diffInMinutes($m->starts_at, false));
                 $due = self::dueOffsets($offsets, $left);
-                if (!$due) {
+                if (! $due) {
                     continue;
                 }
                 $current = min($due);                                           // the most recent offset that has arrived
@@ -79,11 +80,12 @@ class MeetingReminders
                 }
             }
         }
+
         return $sent;
     }
 
     private function human(int $minutes): string
     {
-        return $minutes >= 120 ? intdiv($minutes, 60) . ' h' : $minutes . ' min';
+        return $minutes >= 120 ? intdiv($minutes, 60).' h' : $minutes.' min';
     }
 }

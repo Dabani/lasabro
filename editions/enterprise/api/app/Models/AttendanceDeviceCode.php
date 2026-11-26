@@ -9,10 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 /** The number a biometric device or badge reader uses for an employee. */
 class AttendanceDeviceCode extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_attendance_device_codes';
+
     protected $guarded = [];
 
-    public function employee() { return $this->belongsTo(Employee::class, 'employee_id'); }
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 }

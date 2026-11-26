@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class OnboardingTemplateItem extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_onboarding_template_items';
-    protected $guarded = [];
-    protected $casts = ['offset_days' => 'integer', 'is_active' => 'boolean'];
 
+    protected $guarded = [];
+
+    protected $casts = ['offset_days' => 'integer', 'is_active' => 'boolean'];
 }

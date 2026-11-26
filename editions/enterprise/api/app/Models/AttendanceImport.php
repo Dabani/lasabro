@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttendanceImport extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_attendance_imports';
-    protected $guarded = [];
-    public $timestamps = false;
-    protected $casts = ['created_at' => 'datetime'];
 
+    protected $guarded = [];
+
+    public $timestamps = false;
+
+    protected $casts = ['created_at' => 'datetime'];
 }

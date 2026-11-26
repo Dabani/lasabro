@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Milestone extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['due_date' => 'date', 'completed_at' => 'datetime'];
 }

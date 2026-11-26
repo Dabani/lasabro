@@ -10,9 +10,13 @@ use App\Models\User;
 class OrganizationContext
 {
     protected ?Organization $organization = null;
+
     protected ?Membership $membership = null;
+
     protected array $permissions = [];
+
     protected int $level = 0;
+
     protected array $roleIds = [];
 
     public function resolve(User $user, ?string $requestedOrgId = null): bool
@@ -26,7 +30,7 @@ class OrganizationContext
             ? (clone $q)->where('organization_id', $requestedOrgId)->first()
             : (clone $q)->orderByDesc('is_default')->orderBy('created_at')->first();
 
-        if (!$membership) {
+        if (! $membership) {
             return false;
         }
 
@@ -42,7 +46,6 @@ class OrganizationContext
         return true;
     }
 
-
     /** Tenant context without a user membership: portal requests and console jobs. Grants no permissions. */
     public function resolveForOrganization(Organization $organization): void
     {
@@ -53,12 +56,43 @@ class OrganizationContext
         $this->level = 0;
     }
 
-    public function resolved(): bool { return $this->organization !== null; }
-    public function organization(): ?Organization { return $this->organization; }
-    public function organizationId(): ?string { return $this->organization?->id; }
-    public function membership(): ?Membership { return $this->membership; }
-    public function permissions(): array { return $this->permissions; }
-    public function roleIds(): array { return $this->roleIds; }
-    public function level(): int { return $this->level; }
-    public function can(string $code): bool { return in_array($code, $this->permissions, true); }
+    public function resolved(): bool
+    {
+        return $this->organization !== null;
+    }
+
+    public function organization(): ?Organization
+    {
+        return $this->organization;
+    }
+
+    public function organizationId(): ?string
+    {
+        return $this->organization?->id;
+    }
+
+    public function membership(): ?Membership
+    {
+        return $this->membership;
+    }
+
+    public function permissions(): array
+    {
+        return $this->permissions;
+    }
+
+    public function roleIds(): array
+    {
+        return $this->roleIds;
+    }
+
+    public function level(): int
+    {
+        return $this->level;
+    }
+
+    public function can(string $code): bool
+    {
+        return in_array($code, $this->permissions, true);
+    }
 }

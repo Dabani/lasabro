@@ -41,9 +41,11 @@ class UserInvitationTest extends TestCase
         $url = null;
         Mail::assertSent(UserInvitationMail::class, function ($m) use (&$url) {
             $url = $m->url;
+
             return true;
         });
         parse_str(parse_url($url, PHP_URL_QUERY), $q);
+
         return [User::where('email', strtolower($email))->firstOrFail(), $q['token']];
     }
 
@@ -51,7 +53,7 @@ class UserInvitationTest extends TestCase
     {
         [$user, $token] = $this->invite();
         $this->assertSame('new.person@example.com', $user->email);                    // normalised
-        $this->assertStringContainsString('/activate?token=', 'x/activate?token=' . $token);
+        $this->assertStringContainsString('/activate?token=', 'x/activate?token='.$token);
         $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
         $this->assertDatabaseHas('user_invitations', ['user_id' => $user->id, 'token_hash' => hash('sha256', $token)]);
     }
@@ -61,7 +63,7 @@ class UserInvitationTest extends TestCase
         [$user, $token] = $this->invite();
         auth()->forgetGuards();
 
-        $this->getJson('/api/v1/auth/activation?' . http_build_query(['email' => $user->email, 'token' => $token]))->assertOk()->assertJsonPath('valid', true);
+        $this->getJson('/api/v1/auth/activation?'.http_build_query(['email' => $user->email, 'token' => $token]))->assertOk()->assertJsonPath('valid', true);
         $this->postJson('/api/v1/auth/activate', ['email' => $user->email, 'token' => $token, 'password' => $this->pw, 'password_confirmation' => $this->pw])->assertOk();
 
         $user->refresh();
@@ -78,11 +80,11 @@ class UserInvitationTest extends TestCase
     public function test_wrong_or_expired_token_is_refused(): void
     {
         [$user, $token] = $this->invite();
-        $bad = ($token[0] === 'x' ? 'y' : 'x') . substr($token, 1);
+        $bad = ($token[0] === 'x' ? 'y' : 'x').substr($token, 1);
         $this->postJson('/api/v1/auth/activate', ['email' => $user->email, 'token' => $bad, 'password' => $this->pw, 'password_confirmation' => $this->pw])->assertStatus(422);
 
         UserInvitation::where('user_id', $user->id)->update(['expires_at' => now()->subMinute()]);
-        $this->getJson('/api/v1/auth/activation?' . http_build_query(['email' => $user->email, 'token' => $token]))->assertStatus(422)->assertJsonPath('reason', 'expired');
+        $this->getJson('/api/v1/auth/activation?'.http_build_query(['email' => $user->email, 'token' => $token]))->assertStatus(422)->assertJsonPath('reason', 'expired');
         $this->postJson('/api/v1/auth/activate', ['email' => $user->email, 'token' => $token, 'password' => $this->pw, 'password_confirmation' => $this->pw])->assertStatus(422);
     }
 

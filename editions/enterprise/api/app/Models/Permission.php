@@ -11,5 +11,8 @@ class Permission extends Model
 
     protected $guarded = [];
 
-    public function group() { return $this->belongsTo(LookupValue::class, 'group_id'); }
+    public function group()
+    {
+        return $this->belongsTo(LookupValue::class, 'group_id');
+    }
 }

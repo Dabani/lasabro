@@ -24,7 +24,7 @@ class LasabroFingerprint extends Command
             if (! is_dir($dir)) {
                 mkdir($dir, 0775, true);
             }
-            file_put_contents($out, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL);
+            file_put_contents($out, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
             $this->info("Fingerprint saved to {$out}");
         }
 

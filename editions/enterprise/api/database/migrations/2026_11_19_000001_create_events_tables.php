@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Events with registration, capacity / waitlist and attendance (Guide 6, Appendix A.4). Statuses and kinds are lookups; times are UTC. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('events', function (Blueprint $t) {

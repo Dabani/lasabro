@@ -22,7 +22,9 @@ class EmploymentService
 {
     /** Change types that need approval. Everything else (transfer, manager change) is effective once recorded. */
     public const APPROVAL_REQUIRED = ['promotion', 'confirmation', 'salary_change', 'category_change'];
+
     public const TYPES = ['promotion', 'confirmation', 'transfer', 'category_change', 'salary_change', 'manager_change'];
+
     private const TRACKED = ['category_id', 'position_id', 'grade_id', 'department_id', 'manager_employee_id', 'contract_type_id', 'contract_end_on', 'probation_end_on'];
 
     /** Extra facts for the hire row (salary, contract type, reason) when an employee is created by recruitment conversion. */
@@ -45,7 +47,10 @@ class EmploymentService
         throw ValidationException::withMessages([$field => [__("hr.employment.$key")]]);
     }
 
-    private function status(string $code): string { return Lookup::id('employment_record_status', $code); }
+    private function status(string $code): string
+    {
+        return Lookup::id('employment_record_status', $code);
+    }
 
     public static function asOfRecord(string $employeeId, string $date): ?EmploymentRecord
     {
@@ -66,6 +71,7 @@ class EmploymentService
             'contract_end_on' => $e->contract_end_on?->toDateString(), 'probation_end_on' => $e->probation_end_on?->toDateString(),
             'created_by' => $by?->id ?? request()->user()?->id, 'applied_at' => now(),
         ] + array_intersect_key(self::$hireExtras, array_flip(['salary_amount', 'salary_currency', 'contract_type_id', 'reason'])));
+
         return $rec;
     }
 
@@ -91,6 +97,7 @@ class EmploymentService
             $snap = ['category_id', 'position_id', 'grade_id', 'department_id', 'manager_employee_id', 'contract_end_on', 'probation_end_on'];
             $base = function (string $f) use ($last, $e, $snap) {
                 $v = $last ? $last->{$f} : (in_array($f, $snap, true) ? $e->{$f} : null);
+
                 return $v instanceof \DateTimeInterface ? $v->format('Y-m-d') : $v;
             };
             $new = [];
@@ -119,10 +126,10 @@ class EmploymentService
             if ($type === 'salary_change' && ($d['salary_amount'] ?? null) === null) {
                 $this->fail('salary_amount', 'salary_required');
             }
-            if ($type === 'salary_change' && !$currency) {
+            if ($type === 'salary_change' && ! $currency) {
                 $this->fail('salary_currency', 'currency_required');
             }
-            if (!$changed) {
+            if (! $changed) {
                 $this->fail('change_type', 'nothing_changed');
             }
             if ($type === 'confirmation' && $new['category_id'] === $base('category_id')) {
@@ -144,6 +151,7 @@ class EmploymentService
             } else {
                 $this->syncSnapshot($e->id);
             }
+
             return $rec->refresh();
         });
     }
@@ -152,7 +160,7 @@ class EmploymentService
     public function applyOutcome(string $recordId, string $outcome): void
     {
         $rec = EmploymentRecord::withoutGlobalScopes()->find($recordId);
-        if (!$rec || $rec->status_id !== $this->status('pending_approval')) {
+        if (! $rec || $rec->status_id !== $this->status('pending_approval')) {
             return;
         }
         $rec->update(['status_id' => $this->status($outcome)]);
@@ -167,11 +175,11 @@ class EmploymentService
     {
         $today ??= now()->toDateString();
         $rec = self::asOfRecord($employeeId, $today);
-        if (!$rec) {
+        if (! $rec) {
             return;
         }
         $e = Employee::withoutGlobalScopes()->withTrashed()->find($employeeId);
-        if (!$e) {
+        if (! $e) {
             return;
         }
         $title = $rec->position_id ? HrPosition::withoutGlobalScopes()->where('id', $rec->position_id)->value('title') : null;
@@ -193,6 +201,7 @@ class EmploymentService
         foreach ($ids as $id) {
             $this->syncSnapshot($id, $today);
         }
+
         return $ids->count();
     }
 
@@ -204,6 +213,7 @@ class EmploymentService
             ->orderBy('effective_from')->orderBy('created_at')->get()
             ->map(fn ($r) => ['from' => $r->effective_from->toDateString(), 'grade' => $r->grade_id])->all();
         $since = CareerPath::gradeSince($rows, $today);
+
         return $since === null ? null : CareerPath::months($since, $today);
     }
 }

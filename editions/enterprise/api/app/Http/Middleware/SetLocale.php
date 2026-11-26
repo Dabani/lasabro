@@ -16,6 +16,7 @@ class SetLocale
             ?? $request->getPreferredLanguage($active)
             ?? config('ops.default_language');
         app()->setLocale(in_array($code, $active, true) ? $code : config('ops.default_language'));
+
         return $next($request);
     }
 }

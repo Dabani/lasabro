@@ -8,10 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectMember extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function role() { return $this->belongsTo(LookupValue::class, 'project_role_id'); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(LookupValue::class, 'project_role_id');
+    }
 }

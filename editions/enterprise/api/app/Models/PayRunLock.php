@@ -13,7 +13,7 @@ final class PayRunLock
 {
     public static function assertOpen(?string $runId): void
     {
-        if (!$runId) {
+        if (! $runId) {
             return;
         }
         $status = PayRun::withoutGlobalScopes()->whereKey($runId)->value('status_id');

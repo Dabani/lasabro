@@ -11,6 +11,7 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $q = AppNotification::where('user_id', $request->user()->id);
+
         return response()->json([
             'unread' => (clone $q)->whereNull('read_at')->count(),
             'data' => $q->orderByDesc('created_at')->limit(30)->get()->map(fn ($n) => [
@@ -23,12 +24,14 @@ class NotificationController extends Controller
     public function read(Request $request, string $id)
     {
         AppNotification::where('user_id', $request->user()->id)->whereKey($id)->whereNull('read_at')->update(['read_at' => now()]);
+
         return response()->noContent();
     }
 
     public function readAll(Request $request)
     {
         AppNotification::where('user_id', $request->user()->id)->whereNull('read_at')->update(['read_at' => now()]);
+
         return response()->noContent();
     }
 }

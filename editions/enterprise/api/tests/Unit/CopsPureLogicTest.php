@@ -20,7 +20,10 @@ class CopsPureLogicTest extends TestCase
         return ['id' => $id, 'version' => $v, 'priority' => $p, 'effective_from' => $from, 'effective_to' => $to, 'conditions' => $conds];
     }
 
-    private function pick(array $cs, array $attrs, string $on = '2026-11-03'): ?string { return RuleMatcher::pick($cs, $attrs, $on)['id'] ?? null; }
+    private function pick(array $cs, array $attrs, string $on = '2026-11-03'): ?string
+    {
+        return RuleMatcher::pick($cs, $attrs, $on)['id'] ?? null;
+    }
 
     public function test_boundary_amounts_and_missing_attribute(): void
     {

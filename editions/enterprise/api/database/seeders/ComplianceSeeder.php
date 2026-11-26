@@ -132,11 +132,25 @@ class ComplianceSeeder extends Seeder
         foreach (Organization::all() as $org) {
             $role = fn (string $code) => Role::withoutGlobalScopes()->where('organization_id', $org->id)->where('code', $code)->first();
 
-            foreach (['staff', 'team_leader', 'records_manager'] as $c) $role($c)?->permissions()->syncWithoutDetaching($ids(['training.view']));
-            if ($m = $role('manager')) { $m->permissions()->syncWithoutDetaching($ids(['training.view', 'report.receive'])); $sync($m, ['stat_obligations_overdue', 'stat_open_findings']); }
-            if ($it = $role('it_manager')) { $it->permissions()->syncWithoutDetaching($ids(['backup.manage', 'training.view', 'compliance.view'])); $sync($it, ['stat_backup_age', 'stat_obligations_overdue']); }
-            if ($co = $role('compliance_officer')) { $co->permissions()->syncWithoutDetaching($ids(['training.view', 'training.manage', 'report.receive'])); $sync($co, ['stat_obligations_overdue', 'stat_open_findings', 'stat_backup_age']); }
-            if ($a = $role('admin')) { $a->permissions()->syncWithoutDetaching($ids(['backup.manage', 'training.view', 'training.manage', 'report.receive', 'compliance.view', 'compliance.manage'])); $sync($a, ['stat_obligations_overdue', 'stat_open_findings', 'stat_backup_age']); }
+            foreach (['staff', 'team_leader', 'records_manager'] as $c) {
+                $role($c)?->permissions()->syncWithoutDetaching($ids(['training.view']));
+            }
+            if ($m = $role('manager')) {
+                $m->permissions()->syncWithoutDetaching($ids(['training.view', 'report.receive']));
+                $sync($m, ['stat_obligations_overdue', 'stat_open_findings']);
+            }
+            if ($it = $role('it_manager')) {
+                $it->permissions()->syncWithoutDetaching($ids(['backup.manage', 'training.view', 'compliance.view']));
+                $sync($it, ['stat_backup_age', 'stat_obligations_overdue']);
+            }
+            if ($co = $role('compliance_officer')) {
+                $co->permissions()->syncWithoutDetaching($ids(['training.view', 'training.manage', 'report.receive']));
+                $sync($co, ['stat_obligations_overdue', 'stat_open_findings', 'stat_backup_age']);
+            }
+            if ($a = $role('admin')) {
+                $a->permissions()->syncWithoutDetaching($ids(['backup.manage', 'training.view', 'training.manage', 'report.receive', 'compliance.view', 'compliance.manage']));
+                $sync($a, ['stat_obligations_overdue', 'stat_open_findings', 'stat_backup_age']);
+            }
         }
     }
 
@@ -159,7 +173,7 @@ class ComplianceSeeder extends Seeder
         foreach (Organization::all() as $org) {
             foreach ($defs as [$code, $title, $freq, $roleCode, $due, $route, $desc]) {
                 ComplianceObligation::withoutGlobalScopes()->firstOrCreate(['organization_id' => $org->id, 'code' => $code], [
-                    'title' => $title, 'description' => '<p>' . e($desc) . '</p>', 'frequency_id' => Lookup::id('obligation_frequency', $freq),
+                    'title' => $title, 'description' => '<p>'.e($desc).'</p>', 'frequency_id' => Lookup::id('obligation_frequency', $freq),
                     'responsible_role_id' => Role::withoutGlobalScopes()->where('organization_id', $org->id)->where('code', $roleCode)->value('id'),
                     'link_route' => $route, 'next_due_on' => $due->toDateString(), 'is_active' => true,
                 ]);

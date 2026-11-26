@@ -25,6 +25,7 @@ class MeetingCollabPublicController extends Controller
         $m = Meeting::withoutGlobalScopes()->with(['status', 'confidentiality'])->find($inv->meeting_id);
         abort_unless($m && $m->status->code !== 'draft', 404);
         app(OrganizationContext::class)->resolveForOrganization(Organization::findOrFail($inv->organization_id));
+
         return $inv->setRelation('meeting', $m);
     }
 
@@ -39,6 +40,7 @@ class MeetingCollabPublicController extends Controller
         $this->allowed($inv);
         $m = $inv->meeting;
         $msgs = $this->svc->messages($m, null, $inv, $request->query('after'));
+
         return ['data' => $msgs, 'meta' => ['last_id' => $msgs ? end($msgs)['id'] : $request->query('after'), 'can_post' => $this->online->windowOpen($m), 'can_remove' => false]];
     }
 
@@ -47,6 +49,7 @@ class MeetingCollabPublicController extends Controller
         $inv = $this->find($token);
         $d = $request->validate(['body' => 'required|string|max:1000']);
         $this->svc->post($inv->meeting, null, $inv, $d['body']);
+
         return $this->chat($request, $token);
     }
 
@@ -54,6 +57,7 @@ class MeetingCollabPublicController extends Controller
     {
         $inv = $this->find($token);
         $this->allowed($inv);
+
         return ['data' => $this->svc->polls($inv->meeting, null, $inv, false), 'meta' => ['can_create' => false]];
     }
 
@@ -63,6 +67,7 @@ class MeetingCollabPublicController extends Controller
         $p = MeetingPoll::withoutGlobalScopes()->where('meeting_id', $inv->meeting_id)->findOrFail($pollId);
         $d = $request->validate(['option_ids' => 'required|array|min:1|max:10', 'option_ids.*' => 'string']);
         $this->svc->vote($p, null, $inv, $d['option_ids']);
+
         return $this->polls($token);
     }
 }

@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Resolutions and action items of a meeting (Guide 6.7). Statuses are lookups; every change is kept in meeting_followup_history. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('meeting_resolutions', function (Blueprint $t) {

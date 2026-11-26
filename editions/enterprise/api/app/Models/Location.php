@@ -3,18 +3,29 @@
 namespace App\Models;
 
 use App\Support\BelongsToOrganization;
+use App\Support\HasGeneratedCode;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
 class Location extends Model
 {
-    use \App\Support\HasGeneratedCode;
+    use HasGeneratedCode;
+
     protected static string $codeEntity = 'location';
-    use HasUlids, BelongsToOrganization;
+
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];   // controllers only pass validated data; organization_id is set by the tenant trait
+
     protected $casts = ['is_active' => 'boolean'];
 
-    public function parent() { return $this->belongsTo(self::class, 'parent_id'); }
-    public function type() { return $this->belongsTo(LookupValue::class, 'location_type_id'); }
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(LookupValue::class, 'location_type_id');
+    }
 }

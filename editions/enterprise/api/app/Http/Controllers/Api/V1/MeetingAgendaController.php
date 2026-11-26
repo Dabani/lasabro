@@ -20,6 +20,7 @@ class MeetingAgendaController extends Controller
     {
         $org = app(OrganizationContext::class)->organizationId();
         $req = $create ? 'required' : 'sometimes';
+
         return [
             'title' => [$req, 'string', 'max:200'], 'description' => 'nullable|string|max:20000',
             'presenter_id' => ['nullable', Rule::exists('organization_memberships', 'user_id')->where('organization_id', $org)], 'presenter_name' => 'nullable|string|max:150',
@@ -31,6 +32,7 @@ class MeetingAgendaController extends Controller
     private function shape(MeetingAgendaItem $i): array
     {
         $i->loadMissing(['presenter', 'priority']);
+
         return ['id' => $i->id, 'position' => $i->position, 'title' => $i->title, 'description' => $i->description, 'presenter' => $i->presenter ? ['id' => $i->presenter->id, 'name' => $i->presenter->name] : null,
             'presenter_name' => $i->presenter_name, 'duration_minutes' => $i->duration_minutes, 'priority' => $i->priority?->code, 'expected_decision' => $i->expected_decision, 'is_confidential' => $i->is_confidential];
     }
@@ -40,6 +42,7 @@ class MeetingAgendaController extends Controller
         $m = $this->access->find($request->user(), $id);
         $this->access->requireManage($request->user(), $m);
         $item = $this->svc->addAgendaItem($m, $request->validate($this->rules(true)), $request->user());
+
         return response()->json(['data' => $this->shape($item)], 201);
     }
 
@@ -48,6 +51,7 @@ class MeetingAgendaController extends Controller
         $item = MeetingAgendaItem::findOrFail($itemId);
         $m = $this->access->find($request->user(), $item->meeting_id);
         $this->access->requireManage($request->user(), $m);
+
         return ['data' => $this->shape($this->svc->updateAgendaItem($item, $request->validate($this->rules(false)), $request->user()))];
     }
 
@@ -57,6 +61,7 @@ class MeetingAgendaController extends Controller
         $m = $this->access->find($request->user(), $item->meeting_id);
         $this->access->requireManage($request->user(), $m);
         $this->svc->removeAgendaItem($item, $request->user());
+
         return response()->noContent();
     }
 
@@ -66,6 +71,7 @@ class MeetingAgendaController extends Controller
         $this->access->requireManage($request->user(), $m);
         $d = $request->validate(['order' => 'required|array|min:1|max:200', 'order.*' => 'required|string']);
         $this->svc->reorderAgenda($m, $d['order'], $request->user());
+
         return ['data' => ['ok' => true]];
     }
 
@@ -73,6 +79,7 @@ class MeetingAgendaController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         $this->access->requireManage($request->user(), $m);
+
         return ['data' => ['agenda_status' => $this->svc->circulateAgenda($m, $request->user())->agendaStatus->code]];
     }
 
@@ -80,6 +87,7 @@ class MeetingAgendaController extends Controller
     {
         $m = $this->access->find($request->user(), $id);
         abort_unless($this->access->canChair($request->user(), $m), 403, 'forbidden');
+
         return ['data' => ['agenda_status' => $this->svc->approveAgenda($m, $request->user())->agendaStatus->code]];
     }
 }

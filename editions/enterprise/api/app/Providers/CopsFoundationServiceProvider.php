@@ -13,8 +13,8 @@ use App\Services\FileScanner;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 /** . Registered in bootstrap/providers.php by scripts/apply-bundle-08.py. */
@@ -22,7 +22,7 @@ class CopsFoundationServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../../config/cops.php', 'cops');
+        $this->mergeConfigFrom(__DIR__.'/../../config/cops.php', 'cops');
         $this->app->scoped(ClientContext::class);                        // fresh per request / queue job
 
         // Real malware scanning when enabled; AppServiceProvider keeps the permissive default otherwise.

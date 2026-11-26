@@ -9,6 +9,7 @@ use App\Services\Sms\AfricasTalkingSmsGateway;
 use App\Services\Sms\BrevoSmsGateway;
 use App\Services\Sms\LogSmsGateway;
 use App\Services\Sms\SmsGateway;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
@@ -26,17 +27,16 @@ class AppServiceProvider extends ServiceProvider
 
         // SMS provider is a configuration choice (SMS_DRIVER), not a code change.
         $this->app->bind(SmsGateway::class, fn () => match (config('ops.sms.driver')) {
-            'brevo' => new BrevoSmsGateway(),
-            'africastalking' => new AfricasTalkingSmsGateway(),
-            default => new LogSmsGateway(),
+            'brevo' => new BrevoSmsGateway,
+            'africastalking' => new AfricasTalkingSmsGateway,
+            default => new LogSmsGateway,
         });
     }
 
     public function boot(): void
     {
         // Reset links open the SPA, not a Laravel view.
-        \Illuminate\Auth\Notifications\ResetPassword::createUrlUsing(fn ($user, string $token) =>
-            rtrim(config('ops.frontend_url'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->getEmailForPasswordReset()));
+        ResetPassword::createUrlUsing(fn ($user, string $token) => rtrim(config('ops.frontend_url'), '/').'/reset-password?token='.$token.'&email='.urlencode($user->getEmailForPasswordReset()));
 
         // Hardening
         if (app()->isProduction() && config('ops.security.force_https', true)) {
@@ -55,7 +55,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('health', fn (Request $r) => Limit::perMinute(60)->by($r->ip()));
 
         RateLimiter::for('login', fn (Request $r) => [
-            Limit::perMinute(5)->by(strtolower((string) $r->input('email')) . '|' . $r->ip()),
+            Limit::perMinute(5)->by(strtolower((string) $r->input('email')).'|'.$r->ip()),
             Limit::perMinute(20)->by($r->ip()),
         ]);
     }

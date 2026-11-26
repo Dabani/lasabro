@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Grades, positions, progression criteria, effective-dated employment records, performance reviews, reminder log. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('hr_grades', function (Blueprint $t) {

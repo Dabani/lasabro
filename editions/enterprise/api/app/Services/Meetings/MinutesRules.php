@@ -16,16 +16,28 @@ final class MinutesRules
 
     public const VISIBILITIES = ['participants', 'department', 'organization', 'named'];
 
-    public static function allowed(string $from, string $to): bool { return in_array($to, self::TRANSITIONS[$from] ?? [], true); }
+    public static function allowed(string $from, string $to): bool
+    {
+        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
+    }
 
     /** Only a draft can be edited, commented for change or have its reviewers changed. An approved wording is frozen. */
-    public static function editable(string $status): bool { return $status === 'draft'; }
+    public static function editable(string $status): bool
+    {
+        return $status === 'draft';
+    }
 
     /** Comments are welcome while the text is a draft or waiting for the chair. */
-    public static function commentable(string $status): bool { return in_array($status, ['draft', 'pending_approval'], true); }
+    public static function commentable(string $status): bool
+    {
+        return in_array($status, ['draft', 'pending_approval'], true);
+    }
 
     /** Minutes can be started once the meeting is under way. */
-    public static function canStart(string $meetingStatus): bool { return in_array($meetingStatus, ['in_progress', 'held', 'closed'], true); }
+    public static function canStart(string $meetingStatus): bool
+    {
+        return in_array($meetingStatus, ['in_progress', 'held', 'closed'], true);
+    }
 
     /** A confidential meeting's minutes never go organization-wide or to whole departments: only participants or named people. */
     public static function allowedVisibilities(bool $confidentialMeeting): array

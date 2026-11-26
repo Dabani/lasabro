@@ -1,19 +1,27 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Providers\BillingServiceProvider;
+use App\Providers\CopsFoundationServiceProvider;
 use App\Providers\DatabaseServiceProvider;
+use App\Providers\HrServiceProvider;
+use App\Providers\LasabroHostServiceProvider;
+use App\Providers\MeetingsServiceProvider;
+use App\Providers\PayrollServiceProvider;
+use App\Providers\PortalServiceProvider;
+use App\Providers\ProjectsServiceProvider;
+use App\Providers\TimeServiceProvider;
 
 return [
-    App\Providers\PortalServiceProvider::class,
-    App\Providers\BillingServiceProvider::class,
-    App\Providers\TimeServiceProvider::class,
-    App\Providers\ProjectsServiceProvider::class,
-    App\Providers\CopsFoundationServiceProvider::class,
+    PortalServiceProvider::class,
+    BillingServiceProvider::class,
+    TimeServiceProvider::class,
+    ProjectsServiceProvider::class,
+    CopsFoundationServiceProvider::class,
     AppServiceProvider::class,
     DatabaseServiceProvider::class,
-    App\Providers\LasabroHostServiceProvider::class,
-    App\Providers\HrServiceProvider::class,
-    App\Providers\MeetingsServiceProvider::class,
-    App\Providers\PayrollServiceProvider::class,
-    App\Providers\TripServiceProvider::class,
+    LasabroHostServiceProvider::class,
+    HrServiceProvider::class,
+    MeetingsServiceProvider::class,
+    PayrollServiceProvider::class,
 ];

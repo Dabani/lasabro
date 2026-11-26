@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\BackupVerification;
 use App\Models\NotificationDelivery;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -20,6 +21,7 @@ class HealthController extends Controller
     public function ping()
     {
         $db = $this->database();
+
         return response()->json(['status' => $db['ok'] ? 'ok' : 'degraded', 'time' => now()->toIso8601String()], $db['ok'] ? 200 : 503);
     }
 
@@ -44,6 +46,7 @@ class HealthController extends Controller
         try {
             $t = microtime(true);
             DB::select('select 1');
+
             return ['ok' => true, 'latency_ms' => (int) round((microtime(true) - $t) * 1000)];
         } catch (\Throwable) {
             return ['ok' => false];
@@ -53,10 +56,11 @@ class HealthController extends Controller
     private function cache(): array
     {
         try {
-            $k = 'ops:health:' . bin2hex(random_bytes(4));
+            $k = 'ops:health:'.bin2hex(random_bytes(4));
             Cache::put($k, '1', 10);
             $ok = Cache::get($k) === '1';
             Cache::forget($k);
+
             return ['ok' => $ok, 'driver' => config('cache.default')];
         } catch (\Throwable) {
             return ['ok' => false, 'driver' => config('cache.default')];
@@ -67,10 +71,11 @@ class HealthController extends Controller
     {
         try {
             $disk = Storage::disk(config('ops.files.disk'));
-            $name = '.health-' . bin2hex(random_bytes(4));
+            $name = '.health-'.bin2hex(random_bytes(4));
             $disk->put($name, 'ok');
             $ok = $disk->get($name) === 'ok';
             $disk->delete($name);
+
             return ['ok' => $ok];
         } catch (\Throwable) {
             return ['ok' => false];
@@ -94,6 +99,7 @@ class HealthController extends Controller
         } catch (\Throwable) {
             $out['ok'] = false;
         }
+
         return $out;
     }
 
@@ -101,8 +107,11 @@ class HealthController extends Controller
     private function scheduler(): array
     {
         $ts = Cache::get('ops:scheduler:heartbeat');
-        if (!$ts) return ['ok' => false, 'last_run_seconds_ago' => null];
+        if (! $ts) {
+            return ['ok' => false, 'last_run_seconds_ago' => null];
+        }
         $age = max(0, now()->timestamp - (int) $ts);
+
         return ['ok' => $age <= (int) config('ops.health.scheduler_max_age', 180), 'last_run_seconds_ago' => $age];
     }
 
@@ -110,7 +119,8 @@ class HealthController extends Controller
     {
         try {
             $d = BackupVerification::whereHas('result', fn ($q) => $q->where('code', 'verified_ok'))->max('backup_date');
-            $days = $d ? (int) now()->startOfDay()->diffInDays(\Illuminate\Support\Carbon::parse($d)->startOfDay(), true) : null;
+            $days = $d ? (int) now()->startOfDay()->diffInDays(Carbon::parse($d)->startOfDay(), true) : null;
+
             return ['ok' => $days !== null && $days <= (int) config('ops.health.backup_max_age_days', 14), 'days_since_verified_ok' => $days];
         } catch (\Throwable) {
             return ['ok' => false, 'days_since_verified_ok' => null];
@@ -123,6 +133,7 @@ class HealthController extends Controller
             $since = now()->subDay();
             $failed = NotificationDelivery::where('created_at', '>=', $since)->whereHas('status', fn ($q) => $q->where('code', 'failed'))->count();
             $total = NotificationDelivery::where('created_at', '>=', $since)->count();
+
             return ['ok' => $total === 0 || ($failed / $total) <= 0.25, 'failed_24h' => $failed, 'total_24h' => $total];
         } catch (\Throwable) {
             return ['ok' => false];

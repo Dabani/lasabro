@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Rules\RichTextMin;
 use App\Http\Controllers\Controller;
 use App\Models\Applicant;
 use App\Models\Requisition;
 use App\Models\Vacancy;
+use App\Rules\RichTextMin;
 use App\Services\AuditLogger;
 use App\Services\Hr\HrSettings;
 use App\Services\Hr\RecruitmentService;
@@ -18,7 +18,10 @@ use Illuminate\Validation\Rule;
 /** Requisitions, vacancies and recruitment settings (Guide 5.1). */
 class RecruitmentController extends Controller
 {
-    private function ctx(): OrganizationContext { return app(OrganizationContext::class); }
+    private function ctx(): OrganizationContext
+    {
+        return app(OrganizationContext::class);
+    }
 
     private function reqShape(Requisition $r): array
     {
@@ -30,12 +33,13 @@ class RecruitmentController extends Controller
     public function requisitions(Request $request)
     {
         $q = Requisition::with(['department', 'status', 'requester', 'vacancy'])->orderByDesc('created_at');
-        if (!$this->ctx()->can('hr.recruitment.manage') && !$this->ctx()->can('hr.requisition.approve')) {
+        if (! $this->ctx()->can('hr.recruitment.manage') && ! $this->ctx()->can('hr.requisition.approve')) {
             $q->where('requested_by', $request->user()->id);
         }
         if ($s = $request->query('status')) {
             $q->where('status_id', Lookup::id('requisition_status', $s));
         }
+
         return ['data' => $q->limit(300)->get()->map(fn ($r) => $this->reqShape($r))];
     }
 
@@ -48,6 +52,7 @@ class RecruitmentController extends Controller
             'title' => 'required|string|max:150', 'headcount' => 'required|integer|min:1|max:500', 'justification' => ['required', 'string', 'max:20000', new RichTextMin(1)], 'needed_by' => 'nullable|date_format:Y-m-d|after_or_equal:today',
         ]);
         $r = $svc->createRequisition($d, $request->user());
+
         return response()->json(['data' => $this->reqShape($r->load(['department', 'status', 'requester', 'vacancy']))], 201);
     }
 
@@ -56,6 +61,7 @@ class RecruitmentController extends Controller
         $r = Requisition::findOrFail($id);
         abort_unless($r->requested_by === $request->user()->id || $this->ctx()->can('hr.recruitment.manage'), 403, 'forbidden');
         $svc->cancelRequisition($r, $request->user());
+
         return ['data' => $this->reqShape($r->refresh()->load(['department', 'status', 'requester', 'vacancy']))];
     }
 
@@ -63,6 +69,7 @@ class RecruitmentController extends Controller
     private function vacShape(Vacancy $v): array
     {
         $applicants = Applicant::where('vacancy_id', $v->id);
+
         return ['id' => $v->id, 'code' => $v->code, 'title' => $v->title, 'description' => $v->description, 'status' => $v->status?->code, 'opened_on' => $v->opened_on->toDateString(), 'closes_on' => $v->closes_on?->toDateString(),
             'requisition_id' => $v->requisition_id, 'requisition_code' => $v->requisition?->code, 'headcount' => $v->requisition?->headcount, 'applicants' => (clone $applicants)->count(),
             'hired' => (clone $applicants)->whereNotNull('converted_employee_id')->count()];
@@ -78,6 +85,7 @@ class RecruitmentController extends Controller
         $r = Requisition::findOrFail($requisitionId);
         $d = $request->validate(['title' => 'nullable|string|max:150', 'description' => 'nullable|string|max:20000', 'closes_on' => 'nullable|date_format:Y-m-d|after_or_equal:today']);
         $v = $svc->openVacancy($r, $d);
+
         return response()->json(['data' => $this->vacShape($v->load(['status', 'requisition']))], 201);
     }
 
@@ -86,6 +94,7 @@ class RecruitmentController extends Controller
         $v = Vacancy::findOrFail($id);
         $v->update($request->validate(['title' => 'sometimes|string|max:150', 'description' => 'nullable|string|max:20000', 'closes_on' => 'nullable|date_format:Y-m-d']));
         AuditLogger::log('vacancy.updated', $v);
+
         return ['data' => $this->vacShape($v->refresh()->load(['status', 'requisition']))];
     }
 
@@ -93,11 +102,15 @@ class RecruitmentController extends Controller
     {
         $v = Vacancy::findOrFail($id);
         $svc->closeVacancy($v);
+
         return ['data' => $this->vacShape($v->refresh()->load(['status', 'requisition']))];
     }
 
     // ---- settings -----------------------------------------------------------------------------------------------------
-    public function settings() { return ['data' => HrSettings::all($this->ctx()->organizationId())]; }
+    public function settings()
+    {
+        return ['data' => HrSettings::all($this->ctx()->organizationId())];
+    }
 
     public function updateSettings(Request $request)
     {
@@ -107,6 +120,7 @@ class RecruitmentController extends Controller
             HrSettings::set($this->ctx()->organizationId(), $k, (int) $v);
             AuditLogger::log('hr.setting_changed', null, [], [$k => $v]);
         }
+
         return ['data' => HrSettings::all($this->ctx()->organizationId())];
     }
 }

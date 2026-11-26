@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Services\Hr\Payroll\BracketValidator as BV;
-use App\Services\Hr\Payroll\PayRound;
 use App\Services\Hr\Payroll\PayrollEngine as E;
+use App\Services\Hr\Payroll\PayRound;
 use PHPUnit\Framework\TestCase;
 
 /** Pure payroll logic. Every rate and amount is a TEST INPUT (invented round numbers), never a statement of Rwandan law or of any statutory rate. */
@@ -33,7 +33,10 @@ class PayrollMathTest extends TestCase
             'reduces_taxable_base' => false, 'rounding' => 'nearest', 'decimals' => 0, 'version_id' => 'v'];
     }
 
-    private function earn(string $code, string $amount, bool $taxable, bool $pensionable): array { return ['code' => $code, 'amount' => $amount, 'taxable' => $taxable, 'pensionable' => $pensionable]; }
+    private function earn(string $code, string $amount, bool $taxable, bool $pensionable): array
+    {
+        return ['code' => $code, 'amount' => $amount, 'taxable' => $taxable, 'pensionable' => $pensionable];
+    }
 
     private function line(array $r, string $kind, string $code): array
     {
@@ -70,8 +73,15 @@ class PayrollMathTest extends TestCase
         $this->assertSame('500000.00', $this->line(E::calculate($in('500000')), 'scheme_employee', 'S')['base']);
     }
 
-    private function bands(): array { return [['lower' => '0', 'upper' => '100000', 'rate' => '0'], ['lower' => '100000', 'upper' => '200000', 'rate' => '10'], ['lower' => '200000', 'upper' => null, 'rate' => '25']]; }
-    private function tax(array $o = []): array { return $o + ['code' => 'T', 'type' => 'paye', 'order' => 1, 'mode' => 'brackets', 'base_kind' => 'taxable_earnings', 'brackets' => $this->bands(), 'rounding' => 'nearest', 'decimals' => 0, 'version_id' => 'v']; }
+    private function bands(): array
+    {
+        return [['lower' => '0', 'upper' => '100000', 'rate' => '0'], ['lower' => '100000', 'upper' => '200000', 'rate' => '10'], ['lower' => '200000', 'upper' => null, 'rate' => '25']];
+    }
+
+    private function tax(array $o = []): array
+    {
+        return $o + ['code' => 'T', 'type' => 'paye', 'order' => 1, 'mode' => 'brackets', 'base_kind' => 'taxable_earnings', 'brackets' => $this->bands(), 'rounding' => 'nearest', 'decimals' => 0, 'version_id' => 'v'];
+    }
 
     public function test_progressive_bands_tax_only_the_part_inside_each_band(): void
     {
@@ -156,6 +166,7 @@ class PayrollMathTest extends TestCase
         $in = ['earnings' => [$this->earn('basic', '777777.77', true, true)], 'schemes' => [$this->tax(), $this->flat(['order' => 0])]];
         $this->assertSame(E::calculate($in), E::calculate($in));
     }
+
     public function test_bracket_validation_refuses_gaps_overlaps_and_open_ends(): void
     {
         $b = fn (array $rows) => array_map(fn ($r) => ['lower' => $r[0], 'upper' => $r[1], 'rate' => $r[2]], $rows);

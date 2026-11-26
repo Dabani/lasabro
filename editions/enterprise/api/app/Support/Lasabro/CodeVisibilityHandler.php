@@ -29,7 +29,7 @@ abstract class CodeVisibilityHandler implements DeclarationHandler
             foreach ($codes as $code) {
                 if (str_ends_with($code, '*')) {
                     $prefix = strtr(substr($code, 0, -1), ['!' => '!!', '%' => '!%', '_' => '!_']);
-                    $query->orWhereRaw("code like ? escape '!'", [$prefix . '%']);
+                    $query->orWhereRaw("code like ? escape '!'", [$prefix.'%']);
                 } else {
                     $query->orWhere('code', $code);
                 }

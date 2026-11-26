@@ -8,11 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class InvoiceLineSource extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['hourly_rate' => 'decimal:2', 'seconds' => 'integer'];
 
-    public function timeEntry() { return $this->belongsTo(TimeEntry::class); }
+    public function timeEntry()
+    {
+        return $this->belongsTo(TimeEntry::class);
+    }
 }

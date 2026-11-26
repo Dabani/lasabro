@@ -9,6 +9,7 @@ class MeetingRowResource extends JsonResource
     public function toArray($request): array
     {
         $mine = $this->relationLoaded('invitations') ? $this->invitations->first() : null;
+
         return ['id' => $this->id, 'code' => $this->code, 'title' => $this->title, 'type' => $this->type?->code, 'type_id' => $this->type_id,
             'status' => $this->status?->code, 'confidential' => $this->confidentiality?->code === 'confidential',
             'starts_at' => $this->starts_at->toIso8601String(), 'ends_at' => $this->ends_at->toIso8601String(),

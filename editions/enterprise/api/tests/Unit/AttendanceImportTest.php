@@ -15,9 +15,20 @@ class AttendanceImportTest extends TestCase
 {
     private const TZ = 'Africa/Kigali';                          // UTC+2
 
-    private function fixture(string $name): string { return __DIR__ . '/../fixtures/attendance/' . $name; }
-    private function utc(int $ts): string { return gmdate('Y-m-d H:i:s', $ts); }
-    private function map(array $rows, array $profile = [], array $slots = []): array { return ImportMapper::map($rows, $profile + ['header_row' => 1], $slots, self::TZ); }
+    private function fixture(string $name): string
+    {
+        return __DIR__.'/../fixtures/attendance/'.$name;
+    }
+
+    private function utc(int $ts): string
+    {
+        return gmdate('Y-m-d H:i:s', $ts);
+    }
+
+    private function map(array $rows, array $profile = [], array $slots = []): array
+    {
+        return ImportMapper::map($rows, $profile + ['header_row' => 1], $slots, self::TZ);
+    }
 
     public function test_cells_dates_times_and_serials(): void
     {
@@ -65,7 +76,7 @@ class AttendanceImportTest extends TestCase
 
     public function test_direction_words_numbers_and_ignored_values(): void
     {
-        $d = new DirectionMap();
+        $d = new DirectionMap;
         $this->assertSame('in', $d->classify('C/In'));
         $this->assertSame('out', $d->classify('Sortie'));
         $this->assertSame('invalid', $d->classify('1'));                                     // numbers mean different things on different devices: never guessed
@@ -84,7 +95,7 @@ class AttendanceImportTest extends TestCase
         $this->assertSame(5, $r['total']);                                                    // the blank row does not count
         $this->assertSame(['in', 'out'], array_column($r['punches'], 'dir'));
         $this->assertSame('2026-11-09 06:03:00', $this->utc($r['punches'][0]['ts']));
-        $this->assertSame([[ 'line' => 5, 'reason' => 'bad_timestamp'], ['line' => 6, 'reason' => 'missing_employee'], ['line' => 7, 'reason' => 'bad_direction']], $r['rejected']);
+        $this->assertSame([['line' => 5, 'reason' => 'bad_timestamp'], ['line' => 6, 'reason' => 'missing_employee'], ['line' => 7, 'reason' => 'bad_direction']], $r['rejected']);
     }
 
     public function test_separate_date_and_time_columns_and_no_direction_column(): void
@@ -129,7 +140,7 @@ class AttendanceImportTest extends TestCase
 
     public function test_excel_files_are_read_whatever_their_format(): void
     {
-        $reader = new SpreadsheetReader();
+        $reader = new SpreadsheetReader;
         $x = $reader->read($this->fixture('punches_badge.xlsx'));
         $this->assertSame('xlsx', $x['type']);
         $this->assertSame(['Punches', 'Notes'], $x['sheets']);
@@ -155,12 +166,17 @@ class AttendanceImportTest extends TestCase
 
         $other = $reader->read($this->fixture('punches_badge.xlsx'), 'Notes');
         $this->assertSame([['not attendance']], $other['rows']);
-        try { $reader->read($this->fixture('punches_badge.xlsx'), 'Missing'); $this->fail('an unknown sheet must be refused'); } catch (ImportFileException $e) { $this->assertSame('sheet_not_found', $e->key); }
+        try {
+            $reader->read($this->fixture('punches_badge.xlsx'), 'Missing');
+            $this->fail('an unknown sheet must be refused');
+        } catch (ImportFileException $e) {
+            $this->assertSame('sheet_not_found', $e->key);
+        }
     }
 
     public function test_daily_report_with_title_rows_and_text_files(): void
     {
-        $reader = new SpreadsheetReader();
+        $reader = new SpreadsheetReader;
         $d = $reader->read($this->fixture('daily_report.xlsx'));
         $slots = [['column' => 'In 1', 'direction' => 'in'], ['column' => 'Out 1', 'direction' => 'out'], ['column' => 'In 2', 'direction' => 'in'], ['column' => 'Out 2', 'direction' => 'out']];
         $r = ImportMapper::map($d['rows'], ['layout' => 'daily', 'header_row' => 3], $slots, self::TZ);
@@ -178,7 +194,12 @@ class AttendanceImportTest extends TestCase
         file_put_contents($tmp, "Matricule,Heure\n1,caf\xE9\n");                                     // Windows-1252 text
         $this->assertSame('café', $reader->read($tmp)['rows'][1][1]);
         file_put_contents($tmp, '');
-        try { $reader->read($tmp); $this->fail('an empty file must be refused'); } catch (ImportFileException $e) { $this->assertSame('import_empty', $e->key); }
+        try {
+            $reader->read($tmp);
+            $this->fail('an empty file must be refused');
+        } catch (ImportFileException $e) {
+            $this->assertSame('import_empty', $e->key);
+        }
         unlink($tmp);
     }
 

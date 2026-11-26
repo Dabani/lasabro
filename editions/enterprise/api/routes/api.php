@@ -1,15 +1,14 @@
 <?php
 
-use App\Http\Controllers\Api\V1 as V1;
+use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    require __DIR__ . '/portal.php';          // External client portal (own guard)
-    require __DIR__ . '/meetings-public.php'; // External guest RSVP (personal link, rate limited)
-    require __DIR__ . '/meetings-online-public.php'; // Online meeting for external guests (personal link, rate limited)
-    require __DIR__ . '/meetings-collab-public.php'; // Chat and polls for external guests
-    require __DIR__ . '/events-public.php';   // Event registration and ticket pages (public, rate limited)
-
+    require __DIR__.'/portal.php';          // External client portal (own guard)
+    require __DIR__.'/meetings-public.php'; // External guest RSVP (personal link, rate limited)
+    require __DIR__.'/meetings-online-public.php'; // Online meeting for external guests (personal link, rate limited)
+    require __DIR__.'/meetings-collab-public.php'; // Chat and polls for external guests
+    require __DIR__.'/events-public.php';   // Event registration and ticket pages (public, rate limited)
 
     // ---- public ------------------------------------------------------------------------------
     Route::get('public/config', [V1\PublicController::class, 'config']);
@@ -25,26 +24,25 @@ Route::prefix('v1')->group(function () {
 
     // ---- authenticated + tenant context -------------------------------------------------------
     Route::middleware(['auth:sanctum', 'org.context'])->group(function () {
-        require __DIR__ . '/foundation.php';
-        require __DIR__ . '/projects.php';     // Projects and tasks   // Approvals, rules, scope, employees, clients
-        require __DIR__ . '/time.php';         // Timer, timesheets, rate cards
-        require __DIR__ . '/billing.php';      // Invoices, payments, credit notes, tax rates
-        require __DIR__ . '/portal-admin.php'; // Staff side of the client portal
-        require __DIR__ . '/hr.php';           // Positions, grades, employment history, reviews
-        require __DIR__ . '/recruitment.php';  // Requisitions, vacancies, applicants, interviews, offers, onboarding
-        require __DIR__ . '/attendance.php';   // Clocking, shifts, schedules, holidays, imports, validation
-        require __DIR__ . '/trips.php';
-        require __DIR__ . '/payroll.php';        // Payroll configuration and dry-run
-        require __DIR__ . '/payroll_runs.php';        // Payroll runs, payslips, self-service
-        require __DIR__ . '/payroll_exports.php';        // Payroll bank file, declarations, journal
-        require __DIR__ . '/meetings.php';     // Meetings, rooms, agenda, invitations
-        require __DIR__ . '/meetings-attendance.php'; // Meeting attendance and check-in
-        require __DIR__ . '/meetings-minutes.php';
-        require __DIR__ . '/meetings-followups.php'; // Resolutions and action items
-        require __DIR__ . '/meetings-online.php'; // Online meetings and interventions
-        require __DIR__ . '/meetings-collab.php'; // Chat and polls of online meetings
-        require __DIR__ . '/events.php';       // Events, registration, check-in
-        require __DIR__ . '/events-expenses.php'; // Event expenses and budget
+        require __DIR__.'/foundation.php';
+        require __DIR__.'/projects.php';     // Projects and tasks   // Approvals, rules, scope, employees, clients
+        require __DIR__.'/time.php';         // Timer, timesheets, rate cards
+        require __DIR__.'/billing.php';      // Invoices, payments, credit notes, tax rates
+        require __DIR__.'/portal-admin.php'; // Staff side of the client portal
+        require __DIR__.'/hr.php';           // Positions, grades, employment history, reviews
+        require __DIR__.'/recruitment.php';  // Requisitions, vacancies, applicants, interviews, offers, onboarding
+        require __DIR__.'/attendance.php';   // Clocking, shifts, schedules, holidays, imports, validation
+        require __DIR__.'/payroll.php';        // Payroll configuration and dry-run
+        require __DIR__.'/payroll_runs.php';        // Payroll runs, payslips, self-service
+        require __DIR__.'/payroll_exports.php';        // Payroll bank file, declarations, journal
+        require __DIR__.'/meetings.php';     // Meetings, rooms, agenda, invitations
+        require __DIR__.'/meetings-attendance.php'; // Meeting attendance and check-in
+        require __DIR__.'/meetings-minutes.php';
+        require __DIR__.'/meetings-followups.php'; // Resolutions and action items
+        require __DIR__.'/meetings-online.php'; // Online meetings and interventions
+        require __DIR__.'/meetings-collab.php'; // Chat and polls of online meetings
+        require __DIR__.'/events.php';       // Events, registration, check-in
+        require __DIR__.'/events-expenses.php'; // Event expenses and budget
 
         Route::post('auth/logout', [V1\AuthController::class, 'logout']);
 

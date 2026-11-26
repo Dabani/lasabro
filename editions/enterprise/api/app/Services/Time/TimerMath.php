@@ -8,8 +8,15 @@ namespace App\Services\Time;
  */
 class TimerMath
 {
-    public static function ts(string $utc): int { return (int) \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $utc, new \DateTimeZone('UTC'))->format('U'); }
-    public static function fmt(int $ts): string { return gmdate('Y-m-d H:i:s', $ts); }
+    public static function ts(string $utc): int
+    {
+        return (int) \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $utc, new \DateTimeZone('UTC'))->format('U');
+    }
+
+    public static function fmt(int $ts): string
+    {
+        return gmdate('Y-m-d H:i:s', $ts);
+    }
 
     /** Seconds covered by the segments; an open segment counts up to $now. */
     public static function seconds(array $segments, string $now): int
@@ -18,14 +25,18 @@ class TimerMath
         foreach ($segments as $s) {
             $sum += max(0, self::ts($s['end'] ?? $now) - self::ts($s['start']));
         }
+
         return $sum;
     }
 
     /** Do two half-open intervals overlap? Open ends use $now. */
     public static function overlaps(array $a, array $b, string $now): bool
     {
-        $aS = self::ts($a['start']); $aE = self::ts($a['end'] ?? $now);
-        $bS = self::ts($b['start']); $bE = self::ts($b['end'] ?? $now);
+        $aS = self::ts($a['start']);
+        $aE = self::ts($a['end'] ?? $now);
+        $bS = self::ts($b['start']);
+        $bE = self::ts($b['end'] ?? $now);
+
         return $aS < $bE && $bS < $aE;
     }
 
@@ -37,9 +48,14 @@ class TimerMath
     {
         $closed = self::seconds(array_filter($segments, fn ($s) => $s['end'] !== null), $now);
         $open = array_values(array_filter($segments, fn ($s) => $s['end'] === null))[0] ?? null;
-        if (!$open) return null;
+        if (! $open) {
+            return null;
+        }
         $total = $closed + max(0, self::ts($now) - self::ts($open['start']));
-        if ($total <= $maxSeconds) return null;
+        if ($total <= $maxSeconds) {
+            return null;
+        }
+
         return self::fmt(self::ts($open['start']) + max(0, $maxSeconds - $closed));
     }
 
@@ -47,6 +63,7 @@ class TimerMath
     public static function weekStart(string $date): string
     {
         $d = new \DateTimeImmutable($date, new \DateTimeZone('UTC'));
-        return $d->modify('-' . ((int) $d->format('N') - 1) . ' days')->format('Y-m-d');
+
+        return $d->modify('-'.((int) $d->format('N') - 1).' days')->format('Y-m-d');
     }
 }

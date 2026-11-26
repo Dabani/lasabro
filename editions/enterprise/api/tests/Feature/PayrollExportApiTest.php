@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\EmploymentRecord;
 use App\Models\PayExport;
-use App\Models\PayRun;
+use App\Models\PayExportProfile;
 use App\Models\User;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,13 +19,18 @@ use Tests\TestCase;
  */
 class PayrollExportApiTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $prep;
+
     private User $rev;
+
     private User $fin;
+
     private User $md;
+
     private User $lock;
+
     private Employee $emp;
 
     protected function setUp(): void
@@ -46,13 +51,17 @@ class PayrollExportApiTest extends TestCase
         parent::tearDown();
     }
 
-    private function as(User $u): void { Sanctum::actingAs($u); }
+    private function as(User $u): void
+    {
+        Sanctum::actingAs($u);
+    }
 
     private function employee(string $hired, ?string $salary, ?string $bank): Employee
     {
-        $e = Employee::create(['first_name' => 'Pay', 'last_name' => 'Tester' . uniqid(), 'category_id' => Lookup::id('employee_category', 'contracted'), 'status_id' => Lookup::id('employee_status', 'active'), 'hired_on' => $hired, 'bank_account' => $bank]);
+        $e = Employee::create(['first_name' => 'Pay', 'last_name' => 'Tester'.uniqid(), 'category_id' => Lookup::id('employee_category', 'contracted'), 'status_id' => Lookup::id('employee_status', 'active'), 'hired_on' => $hired, 'bank_account' => $bank]);
         EmploymentRecord::create(['employee_id' => $e->id, 'change_type_id' => Lookup::id('hr_change_type', 'hire'), 'status_id' => Lookup::id('employment_record_status', 'effective'), 'effective_from' => $hired,
             'category_id' => Lookup::id('employee_category', 'contracted'), 'salary_amount' => $salary, 'salary_currency' => 'RWF', 'created_by' => $this->prep->id]);
+
         return $e;
     }
 
@@ -74,6 +83,7 @@ class PayrollExportApiTest extends TestCase
     private function step(User $u, string $id, string $action, array $body = [], int $status = 200)
     {
         $this->as($u);
+
         return $this->postJson("/api/v1/payroll/runs/$id/$action", $body)->assertStatus($status);
     }
 
@@ -90,6 +100,7 @@ class PayrollExportApiTest extends TestCase
         if ($pay) {
             $this->step($this->lock, $id, 'pay', ['paid_on' => '2026-12-01']);
         }
+
         return $id;
     }
 
@@ -107,6 +118,7 @@ class PayrollExportApiTest extends TestCase
         $id = $this->postJson('/api/v1/payroll/export-profiles', $this->bankProfile($o))->assertCreated()->assertJsonPath('data.verification', 'unverified')->json('data.id');
         $this->as($this->rev);
         $this->postJson("/api/v1/payroll/export-profiles/$id/verify")->assertOk();
+
         return $id;
     }
 
@@ -127,7 +139,7 @@ class PayrollExportApiTest extends TestCase
         $this->postJson('/api/v1/payroll/export-profiles', $this->bankProfile(['agreed_with' => '']))->assertStatus(422);                                    // who agreed it is mandatory
         $this->postJson('/api/v1/payroll/export-profiles', $this->bankProfile(['layout_id' => Lookup::id('pay_export_layout', 'fixed_width')]))->assertStatus(422);   // fixed width needs widths
         $this->postJson('/api/v1/payroll/export-profiles', $this->bankProfile(['trailer_template' => 'X;{nope}']))->assertStatus(422);                      // unknown placeholder
-        $this->assertSame(0, \App\Models\PayExportProfile::count());                                                                                          // a refused layout leaves nothing behind
+        $this->assertSame(0, PayExportProfile::count());                                                                                          // a refused layout leaves nothing behind
     }
 
     public function test_a_layout_needs_a_second_person_and_a_verified_layout_is_final(): void

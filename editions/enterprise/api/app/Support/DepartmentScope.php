@@ -35,10 +35,11 @@ class DepartmentScope
         $down = $direct->filter(fn ($a) => $codes[$a->scope_level_id] === 'department')->pluck('department_id')->all();
 
         $ids = $direct->pluck('department_id')->all();
-        if ($down && !$wide) {
+        if ($down && ! $wide) {
             $parents = Department::query()->pluck('parent_id', 'id')->all();
             $ids = array_values(array_unique(array_merge($ids, self::descendants($down, $parents))));
         }
+
         return new self($user->id, $wide, array_values(array_unique($ids)));
     }
 
@@ -50,13 +51,14 @@ class DepartmentScope
         while ($frontier) {
             $next = [];
             foreach ($parentOf as $id => $parent) {
-                if ($parent !== null && in_array($parent, $frontier, true) && !in_array($id, $out, true) && !in_array($id, $roots, true)) {
+                if ($parent !== null && in_array($parent, $frontier, true) && ! in_array($id, $out, true) && ! in_array($id, $roots, true)) {
                     $out[] = $id;
                     $next[] = $id;
                 }
             }
             $frontier = $next;
         }
+
         return $out;
     }
 

@@ -35,9 +35,14 @@ class LegalReferenceController extends Controller
     public function index(Request $request)
     {
         $q = LegalReference::with(['status.translations', 'verifier'])->where('organization_id', $this->ctx->organizationId())->orderBy('code');
-        if ($s = trim((string) $request->query('search', ''))) $q->where(fn ($w) => $w->where('code', 'like', "%$s%")->orWhere('title', 'like', "%$s%")->orWhere('topic', 'like', "%$s%"));
-        if ($st = data_get($request->query('filter'), 'status_id')) $q->where('status_id', $st);
+        if ($s = trim((string) $request->query('search', ''))) {
+            $q->where(fn ($w) => $w->where('code', 'like', "%$s%")->orWhere('title', 'like', "%$s%")->orWhere('topic', 'like', "%$s%"));
+        }
+        if ($st = data_get($request->query('filter'), 'status_id')) {
+            $q->where('status_id', $st);
+        }
         $lang = $request->user()->language_id;
+
         return response()->json(['data' => $q->get()->map(fn ($l) => $this->row($l, $lang))]);
     }
 
@@ -46,6 +51,7 @@ class LegalReferenceController extends Controller
         $d = $request->validate($this->rules());
         $l = LegalReference::create($d + ['organization_id' => $this->ctx->organizationId(), 'status_id' => $d['status_id'] ?? Lookup::id('legal_status', 'unreviewed')]);
         AuditLogger::log('legal_reference.created', $l, [], ['code' => $l->code]);
+
         return response()->json(['data' => $this->row($l->load(['status.translations', 'verifier']), $request->user()->language_id)], 201);
     }
 
@@ -53,10 +59,13 @@ class LegalReferenceController extends Controller
     {
         $l = LegalReference::where('organization_id', $this->ctx->organizationId())->findOrFail($id);
         $d = $request->validate($this->rules($l));
-        if (empty($d['status_id'])) unset($d['status_id']);
+        if (empty($d['status_id'])) {
+            unset($d['status_id']);
+        }
         $old = $l->only(['title', 'citation', 'status_id']);
         $l->update($d);
         AuditLogger::log('legal_reference.updated', $l, $old, $l->only(['title', 'citation', 'status_id']));
+
         return response()->json(['data' => $this->row($l->refresh()->load(['status.translations', 'verifier']), $request->user()->language_id)]);
     }
 
@@ -66,6 +75,7 @@ class LegalReferenceController extends Controller
         $l = LegalReference::where('organization_id', $this->ctx->organizationId())->findOrFail($id);
         $l->update(['status_id' => Lookup::id('legal_status', 'verified'), 'verified_by' => $request->user()->id, 'verified_at' => now()]);
         AuditLogger::log('legal_reference.verified', $l, [], ['code' => $l->code]);
+
         return response()->json(['data' => $this->row($l->refresh()->load(['status.translations', 'verifier']), $request->user()->language_id)]);
     }
 }

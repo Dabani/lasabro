@@ -17,10 +17,12 @@ use Tests\TestCase;
  */
 class PayrollConfigTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $prep;      // admin: holds every payroll permission, so it can prepare AND verify
+
     private User $second;
+
     private Employee $emp;
 
     protected function setUp(): void
@@ -35,11 +37,15 @@ class PayrollConfigTest extends TestCase
             'category_id' => Lookup::id('employee_category', 'contracted'), 'salary_amount' => '500000', 'salary_currency' => 'RWF', 'created_by' => $this->prep->id]);
     }
 
-    private function as(User $u): void { Sanctum::actingAs($u); }
+    private function as(User $u): void
+    {
+        Sanctum::actingAs($u);
+    }
 
     private function basic(bool $taxable = true, bool $pensionable = true): string
     {
         $this->as($this->prep);
+
         return $this->postJson('/api/v1/payroll/components', ['code' => 'basic', 'name' => 'Basic salary', 'kind_id' => Lookup::id('pay_component_kind', 'earning'), 'source_id' => Lookup::id('pay_component_source', 'basic_salary'),
             'is_taxable' => $taxable, 'is_pensionable' => $pensionable])->assertCreated()->json('data.id');
     }
@@ -47,6 +53,7 @@ class PayrollConfigTest extends TestCase
     private function flatScheme(string $code = 'pen', int $order = 1, string $base = 'pensionable_earnings'): string
     {
         $this->as($this->prep);
+
         return $this->postJson('/api/v1/payroll/schemes', ['code' => $code, 'name' => strtoupper($code), 'statutory_type_id' => Lookup::id('pay_statutory_type', 'pension'), 'mode_id' => Lookup::id('pay_scheme_mode', 'flat_rate'),
             'calc_order' => $order, 'base_kind_id' => Lookup::id('pay_scheme_base', $base), 'reduces_taxable_base' => false, 'rounding_id' => Lookup::id('pay_rounding', 'nearest'), 'decimals' => 0])->assertCreated()->json('data.id');
     }
@@ -54,6 +61,7 @@ class PayrollConfigTest extends TestCase
     private function version(string $schemeId, array $o = []): string
     {
         $this->as($this->prep);
+
         return $this->postJson("/api/v1/payroll/schemes/$schemeId/versions", $o + ['employee_rate' => 5, 'employer_rate' => 5, 'valid_from' => '2026-01-01', 'source_citation' => 'Test schedule'])->assertCreated()->assertJsonPath('data.verification', 'unverified')->json('data.id');
     }
 
@@ -66,16 +74,21 @@ class PayrollConfigTest extends TestCase
     private function assignCategory(string $schemeId): string
     {
         $this->as($this->prep);
+
         return $this->postJson('/api/v1/payroll/assignments', ['scheme_id' => $schemeId, 'category_id' => Lookup::id('employee_category', 'contracted'), 'applies' => true, 'valid_from' => '2026-01-01'])->assertCreated()->json('data.id');
     }
 
     private function dry(array $o = []): array
     {
         $this->as($this->prep);
+
         return $this->postJson('/api/v1/payroll/dry-run', $o + ['employee_id' => $this->emp->id, 'period_from' => '2026-11-01', 'period_to' => '2026-11-30'])->assertOk()->json('data');
     }
 
-    private function codes(array $items): array { return array_column($items, 'code'); }
+    private function codes(array $items): array
+    {
+        return array_column($items, 'code');
+    }
 
     public function test_nothing_is_prefilled_and_the_module_is_not_ready(): void
     {

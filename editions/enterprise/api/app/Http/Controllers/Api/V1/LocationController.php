@@ -26,6 +26,7 @@ class LocationController extends Controller
         $d = $this->validated($request);
         $m = Location::create($d);
         AuditLogger::log('location.created', $m, [], $d);
+
         return (new LocationResource($m->load(['parent', 'type'])))->response()->setStatusCode(201);
     }
 
@@ -37,6 +38,7 @@ class LocationController extends Controller
         $old = $m->only(array_keys($d));
         $m->update($d);
         AuditLogger::log('location.updated', $m, $old, $d);
+
         return new LocationResource($m->load(['parent', 'type']));
     }
 
@@ -45,12 +47,14 @@ class LocationController extends Controller
         $m = Location::findOrFail($id);
         $m->delete();
         AuditLogger::log('location.deleted', $m);
+
         return response()->noContent();
     }
 
     private function validated(Request $r, ?Location $m = null): array
     {
         $org = app(OrganizationContext::class)->organizationId();
+
         return $r->validate([
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:2000',

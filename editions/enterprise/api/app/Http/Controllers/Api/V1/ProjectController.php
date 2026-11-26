@@ -15,6 +15,7 @@ use App\Support\AppliesListQuery;
 use App\Support\Lookup;
 use App\Support\LookupRule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
@@ -23,7 +24,10 @@ class ProjectController extends Controller
 
     public function __construct(private ProjectAccess $access) {}
 
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
 
     private function row(Project $p, ?string $level = null): array
     {
@@ -38,6 +42,7 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         $q = Project::query()->visibleTo($request->user(), $this->access->viewAll())->with(['status', 'owner', 'client']);
+
         return $this->respondList($request, $q, ProjectRowResource::class,
             ['code', 'name'], ['name', 'code', 'start_date', 'end_date', 'created_at'], ['status_id', 'client_id', 'owner_id'], ['code', 'name', 'status', 'owner', 'start_date', 'end_date']);
     }
@@ -47,6 +52,7 @@ class ProjectController extends Controller
         [$p, $level] = $this->access->find($request->user(), $id);
         $p->load(['owner', 'client', 'departments:id,name', 'milestones', 'members.user:id,name', 'members.role']);
         $counts = Task::where('project_id', $p->id)->join('lookup_values', 'lookup_values.id', '=', 'tasks.status_id')->selectRaw('lookup_values.code as code, count(*) as n')->groupBy('lookup_values.code')->pluck('n', 'code');
+
         return ['data' => $this->row($p, $level) + [
             'departments' => $p->departments->map(fn ($d) => ['id' => $d->id, 'name' => $d->name]),
             'milestones' => $p->milestones->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'due_date' => $m->due_date?->toDateString(), 'completed_at' => $m->completed_at?->toIso8601String()]),
@@ -58,6 +64,7 @@ class ProjectController extends Controller
     private function rules(?Project $m = null): array
     {
         $org = $this->org();
+
         return [
             // no 'code': the project code is system-generated (PRJ-0001) and cannot be typed or changed
             'name' => [$m ? 'sometimes' : 'required', 'string', 'max:255'], 'description' => 'nullable|string|max:10000',
@@ -79,6 +86,7 @@ class ProjectController extends Controller
         ]);
         $this->syncDepartments($p, $d['department_ids'] ?? []);
         AuditLogger::log('project.created', $p, [], ['code' => $p->code]);
+
         return response()->json(['data' => $this->row($p->load(['status', 'owner', 'client']), 'manager')], 201);
     }
 
@@ -89,8 +97,11 @@ class ProjectController extends Controller
         $d = $request->validate($this->rules($p));
         $old = $p->only(array_keys($d));
         $p->update(collect($d)->except('department_ids')->all());
-        if (array_key_exists('department_ids', $d)) $this->syncDepartments($p, $d['department_ids']);
+        if (array_key_exists('department_ids', $d)) {
+            $this->syncDepartments($p, $d['department_ids']);
+        }
         AuditLogger::log('project.updated', $p, collect($old)->except('department_ids')->all(), collect($d)->except('department_ids')->all());
+
         return ['data' => $this->row($p->load(['status', 'owner', 'client']), $level)];
     }
 
@@ -99,6 +110,7 @@ class ProjectController extends Controller
         $p = Project::findOrFail($id);
         $p->delete();
         AuditLogger::log('project.deleted', $p);
+
         return response()->noContent();
     }
 
@@ -113,6 +125,7 @@ class ProjectController extends Controller
         ]);
         $m = ProjectMember::updateOrCreate(['project_id' => $p->id, 'user_id' => $d['user_id']], ['project_role_id' => $d['project_role_id']]);
         AuditLogger::log('project.member_set', $p, [], ['user_id' => $d['user_id'], 'role_id' => $d['project_role_id']]);
+
         return response()->json(['id' => $m->id], 201);
     }
 
@@ -123,6 +136,7 @@ class ProjectController extends Controller
         ProjectMember::where('project_id', $p->id)->where('user_id', $userId)->delete();
         Task::where('project_id', $p->id)->where('assignee_id', $userId)->update(['assignee_id' => null]);      // no orphan assignments
         AuditLogger::log('project.member_removed', $p, [], ['user_id' => $userId]);
+
         return response()->noContent();
     }
 
@@ -133,6 +147,7 @@ class ProjectController extends Controller
         $d = $request->validate(['name' => 'required|string|max:255', 'due_date' => 'nullable|date']);
         $m = Milestone::create($d + ['project_id' => $p->id]);
         AuditLogger::log('milestone.created', $m, [], $d);
+
         return response()->json(['id' => $m->id], 201);
     }
 
@@ -142,9 +157,13 @@ class ProjectController extends Controller
         abort_unless(ProjectAccess::isManager($level), 403, 'forbidden');
         $m = Milestone::where('project_id', $p->id)->findOrFail($milestoneId);
         $d = $request->validate(['name' => 'sometimes|string|max:255', 'due_date' => 'nullable|date', 'completed' => 'sometimes|boolean']);
-        if (array_key_exists('completed', $d)) { $m->completed_at = $d['completed'] ? now() : null; unset($d['completed']); }
+        if (array_key_exists('completed', $d)) {
+            $m->completed_at = $d['completed'] ? now() : null;
+            unset($d['completed']);
+        }
         $m->fill($d)->save();
         AuditLogger::log('milestone.updated', $m);
+
         return response()->noContent();
     }
 
@@ -154,11 +173,12 @@ class ProjectController extends Controller
         abort_unless(ProjectAccess::isManager($level), 403, 'forbidden');
         Milestone::where('project_id', $p->id)->findOrFail($milestoneId)->delete();
         AuditLogger::log('milestone.deleted', $p);
+
         return response()->noContent();
     }
 
     private function syncDepartments(Project $p, array $ids): void
     {
-        $p->departments()->sync(collect($ids)->mapWithKeys(fn ($i) => [$i => ['id' => (string) \Illuminate\Support\Str::ulid(), 'organization_id' => $p->organization_id]])->all());
+        $p->departments()->sync(collect($ids)->mapWithKeys(fn ($i) => [$i => ['id' => (string) Str::ulid(), 'organization_id' => $p->organization_id]])->all());
     }
 }

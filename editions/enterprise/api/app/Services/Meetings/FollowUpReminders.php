@@ -29,17 +29,17 @@ class FollowUpReminders
             foreach (['resolution' => [MeetingResolution::class, 'responsible_user_id', 'resolution_status'], 'action' => [MeetingAction::class, 'owner_id', 'action_status']] as $kind => [$model, $ownerCol, $lookup]) {
                 $active = [Lookup::id($lookup, 'open'), Lookup::id($lookup, 'in_progress')];
                 $rows = $model::withoutGlobalScopes()->where('organization_id', $org->id)->whereIn('status_id', $active)->whereNotNull('due_on')
-                    ->where('due_on', '<=', date('Y-m-d', strtotime($today . " +$soonDays days")))->get();
+                    ->where('due_on', '<=', date('Y-m-d', strtotime($today." +$soonDays days")))->get();
                 foreach ($rows as $row) {
                     $due = $row->due_on->toDateString();
                     $meeting = Meeting::withoutGlobalScopes()->with('status')->find($row->meeting_id);
-                    if (!$meeting) {
+                    if (! $meeting) {
                         continue;
                     }
                     $owner = $row->{$ownerCol} ? User::with('language')->find($row->{$ownerCol}) : null;
                     $params = ['title' => $row->title, 'ref' => $row->code, 'meeting' => $meeting->title, 'due' => $due];
                     if ($due < $today) {
-                        if (!FollowUpRules::overdueDue($row->overdue_alerted_on?->toDateString(), $today, $repeat)) {
+                        if (! FollowUpRules::overdueDue($row->overdue_alerted_on?->toDateString(), $today, $repeat)) {
                             continue;
                         }
                         $params['days'] = FollowUpRules::daysOverdue($due, $today);
@@ -54,12 +54,13 @@ class FollowUpReminders
                         continue;
                     }
                     if ($to->isNotEmpty()) {
-                        Notifier::send($to, $key, $params, null, ['in_app', 'email'], '/meetings/' . $meeting->id, $org->id);
+                        Notifier::send($to, $key, $params, null, ['in_app', 'email'], '/meetings/'.$meeting->id, $org->id);
                         $sent++;
                     }
                 }
             }
         }
+
         return $sent;
     }
 }

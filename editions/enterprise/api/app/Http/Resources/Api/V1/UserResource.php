@@ -9,6 +9,7 @@ class UserResource extends JsonResource
     public function toArray($request): array
     {
         $m = $this->relationLoaded('memberships') ? $this->memberships->first() : null;
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -28,7 +29,7 @@ class UserResource extends JsonResource
             'last_login_at' => $this->last_login_at?->toIso8601String(),
             'activated' => (bool) $this->email_verified_at,
             // Present only for people who have not activated yet: lets the list show "sent 2 days ago / expired".
-            'invitation' => $this->when($this->relationLoaded('invitation') && $this->invitation && !$this->invitation->accepted_at, fn () => [
+            'invitation' => $this->when($this->relationLoaded('invitation') && $this->invitation && ! $this->invitation->accepted_at, fn () => [
                 'last_sent_at' => $this->invitation->last_sent_at?->toIso8601String(),
                 'expires_at' => $this->invitation->expires_at->toIso8601String(),
                 'expired' => $this->invitation->isExpired(),

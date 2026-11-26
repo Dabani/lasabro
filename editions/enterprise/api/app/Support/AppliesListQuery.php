@@ -52,16 +52,19 @@ trait AppliesListQuery
             $rows = $resource::collection($query->limit(10000)->get())->resolve($request);
             $keys = $exportColumns ?: array_keys($rows[0] ?? []);
             $data = array_map(fn ($r) => array_map(fn ($k) => is_scalar($r[$k] ?? null) ? $r[$k] : '', $keys), $rows);
-            return Excel::download(new ListExport($data, $keys), 'export-' . now()->format('Ymd-His') . '.' . $format);
+
+            return Excel::download(new ListExport($data, $keys), 'export-'.now()->format('Ymd-His').'.'.$format);
         }
 
         $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
+
         return $resource::collection($query->paginate($perPage)->withQueryString());
     }
 
     private function relationLike(string $path, string $term): array
     {
         [$rel, $col] = explode('.', $path, 2);
+
         return [$rel, $col, 'like', "%{$term}%"];
     }
 }

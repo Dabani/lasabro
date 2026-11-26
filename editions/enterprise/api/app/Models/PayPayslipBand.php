@@ -8,11 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayPayslipBand extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'pay_payslip_bands';
+
     protected $guarded = [];
+
     public $timestamps = false;
+
     protected $casts = ['lower' => 'decimal:2', 'upper' => 'decimal:2', 'rate' => 'decimal:6', 'part' => 'decimal:2', 'amount' => 'decimal:4'];
 
     protected static function booted(): void

@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingRoom extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['is_active' => 'boolean', 'capacity' => 'integer'];
 
-    public function location() { return $this->belongsTo(Location::class); }
-    public function bookings() { return $this->hasMany(MeetingRoomBooking::class, 'room_id'); }
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(MeetingRoomBooking::class, 'room_id');
+    }
 }

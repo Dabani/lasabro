@@ -1,7 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace Lasabro\Trips\Models;
 
+use App\Models\LookupValue;
+use App\Models\Project;
+use App\Models\User;
 use App\Support\BelongsToOrganization;
 use App\Support\HasGeneratedCode;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;

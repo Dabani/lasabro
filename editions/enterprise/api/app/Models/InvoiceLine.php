@@ -10,9 +10,10 @@ use LogicException;
 
 class InvoiceLine extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['quantity' => 'decimal:4', 'unit_price' => 'decimal:2', 'amount' => 'decimal:2', 'rounded_minutes' => 'decimal:2', 'raw_seconds' => 'integer', 'line_no' => 'integer'];
 
     protected static function booted(): void
@@ -26,6 +27,13 @@ class InvoiceLine extends Model
         static::deleting($guard);
     }
 
-    public function kind() { return $this->belongsTo(LookupValue::class, 'kind_id'); }
-    public function sources() { return $this->hasMany(InvoiceLineSource::class); }
+    public function kind()
+    {
+        return $this->belongsTo(LookupValue::class, 'kind_id');
+    }
+
+    public function sources()
+    {
+        return $this->hasMany(InvoiceLineSource::class);
+    }
 }

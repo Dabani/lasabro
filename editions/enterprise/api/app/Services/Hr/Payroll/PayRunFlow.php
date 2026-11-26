@@ -43,22 +43,25 @@ final class PayRunFlow
 
     /**
      * The status after an approval step. Finance approves first; the Managing Director approves second when the run requires it.
+     *
      * @return array{status:string,error:?string}
      */
     public static function afterApproval(string $step, bool $mdRequired, bool $financeDone, bool $mdDone): array
     {
         if ($step === 'approve_md') {
-            if (!$mdRequired) {
+            if (! $mdRequired) {
                 return ['status' => 'reviewed', 'error' => 'md_not_required'];
             }
-            if (!$financeDone) {
+            if (! $financeDone) {
                 return ['status' => 'reviewed', 'error' => 'finance_first'];
             }
+
             return ['status' => 'approved', 'error' => null];
         }
         if ($financeDone) {
             return ['status' => 'reviewed', 'error' => 'already_done'];
         }
+
         return ['status' => $mdRequired ? 'reviewed' : 'approved', 'error' => null];
     }
 
@@ -76,6 +79,7 @@ final class PayRunFlow
             'lock', 'pay' => $made,                 // the person who prepared the figures does not release the money
             default => [],
         };
+
         return in_array($actor, $earlier, true) ? 'segregation' : null;
     }
 }

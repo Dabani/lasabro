@@ -17,7 +17,7 @@ final class BracketValidator
             $lower = (string) $b['lower'];
             $upper = ($b['upper'] ?? null) === null || $b['upper'] === '' ? null : (string) $b['upper'];
             $rate = (string) $b['rate'];
-            if (!is_numeric($lower) || bccomp($lower, '0', 4) < 0 || !is_numeric($rate) || bccomp($rate, '0', 6) < 0 || bccomp($rate, '100', 6) > 0 || ($upper !== null && !is_numeric($upper))) {
+            if (! is_numeric($lower) || bccomp($lower, '0', 4) < 0 || ! is_numeric($rate) || bccomp($rate, '0', 6) < 0 || bccomp($rate, '100', 6) > 0 || ($upper !== null && ! is_numeric($upper))) {
                 return 'bad_value';
             }
             if ($i === 0 && bccomp($lower, '0', 4) !== 0) {
@@ -34,6 +34,7 @@ final class BracketValidator
             }
             $expected = $upper;
         }
+
         return 'last_not_open';
     }
 }

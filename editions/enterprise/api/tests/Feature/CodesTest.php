@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ApprovalFlow;
-use App\Models\Department;
+use App\Models\LegalParameter;
 use App\Models\LookupType;
-use App\Models\LookupValue;
 use App\Models\Project;
 use App\Models\RuleSet;
 use App\Models\User;
@@ -17,7 +15,7 @@ use Tests\TestCase;
 /** Identifiers are system-generated, unique, never reused and immutable. Needs Bundles 08-13 and CopsTestHelpers. */
 class CodesTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $admin;
 
@@ -92,10 +90,10 @@ class CodesTest extends TestCase
         $base = ['domain_id' => Lookup::id('rule_domain', 'leave'), 'bound_type_id' => Lookup::id('legal_bound', 'floor'), 'name' => 'Annual leave minimum', 'value_decimal' => 18,
             'valid_from' => '2026-01-01', 'source_citation' => 'test fixture', 'code' => 'ignored'];
         $first = $this->postJson('/api/v1/legal-parameters', $base)->assertCreated()->json('id');
-        $this->assertSame('annual_leave_minimum', \App\Models\LegalParameter::find($first)->code);
+        $this->assertSame('annual_leave_minimum', LegalParameter::find($first)->code);
         $second = $this->postJson('/api/v1/legal-parameters', ['valid_from' => '2027-01-01', 'value_decimal' => 20, 'new_value_of' => $first] + $base)->assertCreated()->json('id');
-        $this->assertSame('annual_leave_minimum', \App\Models\LegalParameter::find($second)->code);                                                   // same parameter, new value
+        $this->assertSame('annual_leave_minimum', LegalParameter::find($second)->code);                                                   // same parameter, new value
         $third = $this->postJson('/api/v1/legal-parameters', ['name' => 'Annual leave minimum', 'valid_from' => '2026-01-01'] + $base)->assertCreated()->json('id');
-        $this->assertSame('annual_leave_minimum_2', \App\Models\LegalParameter::find($third)->code);                                                   // a different parameter with the same name
+        $this->assertSame('annual_leave_minimum_2', LegalParameter::find($third)->code);                                                   // a different parameter with the same name
     }
 }

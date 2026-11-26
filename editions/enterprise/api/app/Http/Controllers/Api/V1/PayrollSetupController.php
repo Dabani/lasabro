@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LookupType;
+use App\Models\LookupValue;
 use App\Models\PayComponent;
 use App\Models\PayEmployeeItem;
 use App\Models\PayScheme;
@@ -28,32 +29,56 @@ use Illuminate\Validation\ValidationException;
  */
 class PayrollSetupController extends Controller
 {
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
-    private function lk(string $type, bool $required = true): array { return [$required ? 'required' : 'nullable', Rule::exists('lookup_values', 'id')->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id'))]; }
-    private function fail(string $field, string $key, array $p = []): never { throw ValidationException::withMessages([$field => [__("payroll.err.$key", $p)]]); }
-    private function unverified(): string { return Lookup::id('rule_verification_status', 'unverified'); }
-    private function verifiedId(): string { return Lookup::id('rule_verification_status', 'verified'); }
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
+
+    private function lk(string $type, bool $required = true): array
+    {
+        return [$required ? 'required' : 'nullable', Rule::exists('lookup_values', 'id')->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id'))];
+    }
+
+    private function fail(string $field, string $key, array $p = []): never
+    {
+        throw ValidationException::withMessages([$field => [__("payroll.err.$key", $p)]]);
+    }
+
+    private function unverified(): string
+    {
+        return Lookup::id('rule_verification_status', 'unverified');
+    }
+
+    private function verifiedId(): string
+    {
+        return Lookup::id('rule_verification_status', 'verified');
+    }
 
     // ---- components ---------------------------------------------------------------------------------------------------------------
     private function comp(PayComponent $c): array
     {
         $c->loadMissing(['kind', 'source']);
+
         return ['id' => $c->id, 'code' => $c->code, 'name' => $c->name, 'kind' => $c->kind->code, 'source' => $c->source->code, 'is_taxable' => $c->is_taxable, 'is_pensionable' => $c->is_pensionable,
             'ledger_account' => $c->ledger_account, 'sort_order' => $c->sort_order, 'is_active' => $c->is_active];
     }
 
-    public function components() { return ['data' => PayComponent::with(['kind', 'source'])->orderBy('sort_order')->orderBy('code')->get()->map(fn ($c) => $this->comp($c))]; }
+    public function components()
+    {
+        return ['data' => PayComponent::with(['kind', 'source'])->orderBy('sort_order')->orderBy('code')->get()->map(fn ($c) => $this->comp($c))];
+    }
 
     public function storeComponent(Request $request)
     {
         $d = $request->validate(['code' => ['required', 'string', 'max:40', 'regex:/^[a-z0-9_]+$/', Rule::unique('pay_components', 'code')->where('organization_id', $this->org())], 'name' => 'required|string|max:150',
             'kind_id' => $this->lk('pay_component_kind'), 'source_id' => $this->lk('pay_component_source'), 'is_taxable' => 'required|boolean', 'is_pensionable' => 'required|boolean',
             'ledger_account' => 'nullable|string|max:40', 'sort_order' => 'nullable|integer|min:0|max:65000']);
-        if (\App\Models\LookupValue::find($d['source_id'])?->code === 'basic_salary' && PayComponent::where('is_active', true)->whereHas('source', fn ($q) => $q->where('code', 'basic_salary'))->exists()) {
+        if (LookupValue::find($d['source_id'])?->code === 'basic_salary' && PayComponent::where('is_active', true)->whereHas('source', fn ($q) => $q->where('code', 'basic_salary'))->exists()) {
             $this->fail('source_id', 'one_basic_component');
         }
         $c = PayComponent::create($d + ['created_by' => $request->user()->id]);
         AuditLogger::log('payroll.component_created', $c, [], ['code' => $c->code, 'taxable' => $c->is_taxable, 'pensionable' => $c->is_pensionable]);
+
         return response()->json(['data' => $this->comp($c)], 201);
     }
 
@@ -65,6 +90,7 @@ class PayrollSetupController extends Controller
         $old = $c->only(array_keys($d));
         $c->update($d);
         AuditLogger::log('payroll.component_updated', $c, $old, $d);
+
         return ['data' => $this->comp($c->refresh())];
     }
 
@@ -72,6 +98,7 @@ class PayrollSetupController extends Controller
     private function ver(PaySchemeVersion $v): array
     {
         $v->loadMissing(['verification', 'brackets', 'preparer', 'verifier']);
+
         return ['id' => $v->id, 'scheme_id' => $v->scheme_id, 'employee_rate' => $v->employee_rate === null ? null : (string) $v->employee_rate, 'employer_rate' => $v->employer_rate === null ? null : (string) $v->employer_rate,
             'base_cap' => $v->base_cap === null ? null : (string) $v->base_cap, 'valid_from' => $v->valid_from->toDateString(), 'valid_to' => $v->valid_to?->toDateString(), 'source_citation' => $v->source_citation,
             'verification' => $v->verification->code, 'prepared_by' => $v->preparer?->name, 'verified_by' => $v->verifier?->name, 'verified_at' => $v->verified_at?->toIso8601String(),
@@ -81,12 +108,16 @@ class PayrollSetupController extends Controller
     private function scheme(PayScheme $s): array
     {
         $s->loadMissing(['statutoryType', 'mode', 'baseKind', 'rounding', 'versions.verification', 'versions.brackets', 'versions.preparer', 'versions.verifier']);
+
         return ['id' => $s->id, 'code' => $s->code, 'name' => $s->name, 'statutory_type' => $s->statutoryType->code, 'mode' => $s->mode->code, 'calc_order' => $s->calc_order, 'base_kind' => $s->baseKind->code,
             'reduces_taxable_base' => $s->reduces_taxable_base, 'rounding' => $s->rounding->code, 'decimals' => $s->decimals, 'round_each_band' => $s->round_each_band, 'is_active' => $s->is_active,
             'versions' => $s->versions->sortByDesc('valid_from')->map(fn ($v) => $this->ver($v))->values()];
     }
 
-    public function schemes() { return ['data' => PayScheme::with(['statutoryType', 'mode', 'baseKind', 'rounding'])->orderBy('calc_order')->get()->map(fn ($s) => $this->scheme($s))]; }
+    public function schemes()
+    {
+        return ['data' => PayScheme::with(['statutoryType', 'mode', 'baseKind', 'rounding'])->orderBy('calc_order')->get()->map(fn ($s) => $this->scheme($s))];
+    }
 
     public function storeScheme(Request $request)
     {
@@ -95,6 +126,7 @@ class PayrollSetupController extends Controller
             'reduces_taxable_base' => 'required|boolean', 'rounding_id' => $this->lk('pay_rounding'), 'decimals' => 'required|integer|between:0,2', 'round_each_band' => 'boolean']);
         $s = PayScheme::create($d + ['created_by' => $request->user()->id, 'is_active' => true]);
         AuditLogger::log('payroll.scheme_created', $s, [], ['code' => $s->code]);
+
         return response()->json(['data' => $this->scheme($s)], 201);
     }
 
@@ -106,6 +138,7 @@ class PayrollSetupController extends Controller
         $old = $s->only(array_keys($d));
         $s->update($d);
         AuditLogger::log('payroll.scheme_updated', $s, $old, $d);
+
         return ['data' => $this->scheme($s->refresh())];
     }
 
@@ -124,10 +157,10 @@ class PayrollSetupController extends Controller
                 $this->fail('employee_rate', 'rate_in_bands');
             }
         } else {
-            if (!empty($d['brackets'])) {
+            if (! empty($d['brackets'])) {
                 $this->fail('brackets', 'bands_not_allowed');
             }
-            if (!isset($d['employee_rate']) && !isset($d['employer_rate'])) {
+            if (! isset($d['employee_rate']) && ! isset($d['employer_rate'])) {
                 $this->fail('employee_rate', 'rates_required');
             }
         }
@@ -143,9 +176,11 @@ class PayrollSetupController extends Controller
                     PayTaxBracket::create(['version_id' => $v->id, 'lower' => $b['lower'], 'upper' => ($b['upper'] ?? '') === '' ? null : $b['upper'], 'rate' => $b['rate']]);
                 }
             }
+
             return $v;
         });
         AuditLogger::log('payroll.version_created', $v, [], ['scheme' => $s->code, 'valid_from' => $d['valid_from'], 'employee_rate' => $d['employee_rate'] ?? null, 'employer_rate' => $d['employer_rate'] ?? null, 'bands' => count($d['brackets'] ?? [])]);
+
         return response()->json(['data' => $this->ver($v->refresh())], 201);
     }
 
@@ -162,15 +197,22 @@ class PayrollSetupController extends Controller
         AuditLogger::log($audit, $row, ['verification' => 'unverified'], ['verification' => 'verified']);
     }
 
-    public function verifyVersion(Request $request, string $id) { $v = PaySchemeVersion::findOrFail($id); $this->verify($request, $v, 'payroll.version_verified'); return ['data' => $this->ver($v->refresh())]; }
+    public function verifyVersion(Request $request, string $id)
+    {
+        $v = PaySchemeVersion::findOrFail($id);
+        $this->verify($request, $v, 'payroll.version_verified');
+
+        return ['data' => $this->ver($v->refresh())];
+    }
 
     public function endVersion(Request $request, string $id)
     {
         $v = PaySchemeVersion::findOrFail($id);
-        $d = $request->validate(['valid_to' => 'required|date_format:Y-m-d|after_or_equal:' . $v->valid_from->toDateString()]);
+        $d = $request->validate(['valid_to' => 'required|date_format:Y-m-d|after_or_equal:'.$v->valid_from->toDateString()]);
         $old = ['valid_to' => $v->valid_to?->toDateString()];
         $v->update($d);
         AuditLogger::log('payroll.version_ended', $v, $old, $d);
+
         return ['data' => $this->ver($v->refresh())];
     }
 
@@ -183,6 +225,7 @@ class PayrollSetupController extends Controller
         }
         AuditLogger::log('payroll.version_deleted', $v, ['valid_from' => $v->valid_from->toDateString()]);
         $v->delete();
+
         return response()->noContent();
     }
 
@@ -190,41 +233,53 @@ class PayrollSetupController extends Controller
     private function assign(PaySchemeAssignment $a): array
     {
         $a->loadMissing(['scheme', 'category', 'employee', 'verification', 'preparer']);
+
         return ['id' => $a->id, 'scheme_id' => $a->scheme_id, 'scheme' => $a->scheme->code, 'category' => $a->category?->code, 'employee_id' => $a->employee_id, 'employee' => $a->employee?->full_name, 'applies' => $a->applies,
             'valid_from' => $a->valid_from->toDateString(), 'valid_to' => $a->valid_to?->toDateString(), 'reason' => $a->reason, 'verification' => $a->verification->code, 'prepared_by' => $a->preparer?->name];
     }
 
-    public function assignments() { return ['data' => PaySchemeAssignment::with(['scheme', 'category', 'employee', 'verification', 'preparer'])->orderByDesc('valid_from')->get()->map(fn ($a) => $this->assign($a))]; }
+    public function assignments()
+    {
+        return ['data' => PaySchemeAssignment::with(['scheme', 'category', 'employee', 'verification', 'preparer'])->orderByDesc('valid_from')->get()->map(fn ($a) => $this->assign($a))];
+    }
 
     public function storeAssignment(Request $request)
     {
         $d = $request->validate(['scheme_id' => ['required', Rule::exists('pay_schemes', 'id')->where('organization_id', $this->org())], 'category_id' => $this->lk('employee_category', false),
             'employee_id' => ['nullable', Rule::exists('hr_employees', 'id')->where('organization_id', $this->org())], 'applies' => 'required|boolean',
             'valid_from' => 'required|date_format:Y-m-d', 'valid_to' => 'nullable|date_format:Y-m-d|after_or_equal:valid_from', 'reason' => 'nullable|string|max:500']);
-        if (!empty($d['category_id']) === !empty($d['employee_id'])) {
+        if (! empty($d['category_id']) === ! empty($d['employee_id'])) {
             $this->fail('category_id', 'assignment_target');
         }
-        if (!empty($d['employee_id']) && trim((string) ($d['reason'] ?? '')) === '') {
+        if (! empty($d['employee_id']) && trim((string) ($d['reason'] ?? '')) === '') {
             $this->fail('reason', 'exception_reason');
         }
-        $same = PaySchemeAssignment::where('scheme_id', $d['scheme_id'])->when(!empty($d['employee_id']), fn ($q) => $q->where('employee_id', $d['employee_id']), fn ($q) => $q->where('category_id', $d['category_id']))
+        $same = PaySchemeAssignment::where('scheme_id', $d['scheme_id'])->when(! empty($d['employee_id']), fn ($q) => $q->where('employee_id', $d['employee_id']), fn ($q) => $q->where('category_id', $d['category_id']))
             ->whereDate('valid_from', '<=', $d['valid_to'] ?? '9999-12-31')->where(fn ($q) => $q->whereNull('valid_to')->orWhereDate('valid_to', '>=', $d['valid_from']))->exists();
         if ($same) {
             $this->fail('valid_from', 'assignment_overlap');
         }
         $a = PaySchemeAssignment::create($d + ['verification_status_id' => $this->unverified(), 'prepared_by' => $request->user()->id]);
         AuditLogger::log('payroll.assignment_created', $a, [], ['applies' => $a->applies, 'valid_from' => $d['valid_from']]);
+
         return response()->json(['data' => $this->assign($a)], 201);
     }
 
-    public function verifyAssignment(Request $request, string $id) { $a = PaySchemeAssignment::findOrFail($id); $this->verify($request, $a, 'payroll.assignment_verified'); return ['data' => $this->assign($a->refresh())]; }
+    public function verifyAssignment(Request $request, string $id)
+    {
+        $a = PaySchemeAssignment::findOrFail($id);
+        $this->verify($request, $a, 'payroll.assignment_verified');
+
+        return ['data' => $this->assign($a->refresh())];
+    }
 
     public function endAssignment(Request $request, string $id)
     {
         $a = PaySchemeAssignment::findOrFail($id);
-        $d = $request->validate(['valid_to' => 'required|date_format:Y-m-d|after_or_equal:' . $a->valid_from->toDateString()]);
+        $d = $request->validate(['valid_to' => 'required|date_format:Y-m-d|after_or_equal:'.$a->valid_from->toDateString()]);
         $a->update($d);
         AuditLogger::log('payroll.assignment_ended', $a, [], $d);
+
         return ['data' => $this->assign($a->refresh())];
     }
 
@@ -236,6 +291,7 @@ class PayrollSetupController extends Controller
         }
         AuditLogger::log('payroll.assignment_deleted', $a);
         $a->delete();
+
         return response()->noContent();
     }
 
@@ -243,6 +299,7 @@ class PayrollSetupController extends Controller
     private function item(PayEmployeeItem $i): array
     {
         $i->loadMissing(['component.kind', 'employee', 'verification', 'preparer']);
+
         return ['id' => $i->id, 'employee_id' => $i->employee_id, 'employee' => $i->employee?->full_name, 'component' => $i->component->code, 'kind' => $i->component->kind->code, 'amount' => (string) $i->amount,
             'valid_from' => $i->valid_from->toDateString(), 'valid_to' => $i->valid_to?->toDateString(), 'reason' => $i->reason, 'verification' => $i->verification->code, 'prepared_by' => $i->preparer?->name];
     }
@@ -254,6 +311,7 @@ class PayrollSetupController extends Controller
             $q->where('employee_id', $e);
         }
         AuditLogger::log('payroll.items_viewed', null, [], ['employee_id' => $request->query('employee_id')]);          // recurring pay is a sensitive read
+
         return ['data' => $q->get()->map(fn ($i) => $this->item($i))];
     }
 
@@ -263,22 +321,30 @@ class PayrollSetupController extends Controller
             'amount' => 'required|numeric|min:0|max:9999999999999', 'valid_from' => 'required|date_format:Y-m-d', 'valid_to' => 'nullable|date_format:Y-m-d|after_or_equal:valid_from', 'reason' => 'nullable|string|max:500']);
         Employee::query()->visibleTo($request->user())->findOrFail($d['employee_id']);
         $c = PayComponent::with('source')->findOrFail($d['component_id']);
-        if (!$c->is_active || $c->source->code !== 'recurring') {
+        if (! $c->is_active || $c->source->code !== 'recurring') {
             $this->fail('component_id', 'component_not_recurring');
         }
         $i = PayEmployeeItem::create($d + ['verification_status_id' => $this->unverified(), 'prepared_by' => $request->user()->id]);
         AuditLogger::log('payroll.item_created', $i, [], ['employee_id' => $d['employee_id'], 'component' => $c->code, 'valid_from' => $d['valid_from']]);   // the amount stays out of the audit trail
+
         return response()->json(['data' => $this->item($i)], 201);
     }
 
-    public function verifyItem(Request $request, string $id) { $i = PayEmployeeItem::findOrFail($id); $this->verify($request, $i, 'payroll.item_verified'); return ['data' => $this->item($i->refresh())]; }
+    public function verifyItem(Request $request, string $id)
+    {
+        $i = PayEmployeeItem::findOrFail($id);
+        $this->verify($request, $i, 'payroll.item_verified');
+
+        return ['data' => $this->item($i->refresh())];
+    }
 
     public function endItem(Request $request, string $id)
     {
         $i = PayEmployeeItem::findOrFail($id);
-        $d = $request->validate(['valid_to' => 'required|date_format:Y-m-d|after_or_equal:' . $i->valid_from->toDateString()]);
+        $d = $request->validate(['valid_to' => 'required|date_format:Y-m-d|after_or_equal:'.$i->valid_from->toDateString()]);
         $i->update($d);
         AuditLogger::log('payroll.item_ended', $i, [], $d);
+
         return ['data' => $this->item($i->refresh())];
     }
 
@@ -290,6 +356,7 @@ class PayrollSetupController extends Controller
         }
         AuditLogger::log('payroll.item_deleted', $i);
         $i->delete();
+
         return response()->noContent();
     }
 
@@ -302,7 +369,8 @@ class PayrollSetupController extends Controller
         $e = Employee::query()->visibleTo($request->user())->findOrFail($d['employee_id']);
         $r = $svc->run($e, $d['period_from'], $d['period_to'], $d['lines'] ?? []);
         AuditLogger::log('payroll.dry_run', $e, [], ['period_from' => $d['period_from'], 'period_to' => $d['period_to']]);
-        $msg = fn (array $items) => array_map(fn ($i) => ['code' => $i['code'], 'message' => __('payroll.check.' . $i['code'], $i['params']), 'params' => $i['params']], $items);
+        $msg = fn (array $items) => array_map(fn ($i) => ['code' => $i['code'], 'message' => __('payroll.check.'.$i['code'], $i['params']), 'params' => $i['params']], $items);
+
         return ['data' => ['blockers' => $msg($r['blockers']), 'warnings' => $msg($r['warnings']), 'result' => $r['result'], 'meta' => $r['meta']]];
     }
 
@@ -314,6 +382,7 @@ class PayrollSetupController extends Controller
         $noVersion = PayScheme::where('is_active', true)->whereDoesntHave('versions', fn ($q) => $q->where('verification_status_id', $this->verifiedId())->whereDate('valid_from', '<=', $today)->where(fn ($w) => $w->whereNull('valid_to')->orWhereDate('valid_to', '>=', $today)))->pluck('code');
         $unverified = PaySchemeVersion::where('verification_status_id', $un)->count() + PaySchemeAssignment::where('verification_status_id', $un)->count() + PayEmployeeItem::where('verification_status_id', $un)->count();
         $basic = PayComponent::where('is_active', true)->whereHas('source', fn ($q) => $q->where('code', 'basic_salary'))->count();
+
         return ['data' => ['components' => PayComponent::where('is_active', true)->count(), 'has_single_basic_component' => $basic === 1, 'schemes' => PayScheme::where('is_active', true)->count(), 'schemes_without_verified_version' => $noVersion,
             'unverified_total' => $unverified, 'ready' => $basic === 1 && $unverified === 0 && $noVersion->isEmpty() && PayScheme::where('is_active', true)->count() > 0]];
     }

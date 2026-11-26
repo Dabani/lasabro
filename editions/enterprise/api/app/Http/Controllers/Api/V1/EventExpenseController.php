@@ -30,6 +30,7 @@ class EventExpenseController extends Controller
     {
         $e = $this->access->find($r->user(), $id, ['status']);
         $this->access->requireManage($r->user(), $e);
+
         return $e;
     }
 
@@ -37,6 +38,7 @@ class EventExpenseController extends Controller
     private function expense(Request $r, string $id): array
     {
         $x = EventExpense::with('status')->findOrFail($id);
+
         return [$x, $this->event($r, $x->event_id)];
     }
 
@@ -44,6 +46,7 @@ class EventExpenseController extends Controller
     {
         $x->loadMissing(['status', 'category', 'creator:id,name']);
         $s = $x->status->code;
+
         return ['id' => $x->id, 'category' => $x->category->code, 'category_id' => $x->category_id, 'description' => $x->description, 'vendor' => $x->vendor, 'expense_date' => $x->expense_date->toDateString(),
             'amount' => $x->amount, 'status' => $s, 'over_budget' => $x->over_budget, 'decision_note' => $x->decision_note, 'receipts' => $this->svc->receipts($x), 'approval_request_id' => $x->approval_request_id,
             'created_by' => $x->creator?->name, 'me' => ['can_edit' => ExpenseRules::editable($s), 'can_submit' => $s === 'draft', 'can_attach' => in_array($s, ['draft', 'pending_approval'], true)]];
@@ -52,6 +55,7 @@ class EventExpenseController extends Controller
     private function rules(bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return [
             'category_id' => [$req, Rule::exists('lookup_values', 'id')->where(fn ($q) => $q->whereIn('lookup_type_id', LookupType::where('code', 'event_expense_category')->pluck('id')))],
             'description' => [$req, 'string', 'max:500'], 'vendor' => 'nullable|string|max:190', 'expense_date' => [$req, 'date_format:Y-m-d'], 'amount' => [$req, 'numeric', 'gt:0', 'max:999999999999'],
@@ -62,6 +66,7 @@ class EventExpenseController extends Controller
     {
         $e = $this->event($request, $id);
         $rows = EventExpense::where('event_id', $e->id)->with(['status', 'category', 'creator:id,name'])->orderBy('expense_date')->orderBy('created_at')->get();
+
         return ['data' => $rows->map(fn ($x) => $this->row($x)), 'meta' => ['summary' => $this->svc->summary($e), 'currency' => $e->currency_code]];
     }
 
@@ -69,6 +74,7 @@ class EventExpenseController extends Controller
     {
         $e = $this->event($request, $id);
         $x = $this->svc->create($e, $request->validate($this->rules(true)), $request->user());
+
         return response(['data' => $this->row($x), 'meta' => ['summary' => $this->svc->summary($e)]], 201);
     }
 
@@ -76,6 +82,7 @@ class EventExpenseController extends Controller
     {
         [$x, $e] = $this->expense($request, $id);
         $x = $this->svc->update($x, $request->validate($this->rules(false)), $request->user());
+
         return ['data' => $this->row($x), 'meta' => ['summary' => $this->svc->summary($e)]];
     }
 
@@ -83,6 +90,7 @@ class EventExpenseController extends Controller
     {
         [$x] = $this->expense($request, $id);
         $this->svc->delete($x);
+
         return response()->noContent();
     }
 
@@ -90,6 +98,7 @@ class EventExpenseController extends Controller
     {
         [$x, $e] = $this->expense($request, $id);
         $x = $this->svc->submit($x, $e, $request->user());
+
         return ['data' => $this->row($x), 'meta' => ['summary' => $this->svc->summary($e)]];
     }
 
@@ -99,6 +108,7 @@ class EventExpenseController extends Controller
         [$x] = $this->expense($request, $id);
         $q = FileAccess::scopeVisible(FileAsset::query())->with(['classification.translations', 'status.translations', 'owner'])->whereHas('status', fn ($s) => $s->where('code', 'active'))
             ->whereHas('links', fn ($l) => $l->where('link_type_id', Lookup::id('file_link_type', 'event_expense'))->where('link_id', $x->id))->orderByDesc('created_at');
+
         return FileResource::collection($q->get());
     }
 
@@ -110,6 +120,7 @@ class EventExpenseController extends Controller
         abort_if(($d['classification_id'] ?? null) === Lookup::id('file_classification', 'restricted'), 422, __('meetings.file_not_restricted'));
         $asset = FileService::store($request->file('file'), $request->user(), $d, ['type' => 'event_expense', 'id' => $x->id])->load(['classification.translations', 'status.translations', 'owner']);
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, 'event_expense' => $x->id, 'sha256' => $asset->currentVersion->sha256]);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 
@@ -123,6 +134,7 @@ class EventExpenseController extends Controller
         $rows = EventExpense::where('event_id', $e->id)->with(['status', 'category'])->orderBy('expense_date')->get()
             ->map(fn ($x) => [$x->expense_date->toDateString(), $x->category->code, $x->description, (string) $x->vendor, (string) $x->amount, $x->status->code, $x->over_budget ? 'yes' : 'no'])->all();
         AuditLogger::log('event.expenses_exported', $e, [], ['format' => $format, 'rows' => count($rows)]);
-        return Excel::download(new ListExport($rows, $keys), 'event-expenses-' . $e->code . '.' . $format);
+
+        return Excel::download(new ListExport($rows, $keys), 'event-expenses-'.$e->code.'.'.$format);
     }
 }

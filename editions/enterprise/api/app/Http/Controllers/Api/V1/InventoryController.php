@@ -24,7 +24,7 @@ class InventoryController extends Controller
     {
         return [
             'id' => $c->id, 'title' => $c->title, 'status' => ['code' => $c->status->code, 'label' => $c->status->label($lang), 'color' => $c->status->color],
-            'location' => $c->location ? $c->location->code . ' — ' . $c->location->name : null, 'started_by' => $c->starter?->name,
+            'location' => $c->location ? $c->location->code.' — '.$c->location->name : null, 'started_by' => $c->starter?->name,
             'started_at' => $c->started_at?->toIso8601String(), 'completed_at' => $c->completed_at?->toIso8601String(),
             'total_expected' => $c->total_expected, 'total_found' => $c->total_found, 'total_missing' => $c->total_missing, 'notes' => $c->notes,
             'checked' => $c->items_checked ?? null,
@@ -34,6 +34,7 @@ class InventoryController extends Controller
     public function index(Request $request)
     {
         $rows = InventoryCount::with(['status.translations', 'starter', 'location'])->withCount(['items as items_checked' => fn ($q) => $q->whereNotNull('found')])->orderByDesc('started_at')->limit(100)->get();
+
         return response()->json(['data' => $rows->map(fn ($c) => $this->row($c, $request->user()->language_id))]);
     }
 
@@ -44,20 +45,23 @@ class InventoryController extends Controller
 
         $c = DB::transaction(function () use ($d, $request) {
             $records = ArchiveRecord::query()->whereHas('format', fn ($f) => $f->whereIn('code', ['physical', 'hybrid']))->whereHas('status', fn ($s) => $s->whereIn('code', ['inactive', 'archived', 'disposal_pending']))
-                ->when(!empty($d['location_id']), fn ($q) => $q->where('location_id', $d['location_id']))->pluck('id');
+                ->when(! empty($d['location_id']), fn ($q) => $q->where('location_id', $d['location_id']))->pluck('id');
             $c = InventoryCount::create(['title' => $d['title'], 'location_id' => $d['location_id'] ?? null, 'status_id' => Lookup::id('inventory_status', 'in_progress'), 'started_by' => $request->user()->id, 'total_expected' => $records->count()]);
             foreach ($records->chunk(500) as $chunk) {
                 InventoryCountItem::insert($chunk->map(fn ($id) => ['count_id' => $c->id, 'record_id' => $id])->all());
             }
+
             return $c;
         });
         AuditLogger::log('inventory.started', $c, [], ['title' => $c->title, 'expected' => (string) $c->total_expected]);
+
         return response()->json(['data' => ['id' => $c->id]], 201);
     }
 
     public function show(Request $request, string $id)
     {
         $c = InventoryCount::with(['status.translations', 'starter', 'location'])->withCount(['items as items_checked' => fn ($q) => $q->whereNotNull('found')])->findOrFail($id);
+
         return response()->json(['data' => $this->row($c, $request->user()->language_id)]);
     }
 
@@ -66,14 +70,18 @@ class InventoryController extends Controller
     {
         $c = InventoryCount::findOrFail($id);
         $q = InventoryCountItem::with(['record.location'])->where('count_id', $c->id);
-        match ($request->query('state')) { 'unchecked' => $q->whereNull('found'), 'missing' => $q->where('found', false), 'found' => $q->where('found', true), default => null };
-        if ($s = trim((string) $request->query('search', ''))) $q->whereHas('record', fn ($r) => $r->where('reference', 'like', "%$s%")->orWhere('title', 'like', "%$s%")->orWhere('index_code', 'like', "%$s%"));
+        match ($request->query('state')) {
+            'unchecked' => $q->whereNull('found'), 'missing' => $q->where('found', false), 'found' => $q->where('found', true), default => null
+        };
+        if ($s = trim((string) $request->query('search', ''))) {
+            $q->whereHas('record', fn ($r) => $r->where('reference', 'like', "%$s%")->orWhere('title', 'like', "%$s%")->orWhere('index_code', 'like', "%$s%"));
+        }
         $p = $q->orderBy('id')->paginate(min(max((int) $request->query('per_page', 25), 1), 100));
 
         return response()->json(['data' => $p->getCollection()->map(fn ($i) => [
             'id' => $i->id, 'found' => $i->found, 'note' => $i->note,
             'record' => ['id' => $i->record->id, 'reference' => $i->record->reference, 'title' => $i->record->title, 'index_code' => $i->record->index_code,
-                'location' => $i->record->location ? $i->record->location->code . ' — ' . $i->record->location->name : null],
+                'location' => $i->record->location ? $i->record->location->code.' — '.$i->record->location->name : null],
         ])->values(), 'meta' => ['current_page' => $p->currentPage(), 'last_page' => $p->lastPage(), 'per_page' => $p->perPage(), 'total' => $p->total()]]);
     }
 
@@ -84,6 +92,7 @@ class InventoryController extends Controller
         $d = $request->validate(['found' => 'required|boolean', 'note' => 'nullable|string|max:250']);
         $i = InventoryCountItem::where('count_id', $c->id)->findOrFail($itemId);
         $i->update(['found' => $d['found'], 'note' => $d['note'] ?? null, 'checked_at' => now(), 'checked_by' => $request->user()->id]);
+
         return response()->json(['data' => ['id' => $i->id, 'found' => $i->found]]);
     }
 
@@ -103,6 +112,7 @@ class InventoryController extends Controller
         if ($missing > 0) {     // discrepancies are reported to the compliance role
             Notifier::send(Notifier::usersWithPermission($this->ctx->organizationId(), 'compliance.manage'), 'inventory_discrepancy', ['title' => $c->title, 'missing' => $missing, 'user' => $request->user()->name], null, ['in_app', 'email'], '/archive/inventory', $this->ctx->organizationId());
         }
+
         return $this->show($request, $id);
     }
 }

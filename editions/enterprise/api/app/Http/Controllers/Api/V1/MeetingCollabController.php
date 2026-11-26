@@ -36,6 +36,7 @@ class MeetingCollabController extends Controller
         $m = $this->meeting($request, $id);
         $this->participantOnly($request, $m);
         $msgs = $this->svc->messages($m, $request->user(), null, $request->query('after'));
+
         return ['data' => $msgs, 'meta' => ['last_id' => $msgs ? end($msgs)['id'] : $request->query('after'), 'can_post' => $this->svc->participates($m, $request->user(), null) && $this->online->windowOpen($m),
             'can_remove' => $this->moderator($request, $m)]];
     }
@@ -45,6 +46,7 @@ class MeetingCollabController extends Controller
         $m = $this->meeting($request, $id);
         $d = $request->validate(['body' => 'required|string|max:1000']);
         $this->svc->post($m, $request->user(), null, $d['body']);
+
         return $this->chat($request, $id);
     }
 
@@ -53,6 +55,7 @@ class MeetingCollabController extends Controller
         $msg = MeetingChatMessage::findOrFail($messageId);
         $this->meeting($request, $msg->meeting_id);
         $this->svc->removeMessage($messageId, $request->user());
+
         return response()->noContent();
     }
 
@@ -61,6 +64,7 @@ class MeetingCollabController extends Controller
         $m = $this->meeting($request, $id);
         $this->participantOnly($request, $m);
         $mod = $this->moderator($request, $m);
+
         return ['data' => $this->svc->polls($m, $request->user(), null, $mod), 'meta' => ['can_create' => $mod && $m->status->code === 'in_progress']];
     }
 
@@ -70,12 +74,14 @@ class MeetingCollabController extends Controller
         $d = $request->validate(['question' => 'required|string|max:300', 'options' => 'required|array|min:2|max:10', 'options.*' => 'required|string|max:150', 'multiple' => 'sometimes|boolean', 'max_choices' => 'nullable|integer|min:0|max:10',
             'anonymous' => 'sometimes|boolean', 'guests_vote' => 'sometimes|boolean', 'agenda_item_id' => 'nullable|string']);
         $this->svc->createPoll($m, $request->user(), $d['question'], $d['options'], $d);
+
         return $this->polls($request, $id);
     }
 
     private function pollMeeting(Request $request, string $pollId): array
     {
         $p = MeetingPoll::findOrFail($pollId);
+
         return [$p, $this->meeting($request, $p->meeting_id)];
     }
 
@@ -84,6 +90,7 @@ class MeetingCollabController extends Controller
         [$p, $m] = $this->pollMeeting($request, $pollId);
         $d = $request->validate(['option_ids' => 'required|array|min:1|max:10', 'option_ids.*' => 'string']);
         $this->svc->vote($p, $request->user(), null, $d['option_ids']);
+
         return $this->polls($request, $m->id);
     }
 
@@ -91,6 +98,7 @@ class MeetingCollabController extends Controller
     {
         [$p, $m] = $this->pollMeeting($request, $pollId);
         $this->svc->closePoll($pollId, $request->user());
+
         return $this->polls($request, $m->id);
     }
 }

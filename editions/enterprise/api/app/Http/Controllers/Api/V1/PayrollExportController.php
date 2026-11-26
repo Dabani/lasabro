@@ -30,13 +30,25 @@ class PayrollExportController extends Controller
 {
     public function __construct(private PayrollExportService $svc) {}
 
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
-    private function fail(string $field, string $key, array $p = []): never { throw ValidationException::withMessages([$field => [__("payexport.err.$key", $p)]]); }
-    private function lk(string $type): array { return ['required', Rule::exists('lookup_values', 'id')->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id'))]; }
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
+
+    private function fail(string $field, string $key, array $p = []): never
+    {
+        throw ValidationException::withMessages([$field => [__("payexport.err.$key", $p)]]);
+    }
+
+    private function lk(string $type): array
+    {
+        return ['required', Rule::exists('lookup_values', 'id')->whereIn('lookup_type_id', LookupType::where('code', $type)->pluck('id'))];
+    }
 
     private function profile(PayExportProfile $p): array
     {
         $p->loadMissing(['kind', 'layout', 'verification', 'columns.scheme', 'columns.component', 'preparer', 'verifier']);
+
         return ['id' => $p->id, 'code' => $p->code, 'name' => $p->name, 'kind' => $p->kind->code, 'layout' => $p->layout->code, 'delimiter' => $p->delimiter, 'quote_char' => $p->quote_char, 'line_ending' => $p->line_ending,
             'encoding' => $p->encoding, 'decimal_separator' => $p->decimal_separator, 'date_format' => $p->date_format, 'include_header' => $p->include_header, 'header_template' => $p->header_template, 'trailer_template' => $p->trailer_template,
             'file_extension' => $p->file_extension, 'filename_template' => $p->filename_template, 'agreed_with' => $p->agreed_with, 'is_active' => $p->is_active, 'verification' => $p->verification->code,
@@ -57,7 +69,10 @@ class PayrollExportController extends Controller
     }
 
     // ---- layouts -----------------------------------------------------------------------------------------------------------------------
-    public function profiles() { return ['data' => PayExportProfile::with(['kind', 'layout', 'verification', 'columns.scheme', 'columns.component', 'preparer', 'verifier'])->orderBy('code')->get()->map(fn ($p) => $this->profile($p))]; }
+    public function profiles()
+    {
+        return ['data' => PayExportProfile::with(['kind', 'layout', 'verification', 'columns.scheme', 'columns.component', 'preparer', 'verifier'])->orderBy('code')->get()->map(fn ($p) => $this->profile($p))];
+    }
 
     public function storeProfile(Request $request)
     {
@@ -78,16 +93,16 @@ class PayrollExportController extends Controller
         $allowed = ExportFields::allowed($kind);
         foreach ($d['columns'] as $i => $c) {
             $f = "columns.$i.source";
-            if (!in_array($c['source'], $allowed, true)) {
+            if (! in_array($c['source'], $allowed, true)) {
                 $this->fail($f, 'source_not_allowed', ['source' => $c['source'], 'kind' => $kind]);
             }
-            if (ExportFields::needsScheme($c['source']) && (empty($c['scheme_id']) || !PayScheme::whereKey($c['scheme_id'])->exists())) {
+            if (ExportFields::needsScheme($c['source']) && (empty($c['scheme_id']) || ! PayScheme::whereKey($c['scheme_id'])->exists())) {
                 $this->fail($f, 'scheme_required');
             }
-            if (ExportFields::needsComponent($c['source']) && (empty($c['component_id']) || !PayComponent::whereKey($c['component_id'])->exists())) {
+            if (ExportFields::needsComponent($c['source']) && (empty($c['component_id']) || ! PayComponent::whereKey($c['component_id'])->exists())) {
                 $this->fail($f, 'component_required');
             }
-            if ($c['source'] === 'constant' && !array_key_exists('constant', $c)) {
+            if ($c['source'] === 'constant' && ! array_key_exists('constant', $c)) {
                 $this->fail($f, 'constant_required');
             }
             if ($layout === 'fixed_width' && empty($c['width'])) {
@@ -100,6 +115,7 @@ class PayrollExportController extends Controller
                 PayExportColumn::create(['profile_id' => $p->id, 'position' => $i + 1, 'header' => $c['header'], 'source' => $c['source'], 'scheme_id' => $c['scheme_id'] ?? null, 'component_id' => $c['component_id'] ?? null,
                     'constant' => $c['constant'] ?? null, 'format' => $c['format'], 'decimals' => $c['decimals'] ?? null, 'width' => $c['width'] ?? null, 'align' => $c['align'] ?? null, 'pad_char' => $c['pad_char'] ?? null, 'truncate' => $c['truncate'] ?? false]);
             }
+
             return $p;
         });
         try {                                                                  // a layout that cannot even render the sample rows is refused now, not on payday
@@ -110,6 +126,7 @@ class PayrollExportController extends Controller
             throw $e;
         }
         AuditLogger::log('payroll.export_profile_created', $p, [], ['code' => $p->code, 'kind' => $kind, 'agreed_with' => $p->agreed_with]);
+
         return response()->json(['data' => $this->profile($p)], 201);
     }
 
@@ -124,6 +141,7 @@ class PayrollExportController extends Controller
         }
         $p->update(['verification_status_id' => Lookup::id('rule_verification_status', 'verified'), 'verified_by' => $request->user()->id, 'verified_at' => now()]);
         AuditLogger::log('payroll.export_profile_verified', $p, ['verification' => 'unverified'], ['verification' => 'verified']);
+
         return ['data' => $this->profile($p->refresh())];
     }
 
@@ -133,6 +151,7 @@ class PayrollExportController extends Controller
         $p = PayExportProfile::findOrFail($id);
         $p->update($d);
         AuditLogger::log('payroll.export_profile_active', $p, [], $d);
+
         return ['data' => $this->profile($p->refresh())];
     }
 
@@ -145,6 +164,7 @@ class PayrollExportController extends Controller
         }
         AuditLogger::log('payroll.export_profile_deleted', $p, ['code' => $p->code]);
         $p->delete();
+
         return response()->noContent();
     }
 
@@ -154,11 +174,15 @@ class PayrollExportController extends Controller
         $p = PayExportProfile::findOrFail($id);
         $s = $this->svc->sampleRows($p);
         $content = $this->svc->render($s['profile'], $s['rows'], $s['vars']);
+
         return ['data' => ['sample' => true, 'encoding' => $p->encoding, 'text' => $p->encoding === 'UTF-8' ? $content : mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1'), 'rows' => count($s['rows'])]];
     }
 
     // ---- journal accounts ------------------------------------------------------------------------------------------------------------------
-    public function journalAccounts() { return ['data' => PayJournalAccount::orderBy('account_key')->get()->map(fn ($a) => ['account_key' => $a->account_key, 'account_code' => $a->account_code, 'label' => $a->label])->values()]; }
+    public function journalAccounts()
+    {
+        return ['data' => PayJournalAccount::orderBy('account_key')->get()->map(fn ($a) => ['account_key' => $a->account_key, 'account_code' => $a->account_code, 'label' => $a->label])->values()];
+    }
 
     public function saveJournalAccounts(Request $request)
     {
@@ -168,16 +192,21 @@ class PayrollExportController extends Controller
             $row = PayJournalAccount::updateOrCreate(['account_key' => $a['account_key']], ['account_code' => $a['account_code'], 'label' => $a['label'] ?? null, 'created_by' => $request->user()->id]);
             AuditLogger::log('payroll.journal_account_saved', $row, [], ['key' => $a['account_key'], 'account' => $a['account_code']]);
         }
+
         return $this->journalAccounts();
     }
 
-    public function requiredAccounts(string $id) { return ['data' => $this->svc->requiredAccounts(PayRun::findOrFail($id))]; }
+    public function requiredAccounts(string $id)
+    {
+        return ['data' => $this->svc->requiredAccounts(PayRun::findOrFail($id))];
+    }
 
     // ---- generated files ---------------------------------------------------------------------------------------------------------------------
     public function generate(Request $request, string $id)
     {
         $d = $request->validate(['profile_id' => ['required', Rule::exists('pay_export_profiles', 'id')->where('organization_id', $this->org())]]);
         $e = $this->svc->generate(PayRun::findOrFail($id), PayExportProfile::findOrFail($d['profile_id']), $request->user());
+
         return response()->json(['data' => $this->exportShape($e->load('generator'))], 201);
     }
 
@@ -190,6 +219,7 @@ class PayrollExportController extends Controller
     {
         $e = PayExport::findOrFail($exportId);
         AuditLogger::log('payroll.export_downloaded', $e, [], ['run' => $e->run_id, 'kind' => $e->kind_code, 'checksum' => $e->checksum]);
-        return response($e->content, 200, ['Content-Type' => $e->mime, 'Content-Disposition' => 'attachment; filename="' . $e->file_name . '"', 'X-Content-SHA256' => $e->checksum]);
+
+        return response($e->content, 200, ['Content-Type' => $e->mime, 'Content-Disposition' => 'attachment; filename="'.$e->file_name.'"', 'X-Content-SHA256' => $e->checksum]);
     }
 }

@@ -17,6 +17,7 @@ use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -77,7 +78,9 @@ class UserController extends Controller
     public function summary()
     {
         $count = fn (?string $quick = null, ?string $status = null) => tap($this->base()->withoutEagerLoads(), function ($q) use ($quick, $status) {
-            if ($status) $this->statusIs($q, $status);
+            if ($status) {
+                $this->statusIs($q, $status);
+            }
             $this->quick($q, $quick);
         })->count();
 
@@ -120,6 +123,7 @@ class UserController extends Controller
                 'must_change_password' => true,
             ]);
             $this->attachMembership($user, $data, $roles);
+
             return $user;
         });
 
@@ -149,6 +153,7 @@ class UserController extends Controller
             [, $sent] = $this->invitations->issue($user->load('language'), $request->user(), $this->ctx->organizationId());
         }
         AuditLogger::log('user.updated', $user, $old, ['name' => $data['name'], 'email' => $data['email'], 'phone' => $data['phone'] ?? null, 'roles' => $roles->pluck('code')->implode(',')]);
+
         return (new UserResource($this->base()->findOrFail($id)))->additional(['invitation_sent' => $sent]);
     }
 
@@ -157,6 +162,7 @@ class UserController extends Controller
         $data = $request->validate(['status' => 'required|in:active,suspended', 'reason' => 'nullable|string|max:250']);
         $user = $this->base()->findOrFail($id);
         $sent = $this->applyStatus($user, $data['status'], $data['reason'] ?? null);
+
         return (new UserResource($this->base()->findOrFail($id)))->additional(['invitation_sent' => $sent]);
     }
 
@@ -165,6 +171,7 @@ class UserController extends Controller
     {
         $user = $this->base()->findOrFail($id);
         $sent = $this->resend($user, $request->user());
+
         return (new UserResource($this->base()->findOrFail($id)))->additional(['invitation_sent' => $sent]);
     }
 
@@ -173,6 +180,7 @@ class UserController extends Controller
     {
         $user = $this->base()->findOrFail($id);
         $this->cancel($user, $request->user());
+
         return response()->json(['message' => __('users.invitation_cancelled')]);
     }
 
@@ -186,10 +194,15 @@ class UserController extends Controller
         $perm = in_array($d['action'], ['suspend', 'activate'], true) ? 'user.suspend' : 'user.create';
         abort_unless($this->ctx->can($perm), 403, __('api.forbidden'));
 
-        $done = 0; $failed = [];
+        $done = 0;
+        $failed = [];
         foreach (array_unique($d['ids']) as $id) {
             $user = $this->base()->find($id);
-            if (!$user) { $failed[] = ['id' => $id, 'name' => null, 'reason' => __('users.user_not_found')]; continue; }
+            if (! $user) {
+                $failed[] = ['id' => $id, 'name' => null, 'reason' => __('users.user_not_found')];
+
+                continue;
+            }
             try {
                 match ($d['action']) {
                     'suspend' => $this->applyStatus($user, 'suspended', $d['reason'] ?? null),
@@ -202,7 +215,8 @@ class UserController extends Controller
                 $failed[] = ['id' => $id, 'name' => $user->name, 'reason' => $e->getMessage()];
             }
         }
-        AuditLogger::log('user.bulk_' . $d['action'], null, [], ['requested' => count($d['ids']), 'done' => $done, 'failed' => count($failed)]);
+        AuditLogger::log('user.bulk_'.$d['action'], null, [], ['requested' => count($d['ids']), 'done' => $done, 'failed' => count($failed)]);
+
         return response()->json(['done' => $done, 'failed' => $failed, 'message' => __('users.bulk_done', ['count' => $done])]);
     }
 
@@ -212,6 +226,7 @@ class UserController extends Controller
         $import = new UsersImport($this->ctx);
         Excel::import($import, $request->file('file'));
         AuditLogger::log('user.imported', null, [], ['created' => $import->created, 'skipped' => count($import->errors), 'mail_failed' => $import->mail_failed]);
+
         return response()->json(['created' => $import->created, 'errors' => $import->errors, 'mail_failed' => $import->mail_failed]);
     }
 
@@ -224,7 +239,9 @@ class UserController extends Controller
         $this->guardHierarchy($user);
 
         $old = $user->status?->code;
-        if ($old === $target) return null;
+        if ($old === $target) {
+            return null;
+        }
         $sent = null;
 
         if ($target === 'suspended') {
@@ -232,7 +249,7 @@ class UserController extends Controller
             DB::table('sessions')->where('user_id', $user->id)->delete();      // terminate live sessions
             $user->tokens()->delete();
             $this->invitations->revoke($user);
-        } elseif (!$user->email_verified_at && !$user->last_login_at) {
+        } elseif (! $user->email_verified_at && ! $user->last_login_at) {
             // Never activated: going back to "active" would give an account nobody can open. Invite again instead.
             $user->update(['status_id' => Lookup::id('user_status', 'invited'), 'must_change_password' => true]);
             [, $sent] = $this->invitations->issue($user->load('language'), request()->user(), $this->ctx->organizationId());
@@ -241,6 +258,7 @@ class UserController extends Controller
             $user->update(['status_id' => Lookup::id('user_status', 'active')]);
         }
         AuditLogger::log('user.status_changed', $user, ['status' => $old], ['status' => $target], $reason);
+
         return $sent;
     }
 
@@ -251,6 +269,7 @@ class UserController extends Controller
         abort_if($this->invitations->throttled($user), 429, __('users.resend_wait'));
         [, $sent] = $this->invitations->issue($user->load('language'), $actor, $this->ctx->organizationId());
         AuditLogger::log($sent ? 'user.invitation_resent' : 'user.invitation_failed', $user, outcome: $sent ? 'success' : 'failure');
+
         return $sent;
     }
 
@@ -258,12 +277,15 @@ class UserController extends Controller
     {
         $this->guardHierarchy($user);
         abort_if($user->id === $actor->id, 422, __('api.cannot_self_suspend'));
-        abort_unless($user->status?->code === 'invited' && !$user->email_verified_at && !$user->last_login_at, 422, __('users.cannot_remove'));
+        abort_unless($user->status?->code === 'invited' && ! $user->email_verified_at && ! $user->last_login_at, 422, __('users.cannot_remove'));
 
         $snapshot = ['name' => $user->name, 'email' => $user->email];
         try {
             DB::transaction(function () use ($user) {
-                foreach ($user->memberships as $m) { $m->roles()->detach(); $m->delete(); }
+                foreach ($user->memberships as $m) {
+                    $m->roles()->detach();
+                    $m->delete();
+                }
                 $user->invitations()->delete();
                 $user->forceDelete();
             });
@@ -279,9 +301,10 @@ class UserController extends Controller
     private function validated(Request $request, ?User $user = null): array
     {
         $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);   // one spelling per address
+
         return $request->validate([
             'name' => 'required|string|max:150',
-            'email' => ['required', 'email', 'max:190', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user?->id)],
+            'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user?->id)],
             'phone' => 'nullable|string|max:40',
             'language_id' => 'nullable|exists:languages,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -297,6 +320,7 @@ class UserController extends Controller
         $roles = Role::whereIn('id', $ids)->where('is_active', true)->get();   // org scope via trait
         abort_unless($roles->count() === count(array_unique($ids)), 422, __('api.invalid_role'));
         abort_if($roles->max('level') > $this->ctx->level(), 403, __('api.role_above_authority'));
+
         return $roles;
     }
 
@@ -313,7 +337,7 @@ class UserController extends Controller
             'department_id' => $data['department_id'] ?? null,
             'job_title' => $data['job_title'] ?? null,
             'status_id' => $m->status_id ?? Lookup::id('membership_status', 'active'),
-            'is_default' => $m->exists ? $m->is_default : !Membership::where('user_id', $user->id)->exists(),
+            'is_default' => $m->exists ? $m->is_default : ! Membership::where('user_id', $user->id)->exists(),
         ])->save();
         $m->roles()->sync($roles->mapWithKeys(fn ($r) => [$r->id => ['assigned_by' => request()->user()->id]])->all());
     }

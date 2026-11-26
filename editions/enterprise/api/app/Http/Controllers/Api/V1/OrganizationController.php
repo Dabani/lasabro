@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\OrganizationResource;
 use App\Services\AuditLogger;
+use App\Services\FileService;
 use App\Services\OrganizationContext;
 use Illuminate\Http\Request;
-use App\Services\FileService;
 
 class OrganizationController extends Controller
 {
@@ -34,6 +34,7 @@ class OrganizationController extends Controller
         $old = $org->only(array_keys($data));
         $org->update($data);
         AuditLogger::log('organization.updated', $org, $old, $data);
+
         return new OrganizationResource($org->fresh(['timezone', 'currency', 'dateFormat']));
     }
 
@@ -45,6 +46,7 @@ class OrganizationController extends Controller
         $asset = FileService::storeSingle($request->file('logo'), $request->user(), 'org_logo', $org->id);
         $org->update(['logo_path' => $asset->currentVersion->storage_path]);
         AuditLogger::log('organization.logo_changed', $org);
+
         return response()->json(['message' => __('api.saved')]);
     }
 }

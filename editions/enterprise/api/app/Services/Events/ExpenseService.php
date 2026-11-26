@@ -26,11 +26,14 @@ class ExpenseService
         throw ValidationException::withMessages([$field => [__("events.$key", $p)]]);
     }
 
-    private function st(string $code): string { return Lookup::id('event_expense_status', $code); }
+    private function st(string $code): string
+    {
+        return Lookup::id('event_expense_status', $code);
+    }
 
     private function requireCurrency(Event $e): void
     {
-        if (!$e->currency_code) {
+        if (! $e->currency_code) {
             $this->fail('amount', 'expense_currency_required');
         }
     }
@@ -41,13 +44,14 @@ class ExpenseService
         $this->checkAmount($d['amount']);
         $x = EventExpense::create($d + ['event_id' => $e->id, 'status_id' => $this->st('draft'), 'created_by' => $by->id]);
         AuditLogger::log('event.expense_created', $x, [], ['event' => $e->code, 'amount' => (string) $x->amount]);
+
         return $x;
     }
 
     public function update(EventExpense $x, array $d, User $by): EventExpense
     {
         $x->loadMissing('status');
-        if (!ExpenseRules::editable($x->status->code)) {
+        if (! ExpenseRules::editable($x->status->code)) {
             $this->fail('status', 'expense_not_editable');
         }
         if (isset($d['amount'])) {
@@ -56,12 +60,13 @@ class ExpenseService
         $old = $x->only(['description', 'amount', 'expense_date']);
         $x->update($d);
         AuditLogger::log('event.expense_updated', $x, array_map(fn ($v) => (string) $v, $old), array_map(fn ($v) => (string) $v, $x->only(array_keys($old))));
+
         return $x->refresh();
     }
 
     private function checkAmount(string|int|float $amount): void
     {
-        if (!ExpenseRules::amountValid(ExpenseRules::toCents($amount))) {
+        if (! ExpenseRules::amountValid(ExpenseRules::toCents($amount))) {
             $this->fail('amount', 'expense_bad_amount');
         }
     }
@@ -69,7 +74,7 @@ class ExpenseService
     public function delete(EventExpense $x): void
     {
         $x->loadMissing('status');
-        if (!ExpenseRules::editable($x->status->code)) {
+        if (! ExpenseRules::editable($x->status->code)) {
             $this->fail('status', 'expense_not_editable');
         }
         AuditLogger::log('event.expense_deleted', $x, ['amount' => (string) $x->amount], []);
@@ -86,6 +91,7 @@ class ExpenseService
     {
         $ids = [$this->st('approved'), $this->st('pending_approval')];
         $sum = EventExpense::where('event_id', $e->id)->whereIn('status_id', $ids)->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))->sum('amount');
+
         return ExpenseRules::toCents($sum);
     }
 
@@ -103,10 +109,11 @@ class ExpenseService
             }
             $budget = $e->budget_amount !== null ? ExpenseRules::toCents($e->budget_amount) : null;
             $over = ExpenseRules::exceedsBudget($budget, $this->committedCents($e, $x->id), $cents);
-            $title = __('events.expense_approval_title', ['event' => $e->title, 'what' => $x->description]) . ($over ? ' ' . __('events.expense_over_budget_tag') : '');
+            $title = __('events.expense_approval_title', ['event' => $e->title, 'what' => $x->description]).($over ? ' '.__('events.expense_over_budget_tag') : '');
             $req = $this->approvals->submit('event_expense', $x->id, $by, $title, ['amount' => (string) $x->amount, 'currency' => $e->currency_code, 'department_id' => $e->department_id]);
             $x->update(['status_id' => $this->st('pending_approval'), 'over_budget' => $over, 'approval_request_id' => $req->id, 'submitted_at' => now(), 'decision_note' => null]);
             AuditLogger::log('event.expense_submitted', $x, [], ['event' => $e->code, 'amount' => (string) $x->amount, 'over_budget' => $over]);
+
             return $x->refresh();
         });
     }
@@ -115,20 +122,20 @@ class ExpenseService
     public function outcome(string $expenseId, string $outcome, ApprovalRequest $req): void
     {
         $x = EventExpense::with(['status', 'event'])->find($expenseId);
-        if (!$x || $x->status->code !== 'pending_approval') {
+        if (! $x || $x->status->code !== 'pending_approval') {
             return;
         }
         $last = ApprovalAction::where('request_id', $req->id)->orderByDesc('acted_at')->first();
         $note = $last?->comment ? mb_substr($last->comment, 0, 2000) : null;
         $to = $outcome === 'approved' ? 'approved' : ($outcome === 'rejected' ? 'rejected' : 'draft');
         $x->update(['status_id' => $this->st($to), 'decided_at' => now(), 'decision_note' => $note]);
-        AuditLogger::log('event.expense_' . $outcome, $x, [], ['amount' => (string) $x->amount, 'note' => $note]);
+        AuditLogger::log('event.expense_'.$outcome, $x, [], ['amount' => (string) $x->amount, 'note' => $note]);
         if ($x->created_by && $outcome !== 'approved') {
             Notifier::send(User::whereKey($x->created_by)->with('language')->get(), 'event_expense_returned', ['title' => $x->event->title, 'what' => $x->description, 'note' => (string) $note, 'outcome' => $outcome],
-                null, ['in_app', 'email'], '/events/' . $x->event_id, $x->organization_id);
+                null, ['in_app', 'email'], '/events/'.$x->event_id, $x->organization_id);
         } elseif ($x->created_by) {
             Notifier::send(User::whereKey($x->created_by)->with('language')->get(), 'event_expense_approved', ['title' => $x->event->title, 'what' => $x->description],
-                null, ['in_app'], '/events/' . $x->event_id, $x->organization_id);
+                null, ['in_app'], '/events/'.$x->event_id, $x->organization_id);
         }
     }
 
@@ -143,6 +150,7 @@ class ExpenseService
         $remaining = ExpenseRules::remainingCents($budget, $approved + $pending);
         $fmt = fn (?int $c) => $c === null ? null : number_format($c / 100, 2, '.', '');
         $byCat = $rows->filter(fn ($r) => $r->status->code === 'approved')->groupBy(fn ($r) => $r->category->code)->map(fn ($g) => $fmt(ExpenseRules::toCents($g->sum('amount'))));
+
         return ['currency' => $e->currency_code, 'budget' => $fmt($budget), 'approved' => $fmt($approved), 'pending' => $fmt($pending), 'remaining' => $fmt($remaining),
             'over_budget' => $remaining !== null && $remaining < 0, 'over_budget_items' => $rows->where('over_budget', true)->count(), 'by_category' => $byCat];
     }

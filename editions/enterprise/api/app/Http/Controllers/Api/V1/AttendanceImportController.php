@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceDeviceCode;
 use App\Models\AttendanceImport;
 use App\Models\AttendanceImportProfile;
-use App\Models\Employee;
 use App\Services\AuditLogger;
 use App\Services\Hr\Attendance\AttendanceImporter;
 use App\Services\OrganizationContext;
@@ -21,15 +20,19 @@ class AttendanceImportController extends Controller
 {
     private const EXTENSIONS = ['', 'csv', 'txt', 'tsv', 'xlsx', 'xlsm', 'xls', 'ods', 'html', 'htm'];
 
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
 
     private function upload(Request $request): UploadedFile
     {
         $request->validate(['file' => 'required|file|max:5120']);
         $f = $request->file('file');
-        if (!in_array(strtolower($f->getClientOriginalExtension()), self::EXTENSIONS, true)) {
+        if (! in_array(strtolower($f->getClientOriginalExtension()), self::EXTENSIONS, true)) {
             throw ValidationException::withMessages(['file' => [__('attendance.file_type_not_supported')]]);
         }
+
         return $f;
     }
 
@@ -39,12 +42,14 @@ class AttendanceImportController extends Controller
     {
         $f = $this->upload($request);
         $d = $request->validate(['sheet' => 'nullable|string|max:100', 'header_row' => 'nullable|integer|min:1|max:50']);
+
         return ['data' => $importer->inspect($f->getRealPath(), $d['sheet'] ?? null, $d['header_row'] ?? null)];
     }
 
     private function profileId(Request $request): ?string
     {
         $d = $request->validate(['profile_id' => ['nullable', Rule::exists('hr_attendance_import_profiles', 'id')->where('organization_id', $this->org())], 'sheet' => 'nullable|string|max:100']);
+
         return $d['profile_id'] ?? null;
     }
 
@@ -52,12 +57,14 @@ class AttendanceImportController extends Controller
     public function preview(Request $request, AttendanceImporter $importer)
     {
         $f = $this->upload($request);
+
         return ['data' => $importer->run($f->getRealPath(), $f->getClientOriginalName(), $request->user(), $this->org(), $this->profileId($request), false, $request->input('sheet'))];
     }
 
     public function import(Request $request, AttendanceImporter $importer)
     {
         $f = $this->upload($request);
+
         return response()->json(['data' => $importer->run($f->getRealPath(), $f->getClientOriginalName(), $request->user(), $this->org(), $this->profileId($request), true, $request->input('sheet'))], 201);
     }
 
@@ -79,6 +86,7 @@ class AttendanceImportController extends Controller
         $col = 'nullable|string|max:100';
         $list = 'nullable|string|max:500';
         $req = $create ? 'required' : 'sometimes';
+
         return [
             'name' => [$req, 'string', 'max:120', Rule::unique('hr_attendance_import_profiles', 'name')->where('organization_id', $this->org())->ignore($ignoreId)],
             'description' => 'nullable|string|max:255', 'layout' => ['sometimes', Rule::in(['punches', 'daily'])], 'sheet' => $col, 'header_row' => 'sometimes|integer|min:0|max:50',
@@ -115,9 +123,11 @@ class AttendanceImportController extends Controller
         $p = DB::transaction(function () use ($d) {
             $p = AttendanceImportProfile::create(collect($d)->except('slots')->all() + ['is_system' => false]);
             $this->saveSlots($p, $d['slots'] ?? null);
+
             return $p;
         });
         AuditLogger::log('attendance.profile_created', $p);
+
         return response()->json(['data' => $this->profileShape($p->refresh()->load('slots'))], 201);
     }
 
@@ -133,22 +143,25 @@ class AttendanceImportController extends Controller
             $this->saveSlots($p, $d['slots'] ?? null);
         });
         AuditLogger::log('attendance.profile_updated', $p);
+
         return ['data' => $this->profileShape($p->refresh()->load('slots'))];
     }
 
     public function duplicateProfile(string $id)
     {
         $src = AttendanceImportProfile::with('slots')->findOrFail($id);
-        $name = $src->name . ' (copy)';
+        $name = $src->name.' (copy)';
         for ($n = 2; AttendanceImportProfile::where('name', $name)->exists(); $n++) {
-            $name = $src->name . " (copy $n)";
+            $name = $src->name." (copy $n)";
         }
         $p = DB::transaction(function () use ($src, $name) {
             $p = AttendanceImportProfile::create($src->settings() + ['name' => $name, 'description' => $src->description, 'is_system' => false]);
             $this->saveSlots($p, $src->slots->map(fn ($s) => ['column' => $s->column_name, 'direction' => $s->direction])->all());
+
             return $p;
         });
         AuditLogger::log('attendance.profile_created', $p, [], ['copy_of' => $src->id]);
+
         return response()->json(['data' => $this->profileShape($p->refresh()->load('slots'))], 201);
     }
 
@@ -160,6 +173,7 @@ class AttendanceImportController extends Controller
         }
         $p->delete();
         AuditLogger::log('attendance.profile_deleted', $p);
+
         return response()->noContent();
     }
 
@@ -175,6 +189,7 @@ class AttendanceImportController extends Controller
         if ($e = $request->query('employee_id')) {
             $q->where('employee_id', $e);
         }
+
         return ['data' => $q->get()->map(fn ($c) => $this->codeShape($c))];
     }
 
@@ -190,6 +205,7 @@ class AttendanceImportController extends Controller
         }
         DB::transaction(fn () => $rows->each(fn ($r) => AttendanceDeviceCode::create($r)));
         AuditLogger::log('attendance.device_codes_added', null, [], ['count' => $rows->count()]);
+
         return response()->json(['data' => ['created' => $rows->count()]], 201);
     }
 
@@ -198,6 +214,7 @@ class AttendanceImportController extends Controller
         $c = AttendanceDeviceCode::findOrFail($id);
         $c->delete();
         AuditLogger::log('attendance.device_code_removed', $c);
+
         return response()->noContent();
     }
 }

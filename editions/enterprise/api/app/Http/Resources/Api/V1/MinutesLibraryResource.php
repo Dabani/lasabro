@@ -10,6 +10,7 @@ class MinutesLibraryResource extends JsonResource
     public function toArray($request): array
     {
         $m = $this->minutes->meeting;
+
         return [
             'id' => $this->id, 'version_no' => $this->version_no, 'status' => $this->status->code, 'visibility' => $this->visibility?->code,
             'published_at' => $this->published_at?->toIso8601String(), 'correction_reason' => $this->correction_reason,

@@ -8,13 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayPayslipFlag extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'pay_payslip_flags';
+
     protected $guarded = [];
+
     public $timestamps = false;
 
-    public function severity() { return $this->belongsTo(LookupValue::class, 'severity_id'); }
+    public function severity()
+    {
+        return $this->belongsTo(LookupValue::class, 'severity_id');
+    }
 
     protected static function booted(): void
     {

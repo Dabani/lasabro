@@ -3,17 +3,21 @@
 namespace App\Models;
 
 use App\Support\BelongsToOrganization;
+use App\Support\HasGeneratedCode;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
 class Shift extends Model
 {
-    use \App\Support\HasGeneratedCode;
+    use HasGeneratedCode;
+
     protected static string $codeEntity = 'shift';
-    use HasUlids, BelongsToOrganization;
+
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_shifts';
-    protected $guarded = [];
-    protected $casts = ['break_minutes' => 'integer', 'auto_deduct_break' => 'boolean', 'grace_minutes' => 'integer', 'is_active' => 'boolean'];
 
+    protected $guarded = [];
+
+    protected $casts = ['break_minutes' => 'integer', 'auto_deduct_break' => 'boolean', 'grace_minutes' => 'integer', 'is_active' => 'boolean'];
 }

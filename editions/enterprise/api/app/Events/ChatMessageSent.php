@@ -19,12 +19,18 @@ class ChatMessageSent implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('chat.' . $this->conversation->id),
-            new PrivateChannel('org.' . $this->conversation->organization_id . '.agents'),
+            new PrivateChannel('chat.'.$this->conversation->id),
+            new PrivateChannel('org.'.$this->conversation->organization_id.'.agents'),
         ];
     }
 
-    public function broadcastAs(): string { return 'chat.updated'; }
+    public function broadcastAs(): string
+    {
+        return 'chat.updated';
+    }
 
-    public function broadcastWith(): array { return ['conversation_id' => $this->conversation->id]; }
+    public function broadcastWith(): array
+    {
+        return ['conversation_id' => $this->conversation->id];
+    }
 }

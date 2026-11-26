@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Schema;
  * people at each stage. Payslips persist every line with its inputs (base, rate, rounding, scheme version) so they can be reproduced years later.
  * A locked run is immutable (the models refuse any change); a correction is an adjustment run. Money DECIMAL(15,2), rates DECIMAL(9,6). No enums, no JSON.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('pay_runs', function (Blueprint $t) {

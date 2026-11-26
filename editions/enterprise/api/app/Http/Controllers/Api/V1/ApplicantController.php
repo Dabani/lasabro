@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Rules\RichTextMin;
 use App\Http\Controllers\Controller;
 use App\Models\Applicant;
-use App\Models\Offer;
 use App\Models\ReferenceCheck;
 use App\Models\Vacancy;
+use App\Rules\RichTextMin;
 use App\Services\AuditLogger;
 use App\Services\Hr\RecruitmentService;
 use App\Services\OrganizationContext;
@@ -18,7 +17,10 @@ use Illuminate\Validation\Rule;
 /** Applicants, stages, references, selection, conversion and personal-data retention (Guide 5.1). Every route needs hr.recruitment.manage. */
 class ApplicantController extends Controller
 {
-    private function ctx(): OrganizationContext { return app(OrganizationContext::class); }
+    private function ctx(): OrganizationContext
+    {
+        return app(OrganizationContext::class);
+    }
 
     private function listShape(Applicant $a): array
     {
@@ -42,6 +44,7 @@ class ApplicantController extends Controller
         if ($t = trim((string) $request->query('q'))) {
             $q->where(fn ($w) => $w->where('first_name', 'like', "%$t%")->orWhere('last_name', 'like', "%$t%")->orWhere('email', 'like', "%$t%")->orWhere('code', 'like', "%$t%"));
         }
+
         return ['data' => $q->limit(300)->get()->map(fn ($a) => $this->listShape($a))];
     }
 
@@ -50,9 +53,10 @@ class ApplicantController extends Controller
         $a->load(['stage', 'vacancy.requisition', 'history.toStage', 'interviews.type', 'interviews.status', 'interviews.panel', 'interviews.scorecards', 'references.result', 'offers.status', 'offers.position']);
         $salary = $this->ctx()->can('hr.salary.view');
         $hasAccepted = $a->offers->contains(fn ($o) => $o->status?->code === 'accepted');
+
         return $this->listShape($a) + [
             'first_name' => $a->first_name, 'last_name' => $a->last_name, 'phone' => $a->phone, 'source' => $a->source, 'notes' => $a->notes, 'rejection_reason' => $a->rejection_reason,
-            'consent_recorded_at' => $a->consent_recorded_at?->toIso8601String(), 'can_convert' => $a->stage?->code === 'offer' && $hasAccepted && !$a->converted_employee_id,
+            'consent_recorded_at' => $a->consent_recorded_at?->toIso8601String(), 'can_convert' => $a->stage?->code === 'offer' && $hasAccepted && ! $a->converted_employee_id,
             'history' => $a->history->sortBy('created_at')->values()->map(fn ($h) => ['stage' => $h->toStage?->code, 'note' => $h->note, 'at' => $h->created_at?->toIso8601String()]),
             'interviews' => $a->interviews->sortBy('scheduled_at')->values()->map(fn ($i) => ['id' => $i->id, 'type' => $i->type?->code, 'status' => $i->status?->code, 'scheduled_at' => $i->scheduled_at->toIso8601String(),
                 'panel' => $i->panel->map(fn ($p) => $p->full_name)->values(), 'scorecards' => $i->scorecards->count()]),
@@ -68,6 +72,7 @@ class ApplicantController extends Controller
     {
         $a = Applicant::findOrFail($id);
         AuditLogger::log('applicant.viewed', $a);
+
         return ['data' => $this->detail($a)];
     }
 
@@ -77,6 +82,7 @@ class ApplicantController extends Controller
         $d = $request->validate(['first_name' => 'required|string|max:100', 'last_name' => 'required|string|max:100', 'email' => 'required|email:rfc|max:190', 'phone' => 'nullable|string|max:40',
             'source' => 'nullable|string|max:60', 'notes' => 'nullable|string|max:20000', 'consent' => 'required|boolean']);
         $a = $svc->addApplicant($v, $d, $request->user());
+
         return response()->json(['data' => $this->detail($a)], 201);
     }
 
@@ -86,6 +92,7 @@ class ApplicantController extends Controller
         abort_if($a->anonymized_at, 422);
         $a->update($request->validate(['first_name' => 'sometimes|string|max:100', 'last_name' => 'sometimes|string|max:100', 'phone' => 'nullable|string|max:40', 'source' => 'nullable|string|max:60', 'notes' => 'nullable|string|max:20000']));
         AuditLogger::log('applicant.updated', $a);
+
         return ['data' => $this->detail($a->refresh())];
     }
 
@@ -94,6 +101,7 @@ class ApplicantController extends Controller
         $a = Applicant::findOrFail($id);
         $d = $request->validate(['stage' => ['required', 'string', 'max:30'], 'note' => 'nullable|string|max:1000']);
         $svc->moveStage($a, $d['stage'], $d['note'] ?? null, $request->user());
+
         return ['data' => $this->detail($a->refresh())];
     }
 
@@ -102,6 +110,7 @@ class ApplicantController extends Controller
         $a = Applicant::findOrFail($id);
         $d = $request->validate(['reason' => ['required', 'string', 'max:5000', new RichTextMin(1)]]);
         $svc->reject($a, $d['reason'], $request->user());
+
         return ['data' => $this->detail($a->refresh())];
     }
 
@@ -109,6 +118,7 @@ class ApplicantController extends Controller
     {
         $a = Applicant::findOrFail($id);
         $req = $svc->requestSelection($a, $request->user());
+
         return response()->json(['data' => ['approval_request_id' => $req->id]], 201);
     }
 
@@ -117,6 +127,7 @@ class ApplicantController extends Controller
         $a = Applicant::findOrFail($id);
         $d = $request->validate(['manager_employee_id' => ['nullable', Rule::exists('hr_employees', 'id')->where('organization_id', $this->ctx()->organizationId())]]);
         $e = $svc->convert($a, $d, $request->user());
+
         return response()->json(['data' => ['employee_id' => $e->id, 'employee_number' => $e->employee_number]], 201);
     }
 
@@ -124,6 +135,7 @@ class ApplicantController extends Controller
     private function refRules(bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return ['referee_name' => "$req|string|max:150", 'referee_contact' => 'nullable|string|max:190', 'relationship' => 'nullable|string|max:100', 'result' => ['sometimes', Rule::in(['pending', 'satisfactory', 'concerns'])],
             'notes' => 'nullable|string|max:10000', 'checked_on' => 'nullable|date_format:Y-m-d'];
     }
@@ -133,6 +145,7 @@ class ApplicantController extends Controller
         $a = Applicant::findOrFail($id);
         abort_if($a->anonymized_at, 422);
         $svc->addReference($a, $request->validate($this->refRules(true)), $request->user());
+
         return response()->json(['data' => $this->detail($a->refresh())], 201);
     }
 
@@ -146,6 +159,7 @@ class ApplicantController extends Controller
         }
         $r->update($d + ['checked_by' => $request->user()->id]);
         AuditLogger::log('reference.updated', $r);
+
         return ['data' => $this->detail(Applicant::findOrFail($r->applicant_id))];
     }
 
@@ -155,6 +169,7 @@ class ApplicantController extends Controller
         $a = Applicant::findOrFail($id);
         $d = $request->validate(['until' => 'required|date_format:Y-m-d', 'reason' => ['required', 'string', 'max:5000', new RichTextMin(1)]]);
         $svc->extendRetention($a, $d['until'], $d['reason'], $request->user());
+
         return ['data' => $this->detail($a->refresh())];
     }
 
@@ -162,6 +177,7 @@ class ApplicantController extends Controller
     {
         $a = Applicant::findOrFail($id);
         $svc->anonymize($a, $request->user());
+
         return ['data' => $this->listShape($a->refresh()->load(['stage', 'vacancy']))];
     }
 }

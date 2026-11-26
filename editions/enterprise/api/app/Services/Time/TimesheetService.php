@@ -10,9 +10,9 @@ use App\Services\Approvals\ApprovalEngine;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use App\Support\Lookup;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\UniqueConstraintViolationException;
 
 /** Weekly timesheets (Monday-Sunday in the organization's timezone), approved through the Phase 0 approval engine. */
 class TimesheetService
@@ -29,7 +29,7 @@ class TimesheetService
         $weekStart = TimerMath::weekStart($anyDate);
         $org = app(OrganizationContext::class)->organizationId();      // users have no organization_id column: it comes from the active context
 
-        $find = fn() => Timesheet::query()
+        $find = fn () => Timesheet::query()
             ->where('organization_id', $org)
             ->where('user_id', $u->id)
             ->whereDate('week_start', $weekStart);
@@ -41,9 +41,9 @@ class TimesheetService
         try {
             return Timesheet::create([
                 'organization_id' => $org,
-                'user_id'         => $u->id,
-                'week_start'      => $weekStart,
-                'status_id'       => Lookup::id('timesheet_status', 'draft'),
+                'user_id' => $u->id,
+                'week_start' => $weekStart,
+                'status_id' => Lookup::id('timesheet_status', 'draft'),
             ]);
         } catch (UniqueConstraintViolationException) {
             // Lost a race with a concurrent request: the row now exists.
@@ -54,21 +54,34 @@ class TimesheetService
     public function submit(User $u, string $anyDate): Timesheet
     {
         $ts = $this->week($u, $anyDate);
+
         return DB::transaction(function () use ($ts, $u) {
             $ts = Timesheet::lockForUpdate()->with('status')->findOrFail($ts->id);
-            if ($ts->status->code !== 'draft') $this->fail('not_draft');
+            if ($ts->status->code !== 'draft') {
+                $this->fail('not_draft');
+            }
             $start = $ts->week_start->toDateString();
-            $end = date('Y-m-d', strtotime($start . ' +6 days'));
+            $end = date('Y-m-d', strtotime($start.' +6 days'));
             $entries = TimeEntry::where('user_id', $u->id)->whereBetween('work_date', [$start, $end])->with('status')->get();
-            if ($entries->contains(fn($e) => $e->ended_at === null)) $this->fail('timer_open');
-            $draft = $entries->filter(fn($e) => $e->status->code === 'draft');
-            if ($draft->isEmpty()) $this->fail('empty');
-            if ($draft->contains(fn($e) => $e->auto_stopped)) $this->fail('needs_correction');
+            if ($entries->contains(fn ($e) => $e->ended_at === null)) {
+                $this->fail('timer_open');
+            }
+            $draft = $entries->filter(fn ($e) => $e->status->code === 'draft');
+            if ($draft->isEmpty()) {
+                $this->fail('empty');
+            }
+            if ($draft->contains(fn ($e) => $e->auto_stopped)) {
+                $this->fail('needs_correction');
+            }
             $total = (int) $draft->sum('duration_seconds');
-            if ($total < 0) $this->fail('negative');
+            if ($total < 0) {
+                $this->fail('negative');
+            }
 
             $submitted = Lookup::id('time_entry_status', 'submitted');
-            foreach ($draft as $e) $e->update(['status_id' => $submitted, 'timesheet_id' => $ts->id]);
+            foreach ($draft as $e) {
+                $e->update(['status_id' => $submitted, 'timesheet_id' => $ts->id]);
+            }
             $name = $u->name;
             $req = $this->approvals->submit(
                 'timesheet',
@@ -79,6 +92,7 @@ class TimesheetService
             );
             $ts->update(['status_id' => Lookup::id('timesheet_status', 'submitted'), 'total_seconds' => $total, 'approval_request_id' => $req->id, 'submitted_at' => now()]);
             AuditLogger::log('timesheet.submitted', $ts, [], ['week' => $start, 'seconds' => $total]);
+
             return $ts->refresh();
         });
     }
@@ -88,15 +102,21 @@ class TimesheetService
     {
         DB::transaction(function () use ($timesheetId, $approved, $note) {
             $ts = Timesheet::lockForUpdate()->with('status')->find($timesheetId);
-            if (!$ts || $ts->status->code !== 'submitted') return;
+            if (! $ts || $ts->status->code !== 'submitted') {
+                return;
+            }
             $entries = TimeEntry::where('timesheet_id', $ts->id)->get();
             if ($approved) {
                 $ok = Lookup::id('time_entry_status', 'approved');
-                foreach ($entries as $e) $e->update(['status_id' => $ok, 'approved_at' => now()]);
+                foreach ($entries as $e) {
+                    $e->update(['status_id' => $ok, 'approved_at' => now()]);
+                }
                 $ts->update(['status_id' => Lookup::id('timesheet_status', 'approved'), 'approved_at' => now()]);
             } else {
                 $draft = Lookup::id('time_entry_status', 'draft');
-                foreach ($entries as $e) $e->update(['status_id' => $draft, 'timesheet_id' => null]);
+                foreach ($entries as $e) {
+                    $e->update(['status_id' => $draft, 'timesheet_id' => null]);
+                }
                 $ts->update(['status_id' => Lookup::id('timesheet_status', 'draft'), 'total_seconds' => 0, 'submitted_at' => null]);
             }
             AuditLogger::log($approved ? 'timesheet.approved' : 'timesheet.reopened', $ts, [], ['note' => $note]);

@@ -9,12 +9,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingMinuteComment extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['created_at' => UtcDateTime::class, 'resolved_at' => UtcDateTime::class];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function version() { return $this->belongsTo(MeetingMinuteVersion::class, 'version_id'); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function version()
+    {
+        return $this->belongsTo(MeetingMinuteVersion::class, 'version_id');
+    }
 }

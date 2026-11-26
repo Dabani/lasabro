@@ -1,10 +1,12 @@
 <?php
 
+use App\Services\Rules\RuleActivationHandler;
+
 return [
     // approval subject type code => handler class (implements App\Services\Approvals\ApprovalOutcomeHandler).
     // Later phases add their own line here: 'timesheet' => \App\Services\Projects\TimesheetApprovalHandler::class, ...
     'approval_handlers' => [
-        'rule_activation' => \App\Services\Rules\RuleActivationHandler::class,
+        'rule_activation' => RuleActivationHandler::class,
     ],
 
     // approval subject type code => permission an approver must also hold (segregation of roles from configuration).

@@ -8,14 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayRunInput extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'pay_run_inputs';
+
     protected $guarded = [];
+
     protected $casts = ['amount' => 'decimal:2'];
 
-    public function component() { return $this->belongsTo(PayComponent::class, 'component_id'); }
-    public function employee() { return $this->belongsTo(Employee::class, 'employee_id'); }
+    public function component()
+    {
+        return $this->belongsTo(PayComponent::class, 'component_id');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 
     protected static function booted(): void
     {

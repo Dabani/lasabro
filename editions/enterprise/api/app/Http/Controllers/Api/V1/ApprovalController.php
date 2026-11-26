@@ -11,6 +11,7 @@ use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use App\Support\AppliesListQuery;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ApprovalController extends Controller
 {
@@ -18,7 +19,10 @@ class ApprovalController extends Controller
 
     public function __construct(private ApprovalEngine $engine) {}
 
-    private function with(): array { return ['flow.steps', 'subjectType', 'status', 'requester']; }
+    private function with(): array
+    {
+        return ['flow.steps', 'subjectType', 'status', 'requester'];
+    }
 
     /** Requests waiting for the signed-in user's decision. perm: approval.act */
     public function inbox(Request $request)
@@ -49,6 +53,7 @@ class ApprovalController extends Controller
             || ($r->isPending() && ($s = $r->currentStep()) && $this->engine->approversFor($r, $s)->has($u->id))
             || $r->actions->contains(fn ($a) => $a->actor_id === $u->id);
         abort_unless($allowed, 404);                                  // no existence leak
+
         return new ApprovalRequestResource($r);
     }
 
@@ -56,12 +61,14 @@ class ApprovalController extends Controller
     {
         $d = $request->validate(['decision' => 'required|in:approve,reject,return', 'comment' => 'nullable|string|max:2000']);
         $r = $this->engine->act($id, $request->user(), $d['decision'], $d['comment'] ?? null);
+
         return new ApprovalRequestResource($r->load($this->with()));
     }
 
     public function resubmit(Request $request, string $id)
     {
         $d = $request->validate(['comment' => 'nullable|string|max:2000']);
+
         return new ApprovalRequestResource($this->engine->resubmit($id, $request->user(), $d['comment'] ?? null)->load($this->with()));
     }
 
@@ -81,12 +88,13 @@ class ApprovalController extends Controller
     {
         $org = app(OrganizationContext::class)->organizationId();
         $d = $request->validate([
-            'delegate_id' => ['required', \Illuminate\Validation\Rule::exists('organization_memberships', 'user_id')->where('organization_id', $org)],
+            'delegate_id' => ['required', Rule::exists('organization_memberships', 'user_id')->where('organization_id', $org)],
             'valid_from' => 'required|date', 'valid_to' => 'required|date|after_or_equal:valid_from',
         ]);
         abort_if($d['delegate_id'] === $request->user()->id, 422);
         $m = ApprovalDelegation::create($d + ['delegator_id' => $request->user()->id, 'is_active' => true]);
         AuditLogger::log('approval.delegation_created', $m, [], $d);
+
         return response()->json(['id' => $m->id], 201);
     }
 
@@ -95,6 +103,7 @@ class ApprovalController extends Controller
         $m = ApprovalDelegation::where('delegator_id', $request->user()->id)->findOrFail($id);
         $m->update(['is_active' => false]);
         AuditLogger::log('approval.delegation_revoked', $m);
+
         return response()->noContent();
     }
 }

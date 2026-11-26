@@ -20,6 +20,7 @@ use App\Services\AuditLogger;
 use App\Services\Hr\HrSettings;
 use App\Services\OrganizationContext;
 use App\Support\Lookup;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -32,16 +33,39 @@ class PayrollRunService
 {
     public function __construct(private PayrollConfigResolver $config) {}
 
-    private function st(string $c): string { return Lookup::id('pay_run_status', $c); }
-    private function ps(string $c): string { return Lookup::id('pay_payslip_status', $c); }
-    private function code(string $id): ?string { return LookupValue::find($id)?->code; }
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
-    private function fail(string $field, string $key, array $p = []): never { throw ValidationException::withMessages([$field => [__("payrun.err.$key", $p)]]); }
-    private function status(PayRun $r): string { return $this->code($r->status_id) ?? ''; }
+    private function st(string $c): string
+    {
+        return Lookup::id('pay_run_status', $c);
+    }
+
+    private function ps(string $c): string
+    {
+        return Lookup::id('pay_payslip_status', $c);
+    }
+
+    private function code(string $id): ?string
+    {
+        return LookupValue::find($id)?->code;
+    }
+
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
+
+    private function fail(string $field, string $key, array $p = []): never
+    {
+        throw ValidationException::withMessages([$field => [__("payrun.err.$key", $p)]]);
+    }
+
+    private function status(PayRun $r): string
+    {
+        return $this->code($r->status_id) ?? '';
+    }
 
     private function expect(PayRun $run, string $action): void
     {
-        if (!PayRunFlow::can($this->status($run), $action)) {
+        if (! PayRunFlow::can($this->status($run), $action)) {
             $this->fail('status', 'cannot_transition', ['status' => $this->status($run), 'action' => $action]);
         }
     }
@@ -56,7 +80,7 @@ class PayrollRunService
 
     private function editable(PayRun $run): void
     {
-        if (!PayRunFlow::editable($this->status($run))) {
+        if (! PayRunFlow::editable($this->status($run))) {
             $this->fail('status', 'run_not_editable');
         }
     }
@@ -76,13 +100,14 @@ class PayrollRunService
             'md_required' => HrSettings::get($org, 'payroll_md_approval_required') === 1, 'proration_mode' => HrSettings::get($org, 'payroll_proration_mode'), 'earnings_decimals' => HrSettings::get($org, 'payroll_earnings_decimals'),
             'prepared_by' => $by->id, 'note' => $d['note'] ?? null]);
         AuditLogger::log('payroll.run_created', $run, [], ['period_from' => $d['period_from'], 'period_to' => $d['period_to'], 'proration_mode' => $run->proration_mode, 'md_required' => $run->md_required]);
+
         return $run;
     }
 
     /** A correction of a locked run: a new run for chosen employees, whose payslips record the difference against the originals. */
     public function createAdjustment(User $by, PayRun $parent, array $employeeIds, ?string $note): PayRun
     {
-        if (!PayRunFlow::frozen($this->status($parent)) || $this->code($parent->kind_id) !== 'regular') {
+        if (! PayRunFlow::frozen($this->status($parent)) || $this->code($parent->kind_id) !== 'regular') {
             $this->fail('status', 'parent_not_locked');
         }
         $employeeIds = array_values(array_unique($employeeIds));
@@ -90,6 +115,7 @@ class PayrollRunService
         if ($employeeIds === [] || count($have) !== count($employeeIds)) {
             $this->fail('employee_ids', 'not_in_original');
         }
+
         return DB::transaction(function () use ($by, $parent, $employeeIds, $note) {
             $org = $this->org();
             $run = PayRun::create(['kind_id' => Lookup::id('pay_run_kind', 'adjustment'), 'period_from' => $parent->period_from->toDateString(), 'period_to' => $parent->period_to->toDateString(), 'currency_id' => $parent->currency_id,
@@ -99,6 +125,7 @@ class PayrollRunService
                 PayRunMember::create(['run_id' => $run->id, 'employee_id' => $eid]);
             }
             AuditLogger::log('payroll.adjustment_created', $run, [], ['parent' => $parent->code, 'employees' => count($employeeIds)]);
+
             return $run;
         });
     }
@@ -108,11 +135,12 @@ class PayrollRunService
     {
         $this->editable($run);
         $c = PayComponent::with('source')->find($d['component_id']);
-        if (!$c || !$c->is_active || $c->source->code !== 'variable') {
+        if (! $c || ! $c->is_active || $c->source->code !== 'variable') {
             $this->fail('component_id', 'input_not_variable');
         }
         $i = PayRunInput::create(['run_id' => $run->id, 'employee_id' => $d['employee_id'], 'component_id' => $c->id, 'amount' => $d['amount'], 'note' => $d['note'] ?? null, 'created_by' => $by->id]);
         AuditLogger::log('payroll.input_added', $i, [], ['run' => $run->code, 'employee_id' => $d['employee_id'], 'component' => $c->code]);     // the amount stays out of the audit trail
+
         return $i;
     }
 
@@ -142,13 +170,14 @@ class PayrollRunService
     }
 
     // ---- calculation ---------------------------------------------------------------------------------------------------------------------
-    /** @return \Illuminate\Support\Collection<int,Employee> */
+    /** @return Collection<int,Employee> */
     private function population(PayRun $run)
     {
         $q = Employee::withoutGlobalScopes()->where('organization_id', $run->organization_id);
         if ($run->parent_run_id) {
             return $q->whereIn('id', PayRunMember::where('run_id', $run->id)->pluck('employee_id'))->get();
         }
+
         return $q->where(fn ($w) => $w->whereNull('hired_on')->orWhereDate('hired_on', '<=', $run->period_to))->where(fn ($w) => $w->whereNull('ended_on')->orWhereDate('ended_on', '>=', $run->period_from))->orderBy('last_name')->get();
     }
 
@@ -169,7 +198,7 @@ class PayrollRunService
             PayPayslip::where('run_id', $run->id)->get()->each->delete();
             foreach ($this->population($run) as $e) {
                 $p = Proration::factor($from, $to, $e->hired_on?->toDateString(), $e->ended_on?->toDateString(), $run->proration_mode, $holidays);
-                if ($e->hired_on !== null && !$p['employed']) {
+                if ($e->hired_on !== null && ! $p['employed']) {
                     continue;                                                                     // not employed in this period: no payslip
                 }
                 $status = $this->payslipFor($run, $e, $p, $exclusions[$e->id] ?? null, $names, $currency, $holidays);
@@ -178,6 +207,7 @@ class PayrollRunService
             $run->update(['status_id' => $this->st('calculated'), 'calculated_by' => $by->id, 'calculated_at' => now()]);
             AuditLogger::log('payroll.run_calculated', $run, [], $count);
         });
+
         return $count;
     }
 
@@ -196,6 +226,7 @@ class PayrollRunService
             'bank_account' => $e->bank_account, 'currency_code' => $currency, 'proration_factor' => $p['factor'], 'worked_days' => $p['worked'], 'period_days' => $p['total']]);
         if ($excluded !== null) {
             $slip->update(['status_id' => $this->ps('excluded'), 'excluded_reason' => $excluded]);
+
             return 'excluded';
         }
         $blockers = [];
@@ -222,6 +253,7 @@ class PayrollRunService
                 $this->flag($slip, 'blocker', $code, $params);
             }
             $slip->update(['status_id' => $this->ps('blocked')]);
+
             return 'blocked';
         }
 
@@ -252,6 +284,7 @@ class PayrollRunService
             }
         }
         $slip->update($upd);
+
         return 'calculated';
     }
 
@@ -263,11 +296,12 @@ class PayrollRunService
         if (PayPayslip::where('run_id', $run->id)->where('status_id', $this->ps('blocked'))->exists()) {
             $this->fail('status', 'blocked_payslips');
         }
-        if (!PayPayslip::where('run_id', $run->id)->where('status_id', $this->ps('calculated'))->exists()) {
+        if (! PayPayslip::where('run_id', $run->id)->where('status_id', $this->ps('calculated'))->exists()) {
             $this->fail('status', 'empty_run');
         }
         $run->update(['status_id' => $this->st('reviewed'), 'reviewed_by' => $by->id, 'reviewed_at' => now()]);
         AuditLogger::log('payroll.run_reviewed', $run);
+
         return $run->refresh();
     }
 
@@ -280,7 +314,8 @@ class PayrollRunService
             $this->fail('status', $r['error']);
         }
         $run->update($step === 'approve_md' ? ['md_by' => $by->id, 'md_at' => now(), 'status_id' => $this->st($r['status'])] : ['finance_by' => $by->id, 'finance_at' => now(), 'status_id' => $this->st($r['status'])]);
-        AuditLogger::log('payroll.run_' . ($step === 'approve_md' ? 'approved_md' : 'approved_finance'), $run, [], ['status' => $r['status']]);
+        AuditLogger::log('payroll.run_'.($step === 'approve_md' ? 'approved_md' : 'approved_finance'), $run, [], ['status' => $r['status']]);
+
         return $run->refresh();
     }
 
@@ -293,6 +328,7 @@ class PayrollRunService
         }
         $run->update(['status_id' => $this->st('draft'), 'reviewed_by' => null, 'reviewed_at' => null, 'finance_by' => null, 'finance_at' => null, 'md_by' => null, 'md_at' => null, 'returned_reason' => $reason]);
         AuditLogger::log('payroll.run_returned', $run, [], ['by' => $by->id, 'reason' => $reason]);
+
         return $run->refresh();
     }
 
@@ -302,6 +338,7 @@ class PayrollRunService
         $this->segregate($run, 'lock', $by);
         $run->update(['status_id' => $this->st('locked'), 'locked_by' => $by->id, 'locked_at' => now()]);
         AuditLogger::log('payroll.run_locked', $run);
+
         return $run->refresh();
     }
 
@@ -311,6 +348,7 @@ class PayrollRunService
         $this->segregate($run, 'pay', $by);
         $run->update(['status_id' => $this->st('paid'), 'paid_on' => $paidOn, 'paid_by' => $by->id, 'payment_reference' => $reference]);
         AuditLogger::log('payroll.run_paid', $run, [], ['paid_on' => $paidOn]);
+
         return $run->refresh();
     }
 
@@ -319,6 +357,7 @@ class PayrollRunService
         $this->expect($run, 'declare');
         $run->update(['status_id' => $this->st('declared'), 'declared_on' => $declaredOn, 'declared_by' => $by->id, 'declaration_reference' => $reference]);
         AuditLogger::log('payroll.run_declared', $run, [], ['declared_on' => $declaredOn]);
+
         return $run->refresh();
     }
 
@@ -330,6 +369,7 @@ class PayrollRunService
         }
         $run->update(['status_id' => $this->st('cancelled'), 'cancel_reason' => $reason]);
         AuditLogger::log('payroll.run_cancelled', $run, [], ['reason' => $reason]);
+
         return $run->refresh();
     }
 
@@ -338,6 +378,7 @@ class PayrollRunService
     {
         $q = PayPayslip::where('run_id', $run->id);
         $sum = fn (string $col) => bcadd((string) (clone $q)->where('status_id', $this->ps('calculated'))->sum($col), '0', 2);
+
         return ['gross' => $sum('gross'), 'employee_contributions' => $sum('employee_contributions'), 'deductions' => $sum('deductions'), 'net' => $sum('net'), 'employer_contributions' => $sum('employer_contributions'), 'employer_cost' => $sum('employer_cost'),
             'net_difference' => (clone $q)->whereNotNull('net_difference')->exists() ? bcadd((string) (clone $q)->sum('net_difference'), '0', 2) : null,
             'calculated' => (clone $q)->where('status_id', $this->ps('calculated'))->count(), 'blocked' => (clone $q)->where('status_id', $this->ps('blocked'))->count(), 'excluded' => (clone $q)->where('status_id', $this->ps('excluded'))->count()];

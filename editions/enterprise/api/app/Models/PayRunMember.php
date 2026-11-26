@@ -11,8 +11,11 @@ class PayRunMember extends Model
     use BelongsToOrganization;
 
     protected $table = 'pay_run_members';
+
     public $incrementing = false;
+
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected static function booted(): void

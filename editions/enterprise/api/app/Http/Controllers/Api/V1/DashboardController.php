@@ -3,24 +3,24 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
-use App\Models\Department;
-use App\Models\Membership;
 use App\Models\ArchiveRecord;
 use App\Models\Asset;
 use App\Models\AuditFinding;
+use App\Models\AuditLog;
 use App\Models\BackupVerification;
 use App\Models\ComplianceObligation;
+use App\Models\DashboardWidget;
+use App\Models\Department;
 use App\Models\EquipmentMovement;
 use App\Models\FileAsset;
 use App\Models\FileDeletionRequest;
 use App\Models\LookupValue;
-use App\Services\FileAccess;
-use App\Support\Lookup;
+use App\Models\Membership;
 use App\Models\Role;
 use App\Models\SupportCase;
-use App\Models\DashboardWidget;
+use App\Services\FileAccess;
 use App\Services\OrganizationContext;
+use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -39,13 +39,16 @@ class DashboardController extends Controller
         $out = [];
         foreach ($rows->unique('widget_id') as $row) {
             $w = $widgets[$row->widget_id] ?? null;
-            if (!$w || ($w->permission && !$ctx->can($w->permission->code))) continue;
+            if (! $w || ($w->permission && ! $ctx->can($w->permission->code))) {
+                continue;
+            }
             $out[] = [
                 'id' => $w->id, 'code' => $w->code, 'name_key' => $w->name_key, 'type' => $w->type->code,
                 'width' => $row->width ?: $w->default_width, 'icon' => $w->icon, 'color' => $w->color,
                 'data' => $this->data($w->code, $ctx),
             ];
         }
+
         return response()->json(['data' => $out]);
     }
 
@@ -53,6 +56,7 @@ class DashboardController extends Controller
     private function data(string $code, OrganizationContext $ctx): mixed
     {
         $org = $ctx->organizationId();
+
         return match ($code) {
             'stat_users' => Membership::where('organization_id', $org)->count(),
             'stat_roles' => Role::count(),
@@ -62,6 +66,7 @@ class DashboardController extends Controller
                 ->map(fn ($r) => ['name' => $r->name, 'value' => $r->memberships_count, 'color' => $r->color ?: 'blue.6'])->values(),
             'chart_activity_7d' => collect(range(6, 0))->map(function ($d) use ($org) {
                 $day = today()->subDays($d);
+
                 return ['date' => $day->format('d M'), 'events' => AuditLog::where('organization_id', $org)->whereDate('created_at', $day)->count()];
             })->values(),
             'list_recent_activity' => AuditLog::with('user')->where('organization_id', $org)->latest('created_at')->limit(8)->get()
@@ -81,7 +86,7 @@ class DashboardController extends Controller
             'chart_records_by_status' => $this->recordsByStatus(),
             'stat_obligations_overdue' => ComplianceObligation::where('is_active', true)->whereDate('next_due_on', '<', today())->count(),
             'stat_open_findings' => AuditFinding::whereHas('audit')->whereHas('status', fn ($q) => $q->whereNotIn('code', ['resolved', 'accepted_risk']))->count(),
-            'stat_backup_age' => ($b = BackupVerification::orderByDesc('backup_date')->first()) ? $b->backup_date->diffInDays(today()) . ' d' : '—',
+            'stat_backup_age' => ($b = BackupVerification::orderByDesc('backup_date')->first()) ? $b->backup_date->diffInDays(today()).' d' : '—',
             default => null,
         };
     }
@@ -90,23 +95,26 @@ class DashboardController extends Controller
     {
         $counts = SupportCase::selectRaw('status_id, count(*) as c')->groupBy('status_id')->pluck('c', 'status_id');
         $lang = request()->user()->language_id;
+
         return LookupValue::with('translations')->whereIn('id', $counts->keys())->orderBy('sort_order')->get()
-            ->map(fn ($v) => ['name' => $v->label($lang), 'value' => (int) $counts[$v->id], 'color' => ($v->color ?: 'gray') . '.6'])->values();
+            ->map(fn ($v) => ['name' => $v->label($lang), 'value' => (int) $counts[$v->id], 'color' => ($v->color ?: 'gray').'.6'])->values();
     }
 
     private function assetsByStatus()
     {
         $counts = Asset::selectRaw('status_id, count(*) as c')->groupBy('status_id')->pluck('c', 'status_id');
         $lang = request()->user()->language_id;
+
         return LookupValue::with('translations')->whereIn('id', $counts->keys())->orderBy('sort_order')->get()
-            ->map(fn ($v) => ['name' => $v->label($lang), 'value' => (int) $counts[$v->id], 'color' => ($v->color ?: 'gray') . '.6'])->values();
+            ->map(fn ($v) => ['name' => $v->label($lang), 'value' => (int) $counts[$v->id], 'color' => ($v->color ?: 'gray').'.6'])->values();
     }
 
     private function recordsByStatus()
     {
         $counts = ArchiveRecord::selectRaw('status_id, count(*) as c')->groupBy('status_id')->pluck('c', 'status_id');
         $lang = request()->user()->language_id;
+
         return LookupValue::with('translations')->whereIn('id', $counts->keys())->orderBy('sort_order')->get()
-            ->map(fn ($v) => ['name' => $v->label($lang), 'value' => (int) $counts[$v->id], 'color' => ($v->color ?: 'gray') . '.6'])->values();
+            ->map(fn ($v) => ['name' => $v->label($lang), 'value' => (int) $counts[$v->id], 'color' => ($v->color ?: 'gray').'.6'])->values();
     }
 }

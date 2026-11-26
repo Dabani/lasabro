@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace Lasabro\Trips\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\LookupType;
-use App\Models\TripRate;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Lasabro\Trips\Models\TripRate;
 
 /** Per diem / accommodation / transport rate tables (perm hr.trip.configure). Effective-dated: a change is a new rate, the old one is ended, never edited. */
 class TripSetupController extends Controller

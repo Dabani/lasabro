@@ -8,15 +8,14 @@ use App\Models\ClientContact;
 use App\Models\ClientIdentity;
 use App\Models\Invoice;
 use App\Models\Milestone;
-use App\Models\PortalFileShare;
 use App\Models\Project;
 use App\Models\ProjectComment;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\FileService;
 use App\Services\OrganizationContext;
 use App\Services\Portal\PortalMfa;
 use App\Services\Portal\Totp;
-use App\Services\FileService;
 use App\Services\SettingsService;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,9 +28,10 @@ use Tests\TestCase;
 /** Needs Bundles 08-12. Not executed in the build environment - run `php artisan test`. */
 class PortalTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $admin;
+
     private User $manager;
 
     protected function setUp(): void
@@ -47,12 +47,22 @@ class PortalTest extends TestCase
     private function spa(): static
     {
         config(['sanctum.stateful' => ['spa.test']]);
+
         return $this->withHeaders(['Referer' => 'http://spa.test']);
     }
 
     /** Each portal request starts with a fresh client context in production; tests reuse one app instance, so reset it. */
-    private function asClient(ClientIdentity $i): void { $this->freshRequest(); $this->actingAs($i, 'client'); }
-    private function asStaff(User $u): void { $this->freshRequest(); Sanctum::actingAs($u); }
+    private function asClient(ClientIdentity $i): void
+    {
+        $this->freshRequest();
+        $this->actingAs($i, 'client');
+    }
+
+    private function asStaff(User $u): void
+    {
+        $this->freshRequest();
+        Sanctum::actingAs($u);
+    }
 
     private function freshRequest(): void
     {
@@ -63,9 +73,10 @@ class PortalTest extends TestCase
     private function world(string $code = 'ACME', bool $shared = true): array
     {
         $c = Client::create(['code' => $code, 'name' => "$code Ltd", 'status_id' => Lookup::id('client_status', 'active'), 'portal_enabled' => true]);
-        $contact = ClientContact::create(['client_id' => $c->id, 'name' => "Contact $code", 'email' => strtolower($code) . '@client.test']);
-        $i = ClientIdentity::create(['client_id' => $c->id, 'client_contact_id' => $contact->id, 'email' => strtolower($code) . '@client.test', 'password' => 'Str0ng-Passw0rd!x', 'is_active' => true]);
+        $contact = ClientContact::create(['client_id' => $c->id, 'name' => "Contact $code", 'email' => strtolower($code).'@client.test']);
+        $i = ClientIdentity::create(['client_id' => $c->id, 'client_contact_id' => $contact->id, 'email' => strtolower($code).'@client.test', 'password' => 'Str0ng-Passw0rd!x', 'is_active' => true]);
         $p = Project::create(['code' => "P-$code", 'name' => "Project $code", 'owner_id' => $this->manager->id, 'status_id' => Lookup::id('project_status', 'active'), 'client_id' => $c->id, 'portal_visible' => $shared]);
+
         return [$c, $contact, $i, $p];
     }
 
@@ -83,12 +94,16 @@ class PortalTest extends TestCase
         $this->asStaff($this->admin);
         $this->postJson("/api/v1/clients/{$c->id}/contacts/{$contact->id}/invite")->assertCreated();
         $url = null;
-        Mail::assertSent(UserInvitationMail::class, function ($m) use (&$url) { $url = $m->url; return true; });
+        Mail::assertSent(UserInvitationMail::class, function ($m) use (&$url) {
+            $url = $m->url;
+
+            return true;
+        });
         parse_str(parse_url($url, PHP_URL_QUERY), $q);
 
         $base = ['organization' => $this->org->slug, 'email' => $q['email']];
-        $this->getJson('/api/v1/portal/auth/activation?' . http_build_query($base + ['token' => 'wrong']))->assertStatus(422);
-        $this->getJson('/api/v1/portal/auth/activation?' . http_build_query($base + ['token' => $q['token']]))->assertOk()->assertJsonPath('valid', true);
+        $this->getJson('/api/v1/portal/auth/activation?'.http_build_query($base + ['token' => 'wrong']))->assertStatus(422);
+        $this->getJson('/api/v1/portal/auth/activation?'.http_build_query($base + ['token' => $q['token']]))->assertOk()->assertJsonPath('valid', true);
         $this->spa()->postJson('/api/v1/portal/auth/activate', $base + ['token' => $q['token'], 'password' => 'short', 'password_confirmation' => 'short'])->assertStatus(422);
         $this->spa()->postJson('/api/v1/portal/auth/activate', $base + ['token' => $q['token'], 'password' => 'Correct-Horse-Battery-9', 'password_confirmation' => 'Correct-Horse-Battery-9'])->assertOk();
         $this->spa()->postJson('/api/v1/portal/auth/activate', $base + ['token' => $q['token'], 'password' => 'Another-Strong-Pass-7', 'password_confirmation' => 'Another-Strong-Pass-7'])->assertStatus(422);   // used
@@ -149,7 +164,9 @@ class PortalTest extends TestCase
         $res = $this->getJson("/api/v1/portal/projects/{$pa->id}")->assertOk();
         $res->assertJsonPath('data.progress.percent', 50)->assertJsonPath('data.milestones.0.progress', 50);
         $body = $res->getContent();
-        foreach (['SECRET internal task title', 'Another internal title', 'INTERNAL note', 'duration_seconds', 'hourly_rate'] as $leak) $this->assertStringNotContainsString($leak, $body);
+        foreach (['SECRET internal task title', 'Another internal title', 'INTERNAL note', 'duration_seconds', 'hourly_rate'] as $leak) {
+            $this->assertStringNotContainsString($leak, $body);
+        }
         $this->assertStringContainsString('Update for the client', $body);
 
         $this->getJson("/api/v1/portal/projects/{$pb->id}")->assertNotFound();                                   // another client's project

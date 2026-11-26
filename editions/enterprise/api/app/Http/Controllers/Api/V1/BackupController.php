@@ -27,7 +27,10 @@ class BackupController extends Controller
 
     public function __construct(private OrganizationContext $ctx) {}
 
-    private function with(): array { return ['location.translations', 'result.translations', 'verifier']; }
+    private function with(): array
+    {
+        return ['location.translations', 'result.translations', 'verifier'];
+    }
 
     private function lookupRule(string $type)
     {
@@ -50,12 +53,13 @@ class BackupController extends Controller
         $v->load($this->with());
         AuditLogger::log('backup.verified', $v, [], ['date' => $v->backup_date->toDateString(), 'location' => $v->location->code, 'result' => $v->result->code]);
 
-        ObligationService::autoComplete($this->ctx->organizationId(), 'backup_verification', $request->user(), 'Backup verification ' . $v->backup_date->toDateString());
+        ObligationService::autoComplete($this->ctx->organizationId(), 'backup_verification', $request->user(), 'Backup verification '.$v->backup_date->toDateString());
 
         if ($v->result->code !== 'verified_ok') {          // a bad backup is an incident-grade event: tell the people who can act
             $to = Notifier::usersWithPermission($this->ctx->organizationId(), 'backup.manage')->merge(Notifier::usersWithPermission($this->ctx->organizationId(), 'compliance.manage'))->unique('id')->reject(fn ($u) => $u->id === $request->user()->id);
             Notifier::send($to, 'backup_issue', ['loc' => $v->location->label(), 'result' => $v->result->label(), 'date' => $v->backup_date->toDateString(), 'user' => $request->user()->name], null, ['in_app', 'email'], '/compliance/backups', $this->ctx->organizationId());
         }
+
         return (new BackupResource($v))->response()->setStatusCode(201);
     }
 
@@ -68,13 +72,16 @@ class BackupController extends Controller
         $all = BackupVerification::with('result')->orderByDesc('backup_date')->get()->groupBy('location_id');
 
         $weeks = collect(range(7, 0))->map(function ($i) use ($rows, $locations) {
-            $start = today()->subWeeks($i)->startOfWeek(); $end = $start->copy()->endOfWeek();
+            $start = today()->subWeeks($i)->startOfWeek();
+            $end = $start->copy()->endOfWeek();
+
             return ['start' => $start->toDateString(), 'end' => $end->toDateString(), 'locations' => $locations->mapWithKeys(fn ($l) => [$l->id => $rows->where('location_id', $l->id)->filter(fn ($r) => $r->backup_date->between($start, $end))->isNotEmpty()])];
         });
 
         return response()->json(['data' => [
             'locations' => $locations->map(function ($l) use ($all, $lang) {
                 $last = optional($all->get($l->id))->first();
+
                 return ['id' => $l->id, 'label' => $l->label($lang), 'last_date' => $last?->backup_date->toDateString(), 'last_result' => $last ? ['label' => $last->result->label($lang), 'color' => $last->result->color, 'code' => $last->result->code] : null,
                     'days_since' => $last ? $last->backup_date->diffInDays(today()) : null];
             })->values(),
@@ -87,6 +94,7 @@ class BackupController extends Controller
         $v = BackupVerification::findOrFail($id);
         $q = FileAccess::scopeVisible(FileAsset::query())->with(['classification.translations', 'status.translations', 'owner'])
             ->whereHas('links', fn ($l) => $l->where('link_type_id', Lookup::id('file_link_type', 'backup_verification'))->where('link_id', $v->id))->orderByDesc('created_at');
+
         return FileResource::collection($q->get());
     }
 
@@ -97,6 +105,7 @@ class BackupController extends Controller
         $asset = FileService::store($request->file('file'), $request->user(), ['classification_id' => Lookup::id('file_classification', 'confidential')], ['type' => 'backup_verification', 'id' => $v->id]);
         $asset->load(['classification.translations', 'status.translations', 'owner']);
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, 'backup' => $v->backup_date->toDateString(), 'sha256' => $asset->currentVersion->sha256]);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 }

@@ -21,6 +21,7 @@ class ResolveClientContext
 
         app(OrganizationContext::class)->resolveForOrganization($identity->organization()->first());
         app(ClientContext::class)->activate($identity);
+
         return $next($request);
     }
 }

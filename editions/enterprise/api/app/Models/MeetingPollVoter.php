@@ -8,14 +8,29 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingPollVoter extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function invitation() { return $this->belongsTo(MeetingInvitation::class, 'invitation_id'); }
-    public function votes() { return $this->hasMany(MeetingPollVote::class, 'voter_id'); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
-    public function displayName(): string { return $this->user?->name ?? (string) $this->invitation?->guest_name; }
+    public function invitation()
+    {
+        return $this->belongsTo(MeetingInvitation::class, 'invitation_id');
+    }
+
+    public function votes()
+    {
+        return $this->hasMany(MeetingPollVote::class, 'voter_id');
+    }
+
+    public function displayName(): string
+    {
+        return $this->user?->name ?? (string) $this->invitation?->guest_name;
+    }
 }

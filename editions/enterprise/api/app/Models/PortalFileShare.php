@@ -8,11 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class PortalFileShare extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['created_at' => 'datetime'];
 
-    public function file() { return $this->belongsTo(FileAsset::class, 'file_id'); }
+    public function file()
+    {
+        return $this->belongsTo(FileAsset::class, 'file_id');
+    }
 }

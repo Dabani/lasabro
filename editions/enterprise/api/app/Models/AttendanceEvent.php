@@ -11,11 +11,14 @@ use LogicException;
 /** A raw clock event. Append-only: it is never edited or deleted (corrections are separate, approved records). */
 class AttendanceEvent extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_attendance_events';
+
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['occurred_at' => UtcDateTime::class, 'created_at' => UtcDateTime::class];
 
     protected static function booted(): void
@@ -25,5 +28,8 @@ class AttendanceEvent extends Model
         static::deleting(fn () => throw new LogicException('Clock events are never deleted.'));
     }
 
-    public function employee() { return $this->belongsTo(Employee::class, 'employee_id'); }
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 }

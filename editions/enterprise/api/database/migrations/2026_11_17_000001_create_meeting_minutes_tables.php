@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Schema;
  * Meeting minutes (Guide 6.6). One minutes record per meeting; every wording is a numbered version.
  * An approved and published version is never edited: a correction is a new version and the earlier ones stay readable.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('meeting_minutes', function (Blueprint $t) {

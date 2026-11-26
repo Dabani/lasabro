@@ -10,7 +10,7 @@ class AfricasTalkingSmsGateway implements SmsGateway
 {
     public function send(string $to, string $message): ?string
     {
-        $payload = ['username' => config('ops.sms.at_username'), 'to' => '+' . ltrim($to, '+'), 'message' => $message];
+        $payload = ['username' => config('ops.sms.at_username'), 'to' => '+'.ltrim($to, '+'), 'message' => $message];
         if ($from = config('ops.sms.sender')) {
             $payload['from'] = $from;
         }
@@ -19,9 +19,10 @@ class AfricasTalkingSmsGateway implements SmsGateway
             ->timeout(15)->post(config('ops.sms.at_url'), $payload)->throw();
 
         $r = $res->json('SMSMessageData.Recipients.0');
-        if (!$r || ($r['status'] ?? '') !== 'Success') {
-            throw new RuntimeException('Africa\'s Talking: ' . ($r['status'] ?? 'no recipient result'));
+        if (! $r || ($r['status'] ?? '') !== 'Success') {
+            throw new RuntimeException('Africa\'s Talking: '.($r['status'] ?? 'no recipient result'));
         }
+
         return $r['messageId'] ?? null;
     }
 }

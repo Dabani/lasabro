@@ -15,7 +15,10 @@ class RateMatcher
     public static function pick(array $lines, ?string $taskId, ?string $userId, ?string $role, string $date): ?array
     {
         $hits = array_values(array_filter($lines, function ($l) use ($taskId, $userId, $role, $date) {
-            if ($l['from'] > $date || ($l['to'] !== null && $l['to'] < $date)) return false;
+            if ($l['from'] > $date || ($l['to'] !== null && $l['to'] < $date)) {
+                return false;
+            }
+
             return match ($l['scope']) {
                 'task' => $taskId !== null && $l['task_id'] === $taskId,
                 'employee' => $userId !== null && $l['user_id'] === $userId,
@@ -25,6 +28,7 @@ class RateMatcher
             };
         }));
         usort($hits, fn ($a, $b) => [self::ORDER[$b['scope']], $b['from']] <=> [self::ORDER[$a['scope']], $a['from']]);
+
         return $hits[0] ?? null;
     }
 }

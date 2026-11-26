@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayJournalAccount extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'pay_journal_accounts';
+
     protected $guarded = [];
 }

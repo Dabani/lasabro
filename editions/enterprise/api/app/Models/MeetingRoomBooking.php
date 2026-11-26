@@ -9,11 +9,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingRoomBooking extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['starts_at' => UtcDateTime::class, 'ends_at' => UtcDateTime::class, 'released_at' => UtcDateTime::class];
 
-    public function room() { return $this->belongsTo(MeetingRoom::class, 'room_id'); }
-    public function meeting() { return $this->belongsTo(Meeting::class); }
+    public function room()
+    {
+        return $this->belongsTo(MeetingRoom::class, 'room_id');
+    }
+
+    public function meeting()
+    {
+        return $this->belongsTo(Meeting::class);
+    }
 }

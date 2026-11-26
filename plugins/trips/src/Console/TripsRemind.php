@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Console\Commands;
+namespace Lasabro\Trips\Console;
 
-use App\Services\Hr\Trips\TripService;
 use Illuminate\Console\Command;
+use Lasabro\Trips\Services\TripService;
 
 class TripsRemind extends Command
 {

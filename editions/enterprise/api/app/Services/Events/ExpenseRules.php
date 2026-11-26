@@ -17,14 +17,26 @@ final class ExpenseRules
         'rejected' => ['draft'],
     ];
 
-    public static function allowed(string $from, string $to): bool { return in_array($to, self::TRANSITIONS[$from] ?? [], true); }
+    public static function allowed(string $from, string $to): bool
+    {
+        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
+    }
 
-    public static function editable(string $status): bool { return $status === 'draft'; }
+    public static function editable(string $status): bool
+    {
+        return $status === 'draft';
+    }
 
-    public static function toCents(string|int|float $amount): int { return (int) round(((float) $amount) * 100); }
+    public static function toCents(string|int|float $amount): int
+    {
+        return (int) round(((float) $amount) * 100);
+    }
 
     /** Money left in the budget after the committed expenses; null when there is no budget. */
-    public static function remainingCents(?int $budgetCents, int $committedCents): ?int { return $budgetCents === null ? null : $budgetCents - $committedCents; }
+    public static function remainingCents(?int $budgetCents, int $committedCents): ?int
+    {
+        return $budgetCents === null ? null : $budgetCents - $committedCents;
+    }
 
     public static function exceedsBudget(?int $budgetCents, int $committedCents, int $newCents): bool
     {
@@ -32,7 +44,13 @@ final class ExpenseRules
     }
 
     /** A receipt is needed from this amount upwards; a threshold of 0 switches the rule off. */
-    public static function receiptRequired(int $thresholdCents, int $amountCents): bool { return $thresholdCents > 0 && $amountCents >= $thresholdCents; }
+    public static function receiptRequired(int $thresholdCents, int $amountCents): bool
+    {
+        return $thresholdCents > 0 && $amountCents >= $thresholdCents;
+    }
 
-    public static function amountValid(int $cents): bool { return $cents > 0; }
+    public static function amountValid(int $cents): bool
+    {
+        return $cents > 0;
+    }
 }

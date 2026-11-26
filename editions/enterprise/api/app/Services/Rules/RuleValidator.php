@@ -18,18 +18,30 @@ class RuleValidator
         $errors = [];
         $warnings = [];
 
-        if ($v->outcomes->isEmpty()) $errors[] = 'no_outcome';
-        if ($v->effective_to && $v->effective_to->lt($v->effective_from)) $errors[] = 'dates_inverted';
+        if ($v->outcomes->isEmpty()) {
+            $errors[] = 'no_outcome';
+        }
+        if ($v->effective_to && $v->effective_to->lt($v->effective_from)) {
+            $errors[] = 'dates_inverted';
+        }
 
         $conds = $this->conditionArrays($v);
         foreach ($conds as $c) {
             $numeric = in_array($c['operator'], ['gte', 'gt', 'lte', 'lt', 'between'], true);
-            if ($numeric && $c['decimal'] === null) $errors[] = 'numeric_value_missing';
-            if (in_array($c['operator'], ['eq', 'ne', 'in'], true) && $c['decimal'] === null && ($c['text'] === null || $c['text'] === '')) $errors[] = 'value_missing';
-            if ($c['operator'] === 'between' && ($c['decimal_to'] === null || bccomp((string) $c['decimal'], (string) $c['decimal_to'], 2) > 0)) $errors[] = 'thresholds_out_of_order';
+            if ($numeric && $c['decimal'] === null) {
+                $errors[] = 'numeric_value_missing';
+            }
+            if (in_array($c['operator'], ['eq', 'ne', 'in'], true) && $c['decimal'] === null && ($c['text'] === null || $c['text'] === '')) {
+                $errors[] = 'value_missing';
+            }
+            if ($c['operator'] === 'between' && ($c['decimal_to'] === null || bccomp((string) $c['decimal'], (string) $c['decimal_to'], 2) > 0)) {
+                $errors[] = 'thresholds_out_of_order';
+            }
         }
         [$lo, $hi] = RuleMatcher::amountInterval($conds);
-        if ($lo > $hi) $errors[] = 'thresholds_out_of_order';
+        if ($lo > $hi) {
+            $errors[] = 'thresholds_out_of_order';
+        }
 
         // Ambiguity: another rule set in the same domain with the same condition signature, same priority, overlapping dates.
         $sig = $this->signature($conds);
@@ -39,20 +51,27 @@ class RuleValidator
             ->where('priority', $v->priority)
             ->with(['conditions.attribute', 'conditions.operator'])->get();
         foreach ($others as $o) {
-            if ($this->signature($this->conditionArrays($o)) === $sig && $this->overlaps($v, $o)) { $errors[] = 'overlap'; break; }
+            if ($this->signature($this->conditionArrays($o)) === $sig && $this->overlaps($v, $o)) {
+                $errors[] = 'overlap';
+                break;
+            }
         }
 
         // Statutory floors/ceilings stored in legal_parameters are enforced (COPS cannot certify lawfulness, only enforce stored limits).
         foreach ($v->outcomes as $o) {
             $val = $o->value_decimal ?? $o->value_integer;
-            if ($val === null) continue;
+            if ($val === null) {
+                continue;
+            }
             $params = LegalParameter::query()->where('code', $o->outcome_key)
                 ->whereDate('valid_from', '<=', $v->effective_from)
                 ->where(fn ($q) => $q->whereNull('valid_to')->orWhereDate('valid_to', '>=', $v->effective_from))->with('boundType')->get();
             foreach ($params as $p) {
                 $below = bccomp((string) $val, (string) $p->value_decimal, 4) < 0;
                 $above = bccomp((string) $val, (string) $p->value_decimal, 4) > 0;
-                if (($p->boundType->code === 'floor' && $below) || ($p->boundType->code === 'ceiling' && $above)) $errors[] = 'statutory_limit';
+                if (($p->boundType->code === 'floor' && $below) || ($p->boundType->code === 'ceiling' && $above)) {
+                    $errors[] = 'statutory_limit';
+                }
             }
         }
 
@@ -77,7 +96,10 @@ class RuleValidator
     {
         $v->loadMissing(['ruleSet', 'verification']);
         $b = [];
-        if ($v->ruleSet->is_legal_profile && ($v->verification?->code !== 'verified' || !$v->signed_off_by)) $b[] = 'unverified_legal_profile';
+        if ($v->ruleSet->is_legal_profile && ($v->verification?->code !== 'verified' || ! $v->signed_off_by)) {
+            $b[] = 'unverified_legal_profile';
+        }
+
         return $b;
     }
 
@@ -92,8 +114,9 @@ class RuleValidator
     private function signature(array $conds, bool $ignoreAmount = false): string
     {
         $parts = array_map(fn ($c) => implode('|', [$c['attribute'], $c['operator'], $c['text'], $c['decimal'], $c['decimal_to']]),
-            array_values(array_filter($conds, fn ($c) => !$ignoreAmount || $c['attribute'] !== 'amount')));
+            array_values(array_filter($conds, fn ($c) => ! $ignoreAmount || $c['attribute'] !== 'amount')));
         sort($parts);
+
         return implode(';', $parts);
     }
 
@@ -101,6 +124,7 @@ class RuleValidator
     {
         $aEnd = $a->effective_to?->toDateString() ?? '9999-12-31';
         $bEnd = $b->effective_to?->toDateString() ?? '9999-12-31';
+
         return $a->effective_from->toDateString() <= $bEnd && $b->effective_from->toDateString() <= $aEnd;
     }
 }

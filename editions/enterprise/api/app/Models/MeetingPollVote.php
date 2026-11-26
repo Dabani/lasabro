@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class MeetingPollVote extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     public $timestamps = false;
+
     protected $guarded = [];
 }

@@ -62,7 +62,7 @@ class EventRulesTest extends TestCase
     {
         $this->assertTrue(R::ticketValid(str_repeat('a1', 24)));
         $this->assertFalse(R::ticketValid('short'));
-        $this->assertFalse(R::ticketValid(str_repeat('a', 47) . '/'));
+        $this->assertFalse(R::ticketValid(str_repeat('a', 47).'/'));
         $this->assertSame(75, R::attendanceRate(8, 6));
         $this->assertSame(0, R::attendanceRate(0, 0));
         $this->assertSame(['b', 'c'], R::noShows(['a', 'b', 'c'], ['a']));

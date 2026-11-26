@@ -14,6 +14,7 @@ class AssetResource extends JsonResource
     public function toArray($request): array
     {
         $lang = optional($request->user())->language_id;
+
         return [
             'id' => $this->id,
             'asset_tag' => $this->asset_tag,
@@ -27,7 +28,7 @@ class AssetResource extends JsonResource
             'warranty_expired' => $this->warranty_expires_on?->isPast() ?? false,
             'assignee' => $this->assignee ? ['id' => $this->assignee->id, 'name' => $this->assignee->name] : null,
             'department_id' => $this->department_id, 'department' => $this->department?->name,
-            'location_id' => $this->location_id, 'location' => $this->location ? $this->location->code . ' — ' . $this->location->name : null,
+            'location_id' => $this->location_id, 'location' => $this->location ? $this->location->code.' — '.$this->location->name : null,
             'notes' => $this->notes,
             'created_at' => $this->created_at?->toIso8601String(),
             // flat copies for export

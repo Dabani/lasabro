@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Hr\Trips;
+namespace Lasabro\Trips\Services;
 
 use App\Services\MoneyService;
 use DateTimeImmutable;

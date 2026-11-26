@@ -3,7 +3,6 @@
 namespace App\Services\Meetings;
 
 use App\Models\ComplianceObligation;
-use App\Models\Department;
 use App\Models\FileLink;
 use App\Models\Meeting;
 use App\Models\MeetingAction;
@@ -31,10 +30,20 @@ class FollowUpService
         throw ValidationException::withMessages([$field => [__("meetings.$key", $p)]]);
     }
 
-    private function st(string $kind, string $code): string { return Lookup::id($kind === 'resolution' ? 'resolution_status' : 'action_status', $code); }
-    private function link(Meeting $m): string { return '/meetings/' . $m->id; }
+    private function st(string $kind, string $code): string
+    {
+        return Lookup::id($kind === 'resolution' ? 'resolution_status' : 'action_status', $code);
+    }
 
-    public static function today(string $orgId): string { return now(AttendanceService::tz($orgId))->toDateString(); }
+    private function link(Meeting $m): string
+    {
+        return '/meetings/'.$m->id;
+    }
+
+    public static function today(string $orgId): string
+    {
+        return now(AttendanceService::tz($orgId))->toDateString();
+    }
 
     private function history(string $kind, string $id, string $org, ?string $from, string $to, ?User $by, ?string $note): void
     {
@@ -44,8 +53,8 @@ class FollowUpService
     /** People who can be given work: the hosts and the invitees of the meeting (also keeps confidential meetings closed). */
     private function requireParticipant(Meeting $m, ?string $userId, string $field): void
     {
-        if ($userId !== null && !in_array($userId, array_filter([$m->organizer_id, $m->chair_id, $m->secretary_id, $m->facilitator_id]), true)
-            && !MeetingInvitation::where('meeting_id', $m->id)->where('user_id', $userId)->exists()) {
+        if ($userId !== null && ! in_array($userId, array_filter([$m->organizer_id, $m->chair_id, $m->secretary_id, $m->facilitator_id]), true)
+            && ! MeetingInvitation::where('meeting_id', $m->id)->where('user_id', $userId)->exists()) {
             $this->fail($field, 'followup_only_participants');
         }
     }
@@ -53,7 +62,7 @@ class FollowUpService
     private function requireRecordable(Meeting $m): void
     {
         $m->loadMissing('status');
-        if (!FollowUpRules::canRecord($m->status->code)) {
+        if (! FollowUpRules::canRecord($m->status->code)) {
             $this->fail('status', 'followup_meeting_not_started');
         }
     }
@@ -61,6 +70,7 @@ class FollowUpService
     private function nextSeq(string $table, Meeting $m): int
     {
         Meeting::withoutGlobalScopes()->whereKey($m->id)->lockForUpdate()->first();     // numbering is serialized per meeting
+
         return (int) DB::table($table)->where('meeting_id', $m->id)->max('seq') + 1;
     }
 
@@ -69,6 +79,7 @@ class FollowUpService
     {
         $this->requireRecordable($m);
         $this->requireParticipant($m, $d['responsible_user_id'] ?? null, 'responsible_user_id');
+
         return DB::transaction(function () use ($m, $d, $by) {
             $r = MeetingResolution::create([
                 'meeting_id' => $m->id, 'agenda_item_id' => $d['agenda_item_id'] ?? null, 'seq' => $this->nextSeq('meeting_resolutions', $m),
@@ -79,6 +90,7 @@ class FollowUpService
             $this->history('resolution', $r->id, $r->organization_id, null, $r->status_id, $by, null);
             AuditLogger::log('meeting.resolution_created', $r, [], ['code' => $r->code, 'meeting' => $m->code, 'due_on' => $r->due_on?->toDateString()]);
             $this->notifyAssigned($m, $r->responsible_user_id, $r->code, $r->title, $r->due_on?->toDateString(), $by);
+
             return $r;
         });
     }
@@ -86,7 +98,7 @@ class FollowUpService
     public function updateResolution(MeetingResolution $r, Meeting $m, array $d, User $by): MeetingResolution
     {
         $r->loadMissing('status');
-        if (!FollowUpRules::editable($r->status->code)) {
+        if (! FollowUpRules::editable($r->status->code)) {
             $this->fail('status', 'followup_not_editable');
         }
         if (array_key_exists('responsible_user_id', $d)) {
@@ -104,6 +116,7 @@ class FollowUpService
         $r->update($d);
         AuditLogger::log('meeting.resolution_updated', $r, array_map(fn ($v) => (string) $v, $old), array_map(fn ($v) => (string) $v, $r->only(array_keys($old))));
         $this->notifyAssigned($m, $newResp, $r->code, $r->title, $r->due_on?->toDateString(), $by);
+
         return $r;
     }
 
@@ -111,7 +124,7 @@ class FollowUpService
     {
         $r->loadMissing('status');
         $from = $r->status->code;
-        if (!FollowUpRules::canMove('resolution', $from, $to, $r->responsible_user_id === $by->id, $runner)) {
+        if (! FollowUpRules::canMove('resolution', $from, $to, $r->responsible_user_id === $by->id, $runner)) {
             $this->fail('status', 'followup_bad_move');
         }
         if (FollowUpRules::needsReason('resolution', $from, $to) && mb_strlen(trim((string) $note)) < 3) {
@@ -121,6 +134,7 @@ class FollowUpService
         $r->update(['status_id' => $this->st('resolution', $to), 'completed_at' => $to === 'completed' ? now() : null]);
         $this->history('resolution', $r->id, $r->organization_id, $fromId, $r->status_id, $by, $note);
         AuditLogger::log('meeting.resolution_status', $r, ['status' => $from], ['status' => $to, 'note' => $note]);
+
         return $r->refresh();
     }
 
@@ -140,9 +154,9 @@ class FollowUpService
         if ($r->task_id || $r->obligation_id) {
             $this->fail('status', 'followup_already_converted');
         }
-        $src = '<p>' . e(__('meetings.fu_source', ['code' => $m->code, 'title' => $m->title, 'res' => $r->code])) . '</p>';
+        $src = '<p>'.e(__('meetings.fu_source', ['code' => $m->code, 'title' => $m->title, 'res' => $r->code])).'</p>';
         $task = $this->tasks->create($p, [
-            'title' => '[' . $r->code . '] ' . $r->title, 'description' => $src . ($r->body ?? ''),
+            'title' => '['.$r->code.'] '.$r->title, 'description' => $src.($r->body ?? ''),
             'assignee_id' => $assigneeId ?? $r->responsible_user_id, 'department_id' => $r->responsible_department_id, 'due_date' => $r->due_on?->toDateString(),
         ], $by);
         $r->update(['task_id' => $task->id]);
@@ -150,6 +164,7 @@ class FollowUpService
             $this->transitionResolution($r, $m, 'in_progress', null, $by, true);
         }
         AuditLogger::log('meeting.resolution_to_task', $r, [], ['code' => $r->code, 'project' => $p->code, 'task' => $task->number]);
+
         return $r->refresh();
     }
 
@@ -159,16 +174,17 @@ class FollowUpService
         if ($r->task_id || $r->obligation_id) {
             $this->fail('status', 'followup_already_converted');
         }
-        if (!$r->due_on) {
+        if (! $r->due_on) {
             $this->fail('due_on', 'followup_due_required');
         }
         $o = ComplianceObligation::create([
-            'title' => $r->title, 'description' => '<p>' . e(__('meetings.fu_source', ['code' => $m->code, 'title' => $m->title, 'res' => $r->code])) . '</p>' . ($r->body ?? ''),
+            'title' => $r->title, 'description' => '<p>'.e(__('meetings.fu_source', ['code' => $m->code, 'title' => $m->title, 'res' => $r->code])).'</p>'.($r->body ?? ''),
             'frequency_id' => Lookup::id('obligation_frequency', $frequencyCode), 'responsible_user_id' => $r->responsible_user_id,
-            'link_route' => '/meetings/' . $m->id, 'next_due_on' => $r->due_on->toDateString(), 'is_active' => true,
+            'link_route' => '/meetings/'.$m->id, 'next_due_on' => $r->due_on->toDateString(), 'is_active' => true,
         ]);
         $r->update(['obligation_id' => $o->id]);
         AuditLogger::log('meeting.resolution_to_obligation', $r, [], ['code' => $r->code, 'obligation' => $o->code]);
+
         return $r->refresh();
     }
 
@@ -177,9 +193,10 @@ class FollowUpService
     {
         $this->requireRecordable($m);
         $this->requireParticipant($m, $d['owner_id'] ?? null, 'owner_id');
-        if (!empty($d['resolution_id']) && !MeetingResolution::where('meeting_id', $m->id)->whereKey($d['resolution_id'])->exists()) {
+        if (! empty($d['resolution_id']) && ! MeetingResolution::where('meeting_id', $m->id)->whereKey($d['resolution_id'])->exists()) {
             $this->fail('resolution_id', 'followup_bad_resolution');
         }
+
         return DB::transaction(function () use ($m, $d, $by) {
             $a = MeetingAction::create([
                 'meeting_id' => $m->id, 'resolution_id' => $d['resolution_id'] ?? null, 'agenda_item_id' => $d['agenda_item_id'] ?? null, 'seq' => $this->nextSeq('meeting_actions', $m),
@@ -189,6 +206,7 @@ class FollowUpService
             $this->history('action', $a->id, $a->organization_id, null, $a->status_id, $by, null);
             AuditLogger::log('meeting.action_created', $a, [], ['code' => $a->code, 'meeting' => $m->code, 'owner' => $a->owner_id, 'due_on' => $a->due_on?->toDateString()]);
             $this->notifyAssigned($m, $a->owner_id, $a->code, $a->title, $a->due_on?->toDateString(), $by);
+
             return $a;
         });
     }
@@ -196,7 +214,7 @@ class FollowUpService
     public function updateAction(MeetingAction $a, Meeting $m, array $d, User $by): MeetingAction
     {
         $a->loadMissing('status');
-        if (!FollowUpRules::editable($a->status->code)) {
+        if (! FollowUpRules::editable($a->status->code)) {
             $this->fail('status', 'followup_not_editable');
         }
         if (array_key_exists('owner_id', $d)) {
@@ -214,6 +232,7 @@ class FollowUpService
         $a->update($d);
         AuditLogger::log('meeting.action_updated', $a, array_map(fn ($v) => (string) $v, $old), array_map(fn ($v) => (string) $v, $a->only(array_keys($old))));
         $this->notifyAssigned($m, $newOwner, $a->code, $a->title, $a->due_on?->toDateString(), $by);
+
         return $a;
     }
 
@@ -221,14 +240,14 @@ class FollowUpService
     {
         $a->loadMissing('status');
         $from = $a->status->code;
-        if (!FollowUpRules::canMove('action', $from, $to, $a->owner_id === $by->id, $runner)) {
+        if (! FollowUpRules::canMove('action', $from, $to, $a->owner_id === $by->id, $runner)) {
             $this->fail('status', 'followup_bad_move');
         }
         if (FollowUpRules::needsReason('action', $from, $to) && mb_strlen(trim((string) $note)) < 3) {
             $this->fail('note', 'followup_reason_required');
         }
         $files = $to === 'done' ? FileLink::where('link_type_id', Lookup::id('file_link_type', 'meeting_action'))->where('link_id', $a->id)->count() : 0;
-        if ($to === 'done' && !FollowUpRules::evidenceOk($note, $files)) {
+        if ($to === 'done' && ! FollowUpRules::evidenceOk($note, $files)) {
             $this->fail('note', 'followup_evidence_required');
         }
         $fromId = $a->status_id;
@@ -246,6 +265,7 @@ class FollowUpService
         if ($to === 'done' && $a->owner_id === $by->id) {
             $this->notifyRunners($m, 'meeting_followup_done', $a->code, $a->title, null);
         }
+
         return $a->refresh();
     }
 
@@ -262,7 +282,7 @@ class FollowUpService
     // ---- notices ----------------------------------------------------------------------------------------------------------------
     private function notifyAssigned(Meeting $m, ?string $userId, string $ref, string $title, ?string $due, User $by): void
     {
-        if (!$userId || $userId === $by->id) {
+        if (! $userId || $userId === $by->id) {
             return;
         }
         Notifier::send(User::whereKey($userId)->with('language')->get(), 'meeting_followup_assigned', ['title' => $title, 'ref' => $ref, 'meeting' => $m->title, 'due' => $due ?? '-', 'by' => $by->name],

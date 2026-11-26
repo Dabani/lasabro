@@ -6,10 +6,10 @@ use App\Models\Department;
 use App\Models\Membership;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\InvitationService;
 use App\Services\OrganizationContext;
 use App\Support\Lookup;
 use Illuminate\Support\Collection;
-use App\Services\InvitationService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -19,6 +19,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class UsersImport implements ToCollection, WithHeadingRow
 {
     public int $created = 0;
+
     public array $errors = [];
 
     public int $mail_failed = 0;
@@ -32,17 +33,29 @@ class UsersImport implements ToCollection, WithHeadingRow
         foreach ($rows as $i => $row) {
             $line = $i + 2;
             $row['email'] = mb_strtolower(trim((string) ($row['email'] ?? '')));
-            if (isset($seen[$row['email']])) { $this->errors[] = ['line' => $line, 'message' => 'duplicate in file']; continue; }
+            if (isset($seen[$row['email']])) {
+                $this->errors[] = ['line' => $line, 'message' => 'duplicate in file'];
+
+                continue;
+            }
             $seen[$row['email']] = true;
             $v = Validator::make($row->toArray(), [
                 'name' => 'required|string|max:150', 'email' => 'required|email|unique:users,email', 'role_code' => 'required|string',
             ]);
-            if ($v->fails()) { $this->errors[] = ['line' => $line, 'message' => $v->errors()->first()]; continue; }
+            if ($v->fails()) {
+                $this->errors[] = ['line' => $line, 'message' => $v->errors()->first()];
+
+                continue;
+            }
 
             $role = Role::where('code', $row['role_code'])->where('is_active', true)->first();
-            if (!$role || $role->level > $this->ctx->level()) { $this->errors[] = ['line' => $line, 'message' => 'role']; continue; }
+            if (! $role || $role->level > $this->ctx->level()) {
+                $this->errors[] = ['line' => $line, 'message' => 'role'];
 
-            $dept = !empty($row['department_code']) ? Department::where('code', $row['department_code'])->first() : null;
+                continue;
+            }
+
+            $dept = ! empty($row['department_code']) ? Department::where('code', $row['department_code'])->first() : null;
 
             $user = User::create([
                 'name' => $row['name'], 'email' => $row['email'], 'phone' => $row['phone'] ?? null,
@@ -55,7 +68,9 @@ class UsersImport implements ToCollection, WithHeadingRow
             ]);
             $m->roles()->attach($role->id, ['assigned_by' => request()->user()->id]);
             [, $sent] = $invitations->issue($user->load('language'), request()->user(), $this->ctx->organizationId());
-            if (!$sent) $this->mail_failed++;
+            if (! $sent) {
+                $this->mail_failed++;
+            }
             $this->created++;
         }
     }

@@ -30,7 +30,10 @@ use Illuminate\Validation\ValidationException;
  */
 class PortalController extends Controller
 {
-    private function identity() { return app(ClientContext::class)->identity(); }
+    private function identity()
+    {
+        return app(ClientContext::class)->identity();
+    }
 
     private function project(string $id): Project
     {
@@ -41,11 +44,19 @@ class PortalController extends Controller
     {
         $i = $this->identity();
         $c = Client::find($i->client_id);
+
         return ['email' => $i->email, 'client' => ['id' => $c->id, 'code' => $c->code, 'name' => $c->name]];
     }
 
-    public function contacts() { return ['data' => ClientContact::orderBy('name')->get(['id', 'name', 'email', 'phone', 'job_title'])]; }
-    public function contact(string $id) { return ['data' => ClientContact::findOrFail($id)->only(['id', 'name', 'email', 'phone', 'job_title'])]; }
+    public function contacts()
+    {
+        return ['data' => ClientContact::orderBy('name')->get(['id', 'name', 'email', 'phone', 'job_title'])];
+    }
+
+    public function contact(string $id)
+    {
+        return ['data' => ClientContact::findOrFail($id)->only(['id', 'name', 'email', 'phone', 'job_title'])];
+    }
 
     // ---- projects ------------------------------------------------------------------------------------------------------------------
     public function projects()
@@ -62,6 +73,7 @@ class PortalController extends Controller
         $me = $this->identity();
         $shares = PortalFileShare::where('project_id', $p->id)->with(['file.currentVersion', 'file.status'])->orderByDesc('created_at')->get()
             ->filter(fn ($s) => $s->file && $s->file->status?->code === 'active');
+
         return ['data' => [
             'id' => $p->id, 'code' => $p->code, 'name' => $p->name, 'description' => $p->description, 'status' => $p->status->code,
             'start_date' => $p->start_date?->toDateString(), 'end_date' => $p->end_date?->toDateString(), 'progress' => PortalAccess::progress($p->id),
@@ -83,6 +95,7 @@ class PortalController extends Controller
         $c = ProjectComment::create(['project_id' => $p->id, 'client_identity_id' => $me->id, 'body' => trim($d['body']), 'is_client_visible' => true]);
         $this->notifyTeam($p, 'portal_client_comment');
         AuditLogger::log('portal.comment', $p, [], ['comment' => $c->id]);
+
         return response()->json(['id' => $c->id], 201);
     }
 
@@ -96,15 +109,20 @@ class PortalController extends Controller
 
         $org = $p->organization_id;
         $allowed = array_values(array_intersect(array_map('trim', explode(',', strtolower((string) SettingsService::get($org, 'portal.upload_extensions')))), config('ops.files.allowed_extensions')));
-        if (!in_array(strtolower($file->getClientOriginalExtension()), $allowed, true)) throw ValidationException::withMessages(['file' => [__('portal.upload.type_not_allowed', ['types' => implode(', ', $allowed)])]]);
+        if (! in_array(strtolower($file->getClientOriginalExtension()), $allowed, true)) {
+            throw ValidationException::withMessages(['file' => [__('portal.upload.type_not_allowed', ['types' => implode(', ', $allowed)])]]);
+        }
         $maxMb = min((int) SettingsService::get($org, 'portal.upload_max_mb'), (int) config('ops.files.max_mb'));
-        if ($file->getSize() > $maxMb * 1024 * 1024) throw ValidationException::withMessages(['file' => [__('portal.upload.too_large', ['mb' => $maxMb])]]);
+        if ($file->getSize() > $maxMb * 1024 * 1024) {
+            throw ValidationException::withMessages(['file' => [__('portal.upload.too_large', ['mb' => $maxMb])]]);
+        }
 
         $owner = User::findOrFail($p->owner_id);                                    // internal owner of record; the uploader is the client identity
         $asset = FileService::store($file, $owner, [], ['type' => 'project', 'id' => $p->id]);     // validates type, detects content, virus-scans, stores a version
         PortalFileShare::create(['project_id' => $p->id, 'file_id' => $asset->id, 'client_identity_id' => $this->identity()->id]);
         $this->notifyTeam($p, 'portal_client_upload');
         AuditLogger::log('portal.file_uploaded', $asset, [], ['name' => $asset->name, 'project' => $p->code, 'client_identity_id' => $this->identity()->id]);
+
         return response()->json(['id' => $asset->id], 201);
     }
 
@@ -115,6 +133,7 @@ class PortalController extends Controller
         $f = FileAsset::with('currentVersion')->findOrFail($fileId);
         abort_unless($f->currentVersion && FileService::exists($f->currentVersion), 404);
         AuditLogger::log('portal.file_downloaded', $f, [], ['project' => $p->code]);
+
         return Storage::disk(FileService::disk())->download($f->currentVersion->storage_path, $f->currentVersion->original_name, ['X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store']);
     }
 
@@ -122,12 +141,14 @@ class PortalController extends Controller
     private function visibleInvoices(Project $p)
     {
         abort_unless(PortalAccess::enabled($p, 'portal_invoices'), 403, __('portal.feature_disabled'));
+
         return Invoice::where('project_id', $p->id)->whereHas('status', fn ($s) => $s->whereIn('code', ['issued', 'partially_paid', 'paid', 'overdue']));
     }
 
     public function invoices(string $id)
     {
         $p = $this->project($id);
+
         return ['data' => $this->visibleInvoices($p)->with('status')->orderByDesc('issue_date')->get()->map(fn ($i) => ['id' => $i->id, 'number' => $i->number, 'status' => $i->status->code,
             'issue_date' => $i->issue_date?->toDateString(), 'due_date' => $i->due_date?->toDateString(), 'currency_code' => $i->currency_code,
             'total' => $i->total, 'paid_total' => $i->paid_total, 'balance' => $i->balance])];
@@ -139,12 +160,13 @@ class PortalController extends Controller
         $p = $this->project($id);
         $i = $this->visibleInvoices($p)->findOrFail($invoiceId);
         AuditLogger::log('portal.invoice_downloaded', $i);
-        return response((new InvoicePdf())->render($i, false), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => "attachment; filename=\"{$i->number}.pdf\"", 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store']);
+
+        return response((new InvoicePdf)->render($i, false), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => "attachment; filename=\"{$i->number}.pdf\"", 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store']);
     }
 
     private function notifyTeam(Project $p, string $key): void
     {
         $ids = ProjectMember::where('project_id', $p->id)->whereHas('role', fn ($r) => $r->where('code', 'manager'))->pluck('user_id')->push($p->owner_id)->unique();
-        Notifier::send(User::whereIn('id', $ids)->get(), $key, ['title' => $p->code . ' ' . $p->name, 'client' => $p->client?->name ?? ''], null, ['in_app', 'email'], "/projects/{$p->id}", $p->organization_id);
+        Notifier::send(User::whereIn('id', $ids)->get(), $key, ['title' => $p->code.' '.$p->name, 'client' => $p->client?->name ?? ''], null, ['in_app', 'email'], "/projects/{$p->id}", $p->organization_id);
     }
 }

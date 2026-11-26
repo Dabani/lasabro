@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exports\ListExport;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\EquipmentMovement;
@@ -15,6 +16,7 @@ use App\Support\Lookup;
 use Dompdf\Dompdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MovementController extends Controller
 {
@@ -22,20 +24,24 @@ class MovementController extends Controller
 
     public function __construct(private OrganizationContext $ctx) {}
 
-    private function with(): array { return ['status.translations', 'requester', 'approver', 'assets']; }
+    private function with(): array
+    {
+        return ['status.translations', 'requester', 'approver', 'assets'];
+    }
 
     protected function visible()
     {
         $q = EquipmentMovement::query();
-        if (!$this->ctx->can('asset.manage') && !$this->ctx->can('asset.approve_movement')) {
+        if (! $this->ctx->can('asset.manage') && ! $this->ctx->can('asset.approve_movement')) {
             $q->where('requested_by', request()->user()->id);
         }
+
         return $q;
     }
 
     private function row(EquipmentMovement $m, $lang, bool $detail = false): array
     {
-        $overdue = $m->status->code === 'checked_out' && $m->expected_return_date && $m->expected_return_date->isPast() && !$m->expected_return_date->isToday();
+        $overdue = $m->status->code === 'checked_out' && $m->expected_return_date && $m->expected_return_date->isPast() && ! $m->expected_return_date->isToday();
         $base = [
             'id' => $m->id, 'reference' => $m->reference, 'destination' => $m->destination,
             'status' => ['id' => $m->status->id, 'code' => $m->status->code, 'label' => $m->status->label($lang), 'color' => $m->status->color],
@@ -44,9 +50,12 @@ class MovementController extends Controller
             'is_overdue' => $overdue, 'assets_count' => $m->assets->count(), 'created_at' => $m->created_at->toIso8601String(),
             'requester_name' => $m->requester->name, 'status_label' => $m->status->label($lang),
         ];
-        if (!$detail) return $base;
+        if (! $detail) {
+            return $base;
+        }
 
         $conds = LookupValue::with('translations')->whereIn('id', $m->assets->flatMap(fn ($a) => [$a->pivot->condition_out_id, $a->pivot->condition_in_id])->filter()->unique())->get()->keyBy('id');
+
         return $base + [
             'purpose' => $m->purpose, 'decision_note' => $m->decision_note, 'decided_at' => $m->decided_at?->toIso8601String(),
             'checked_out_at' => $m->checked_out_at?->toIso8601String(), 'returned_at' => $m->returned_at?->toIso8601String(), 'return_note' => $m->return_note,
@@ -61,10 +70,13 @@ class MovementController extends Controller
     public function index(Request $request)
     {
         $q = $this->visible()->with($this->with());
-        if ($request->boolean('mine')) $q->where('requested_by', $request->user()->id);
+        if ($request->boolean('mine')) {
+            $q->where('requested_by', $request->user()->id);
+        }
         if ($request->boolean('overdue')) {
             $q->whereHas('status', fn ($s) => $s->where('code', 'checked_out'))->whereDate('expected_return_date', '<', today());
         }
+
         return $this->respondListRaw($request, $q, $request->user()->language_id);
     }
 
@@ -75,7 +87,9 @@ class MovementController extends Controller
             $q->where(fn ($w) => $w->where('reference', 'like', "%$s%")->orWhere('destination', 'like', "%$s%")->orWhereHas('requester', fn ($r) => $r->where('name', 'like', "%$s%")));
         }
         foreach ((array) $request->query('filter', []) as $col => $v) {
-            if ($col === 'status_id' && $v) $q->where('status_id', $v);
+            if ($col === 'status_id' && $v) {
+                $q->where('status_id', $v);
+            }
         }
         $sort = in_array($request->query('sort'), ['reference', 'departure_date', 'created_at', 'expected_return_date'], true) ? $request->query('sort') : 'created_at';
         $q->orderBy($sort, strtolower((string) $request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc');
@@ -85,10 +99,12 @@ class MovementController extends Controller
             abort_unless(in_array($fmt, ['csv', 'xlsx'], true), 422);
             $keys = ['reference', 'requester_name', 'destination', 'status_label', 'departure_date', 'expected_return_date', 'assets_count'];
             $rows = $q->limit(10000)->get()->map(fn ($m) => array_map(fn ($k) => $this->row($m, $lang)[$k] ?? '', $keys))->all();
-            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ListExport($rows, $keys), 'movements-' . now()->format('Ymd-His') . '.' . $fmt);
+
+            return Excel::download(new ListExport($rows, $keys), 'movements-'.now()->format('Ymd-His').'.'.$fmt);
         }
 
         $page = $q->paginate(min(max((int) $request->query('per_page', 15), 1), 100))->withQueryString();
+
         return response()->json([
             'data' => $page->getCollection()->map(fn ($m) => $this->row($m, $lang))->values(),
             'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()],
@@ -98,6 +114,7 @@ class MovementController extends Controller
     public function show(Request $request, string $id)
     {
         $m = $this->visible()->with($this->with())->findOrFail($id);
+
         return response()->json(['data' => $this->row($m, $request->user()->id ? $request->user()->language_id : null, true)]);
     }
 
@@ -107,8 +124,11 @@ class MovementController extends Controller
         $busy = DB::table('equipment_movement_items as i')->join('equipment_movements as m', 'm.id', '=', 'i.movement_id')
             ->join('lookup_values as s', 's.id', '=', 'm.status_id')->whereIn('s.code', self::ACTIVE)->pluck('i.asset_id');
         $q = Asset::query()->whereHas('status', fn ($s) => $s->whereIn('code', ['in_stock', 'assigned']))->whereNotIn('id', $busy);
-        if (!$this->ctx->can('asset.manage')) $q->where('assigned_user_id', $request->user()->id);
-        return response()->json(['data' => $q->orderBy('asset_tag')->limit(200)->get()->map(fn ($a) => ['id' => $a->id, 'label' => $a->asset_tag . ' — ' . $a->name])]);
+        if (! $this->ctx->can('asset.manage')) {
+            $q->where('assigned_user_id', $request->user()->id);
+        }
+
+        return response()->json(['data' => $q->orderBy('asset_tag')->limit(200)->get()->map(fn ($a) => ['id' => $a->id, 'label' => $a->asset_tag.' — '.$a->name])]);
     }
 
     public function store(Request $request)
@@ -142,12 +162,13 @@ class MovementController extends Controller
             foreach ($assets as $a) {
                 $m->assets()->attach($a->id, ['status_before_id' => $a->status_id, 'condition_out_id' => $a->condition_id]);
             }
+
             return $m;
         });
         AuditLogger::log('movement.requested', $m, [], ['reference' => $m->reference, 'assets' => (string) $assets->count()]);
 
         $approvers = Notifier::usersWithPermission($this->ctx->organizationId(), 'asset.approve_movement')->reject(fn ($u) => $u->id === $user->id);
-        Notifier::send($approvers, 'movement_requested', ['ref' => $m->reference, 'user' => $user->name, 'dest' => $m->destination], null, ['in_app', 'email'], '/assets/movements?open=' . $m->id, $this->ctx->organizationId());
+        Notifier::send($approvers, 'movement_requested', ['ref' => $m->reference, 'user' => $user->name, 'dest' => $m->destination], null, ['in_app', 'email'], '/assets/movements?open='.$m->id, $this->ctx->organizationId());
 
         return response()->json(['data' => ['id' => $m->id, 'reference' => $m->reference]], 201);
     }
@@ -161,12 +182,20 @@ class MovementController extends Controller
 
         $m->update(['status_id' => Lookup::id('movement_status', $decision), 'decided_by' => $request->user()->id, 'decided_at' => now(), 'decision_note' => $d['note'] ?? null]);
         AuditLogger::log("movement.$decision", $m, [], ['reference' => $m->reference], $d['note'] ?? null);
-        Notifier::send($m->requester->loadMissing('language'), 'movement_decided', ['ref' => $m->reference, 'user' => $request->user()->name, 'decision' => __("api.decision_" . ($decision === 'approved' ? 'approved' : 'rejected'))], null, ['in_app', 'email'], '/assets/movements?open=' . $m->id, $this->ctx->organizationId());
+        Notifier::send($m->requester->loadMissing('language'), 'movement_decided', ['ref' => $m->reference, 'user' => $request->user()->name, 'decision' => __('api.decision_'.($decision === 'approved' ? 'approved' : 'rejected'))], null, ['in_app', 'email'], '/assets/movements?open='.$m->id, $this->ctx->organizationId());
+
         return response()->json(['data' => $this->row($m->refresh()->load($this->with()), $request->user()->language_id, true)]);
     }
 
-    public function approve(Request $request, string $id) { return $this->decide($request, $id, 'approved'); }
-    public function reject(Request $request, string $id) { return $this->decide($request, $id, 'rejected'); }
+    public function approve(Request $request, string $id)
+    {
+        return $this->decide($request, $id, 'approved');
+    }
+
+    public function reject(Request $request, string $id)
+    {
+        return $this->decide($request, $id, 'rejected');
+    }
 
     /** Security / IT hands the approved equipment over: assets become "off site". */
     public function checkout(Request $request, string $id)
@@ -183,6 +212,7 @@ class MovementController extends Controller
             $m->update(['status_id' => Lookup::id('movement_status', 'checked_out'), 'checked_out_by' => $request->user()->id, 'checked_out_at' => now()]);
         });
         AuditLogger::log('movement.checked_out', $m, [], ['reference' => $m->reference]);
+
         return response()->json(['data' => $this->row($m->refresh()->load($this->with()), $request->user()->language_id, true)]);
     }
 
@@ -204,6 +234,7 @@ class MovementController extends Controller
             $m->update(['status_id' => Lookup::id('movement_status', 'returned'), 'returned_by' => $request->user()->id, 'returned_at' => now(), 'return_note' => $d['return_note'] ?? null]);
         });
         AuditLogger::log('movement.returned', $m, [], ['reference' => $m->reference]);
+
         return response()->json(['data' => $this->row($m->refresh()->load($this->with()), $request->user()->language_id, true)]);
     }
 
@@ -214,6 +245,7 @@ class MovementController extends Controller
         abort_unless($m->requested_by === $request->user()->id || $this->ctx->can('asset.manage'), 403);
         $m->update(['status_id' => Lookup::id('movement_status', 'cancelled')]);
         AuditLogger::log('movement.cancelled', $m, [], ['reference' => $m->reference]);
+
         return response()->json(['data' => $this->row($m->refresh()->load($this->with()), $request->user()->language_id, true)]);
     }
 
@@ -234,6 +266,6 @@ class MovementController extends Controller
         $pdf->render();
         AuditLogger::log('movement.pdf_generated', $m, [], ['reference' => $m->reference]);
 
-        return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="' . $m->reference . '.pdf"', 'X-Content-Type-Options' => 'nosniff']);
+        return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="'.$m->reference.'.pdf"', 'X-Content-Type-Options' => 'nosniff']);
     }
 }

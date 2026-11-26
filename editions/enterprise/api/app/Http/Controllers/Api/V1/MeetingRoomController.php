@@ -24,6 +24,7 @@ class MeetingRoomController extends Controller
     private function rules(?MeetingRoom $r = null): array
     {
         $org = app(OrganizationContext::class)->organizationId();
+
         return [
             'name' => [$r ? 'sometimes' : 'required', 'string', 'max:150', Rule::unique('meeting_rooms', 'name')->where('organization_id', $org)->ignore($r?->id)],
             'location_id' => ['nullable', Rule::exists('locations', 'id')->where('organization_id', $org)],
@@ -34,9 +35,10 @@ class MeetingRoomController extends Controller
     public function index(Request $request)
     {
         $q = MeetingRoom::with('location')->orderBy('name');
-        if (!$request->boolean('all')) {
+        if (! $request->boolean('all')) {
             $q->where('is_active', true);
         }
+
         return ['data' => $q->get()->map(fn ($r) => $this->shape($r))];
     }
 
@@ -44,6 +46,7 @@ class MeetingRoomController extends Controller
     {
         $r = MeetingRoom::create($request->validate($this->rules()));
         AuditLogger::log('meeting_room.created', $r, [], ['name' => $r->name]);
+
         return response()->json(['data' => $this->shape($r->load('location'))], 201);
     }
 
@@ -54,6 +57,7 @@ class MeetingRoomController extends Controller
         $old = $r->only(array_keys($d));
         $r->update($d);
         AuditLogger::log('meeting_room.updated', $r, $old, $d);
+
         return ['data' => $this->shape($r->load('location'))];
     }
 
@@ -64,6 +68,7 @@ class MeetingRoomController extends Controller
         abort_if(MeetingRoomBooking::where('room_id', $r->id)->exists(), 422, __('meetings.room_in_use'));
         AuditLogger::log('meeting_room.deleted', $r, ['name' => $r->name], []);
         $r->delete();
+
         return response()->noContent();
     }
 
@@ -75,6 +80,7 @@ class MeetingRoomController extends Controller
         $to = CarbonImmutable::parse($d['to']);
         abort_if($from->diffInDays($to) > 62, 422, __('meetings.bad_period'));
         $tz = AttendanceService::tz($r->organization_id);
+
         return ['data' => ['room' => $this->shape($r), 'timezone' => $tz,
             'busy' => $rooms->busy($r->id, $from, $to)->map(fn ($b) => ['starts_at' => $b->starts_at->toIso8601String(), 'ends_at' => $b->ends_at->toIso8601String()])->values()]];
     }

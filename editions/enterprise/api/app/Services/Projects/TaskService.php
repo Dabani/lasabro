@@ -11,6 +11,7 @@ use App\Services\AuditLogger;
 use App\Services\Notifier;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class TaskService
@@ -34,6 +35,7 @@ class TaskService
             $this->history($task, null, $statusId, $by, 'created');
             AuditLogger::log('task.created', $task, [], ['project' => $project->code, 'number' => $task->number]);
             $this->notifyAssigned($task, $project, $by);
+
             return $task;
         });
     }
@@ -44,7 +46,10 @@ class TaskService
         $assigneeChanged = array_key_exists('assignee_id', $d) && $d['assignee_id'] !== $task->assignee_id;
         $task->update($d);
         AuditLogger::log('task.updated', $task, $old, $d);
-        if ($assigneeChanged) $this->notifyAssigned($task, $task->project, $by);
+        if ($assigneeChanged) {
+            $this->notifyAssigned($task, $task->project, $by);
+        }
+
         return $task;
     }
 
@@ -53,12 +58,13 @@ class TaskService
     {
         $task->loadMissing('status');
         $from = $task->status->code;
-        if ($from !== $to && !TaskWorkflow::allowed($from, $to, $isManager)) {
+        if ($from !== $to && ! TaskWorkflow::allowed($from, $to, $isManager)) {
             throw ValidationException::withMessages(['status' => [__('projects.task.transition_not_allowed')]]);
         }
         if ($from !== $to && in_array($to, ['in_review', 'done'], true) && $this->unfinishedBlockers($task) > 0) {
             throw ValidationException::withMessages(['status' => [__('projects.task.blocked')]]);
         }
+
         return DB::transaction(function () use ($task, $from, $to, $by, $position) {
             if ($from !== $to) {
                 if ($to === 'in_review') {
@@ -71,6 +77,7 @@ class TaskService
             } elseif ($from !== $to) {
                 $task->update(['position' => (int) Task::where('project_id', $task->project_id)->where('status_id', $task->status_id)->max('position') + 1]);
             }
+
             return $task->refresh();
         });
     }
@@ -91,7 +98,7 @@ class TaskService
         if (TaskGraph::wouldCycle($edges, $task->id, $dependsOn->id)) {
             throw ValidationException::withMessages(['depends_on_task_id' => [__('projects.task.dependency_cycle')]]);
         }
-        DB::table('task_dependencies')->insertOrIgnore(['id' => (string) \Illuminate\Support\Str::ulid(), 'organization_id' => $task->organization_id, 'task_id' => $task->id, 'depends_on_task_id' => $dependsOn->id]);
+        DB::table('task_dependencies')->insertOrIgnore(['id' => (string) Str::ulid(), 'organization_id' => $task->organization_id, 'task_id' => $task->id, 'depends_on_task_id' => $dependsOn->id]);
         AuditLogger::log('task.dependency_added', $task, [], ['depends_on' => $dependsOn->number]);
     }
 

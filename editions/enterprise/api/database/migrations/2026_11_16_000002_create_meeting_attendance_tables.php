@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Meeting attendance (Guide 6.5). Statuses and check-in methods are lookups; every change is kept in an immutable history. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('meeting_attendances', function (Blueprint $t) {

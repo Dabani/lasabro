@@ -9,7 +9,7 @@ trait Immutable
 {
     public static function bootImmutable(): void
     {
-        static::updating(fn () => throw new LogicException(static::class . ' rows are immutable.'));
-        static::deleting(fn () => throw new LogicException(static::class . ' rows are immutable.'));
+        static::updating(fn () => throw new LogicException(static::class.' rows are immutable.'));
+        static::deleting(fn () => throw new LogicException(static::class.' rows are immutable.'));
     }
 }

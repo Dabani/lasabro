@@ -7,7 +7,9 @@ use App\Models\Employee;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\TimeEntry;
+use App\Models\TimeEntrySegment;
 use App\Models\Timesheet;
+use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Time\TimeService;
 use App\Support\Lookup;
@@ -18,7 +20,7 @@ use Tests\TestCase;
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundles 08-09 helpers. */
 class TimeTrackingTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -30,6 +32,7 @@ class TimeTrackingTest extends TestCase
     {
         $p = Project::create(['code' => 'PRJ', 'name' => 'P', 'owner_id' => $owner->id, 'status_id' => Lookup::id('project_status', 'active')]);
         ProjectMember::create(['project_id' => $p->id, 'user_id' => $member->id, 'project_role_id' => Lookup::id('project_role', 'member')]);
+
         return $p;
     }
 
@@ -86,7 +89,7 @@ class TimeTrackingTest extends TestCase
             'last_name' => 'M',
             'user_id' => $manager->id,
             'category_id' => Lookup::id('employee_category', 'contracted'),
-            'status_id' => Lookup::id('employee_status', 'active')
+            'status_id' => Lookup::id('employee_status', 'active'),
         ]);
         Employee::create([
             'employee_number' => 'D1',
@@ -95,7 +98,7 @@ class TimeTrackingTest extends TestCase
             'user_id' => $dev->id,
             'manager_employee_id' => $lead->id,
             'category_id' => Lookup::id('employee_category', 'contracted'),
-            'status_id' => Lookup::id('employee_status', 'active')
+            'status_id' => Lookup::id('employee_status', 'active'),
         ]);
 
         Sanctum::actingAs($dev);
@@ -123,14 +126,14 @@ class TimeTrackingTest extends TestCase
         $id = $this->postJson('/api/v1/time-entries', $this->entry($dev->id, $p->id, gmdate('Y-m-d H:i:s', time() - 7200), gmdate('Y-m-d H:i:s', time() - 3600)))->json('data.id');
         $week = $this->getJson('/api/v1/time-week')->json('data.week_start');
         $this->postJson("/api/v1/timesheets/$week/submit")->assertOk();
-        $admin = \App\Models\User::where('email', 'admin@example.com')->firstOrFail();
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
         $req = ApprovalRequest::where('subject_type_id', Lookup::id('approval_subject_type', 'timesheet'))->firstOrFail();
         app(ApprovalEngine::class)->act($req->id, $admin, 'return', 'Wrong project on Tuesday');
         $this->assertSame('draft', TimeEntry::find($id)->status->code);
         $this->assertNull(TimeEntry::find($id)->timesheet_id);
 
         $this->postJson('/api/v1/timer/start', ['project_id' => $p->id])->assertCreated();
-        \App\Models\TimeEntrySegment::query()->update(['started_at' => gmdate('Y-m-d H:i:s', time() - 20 * 3600)]);
+        TimeEntrySegment::query()->update(['started_at' => gmdate('Y-m-d H:i:s', time() - 20 * 3600)]);
         TimeEntry::whereNull('ended_at')->update(['started_at' => gmdate('Y-m-d H:i:s', time() - 20 * 3600)]);
         $this->assertSame(1, app(TimeService::class)->autoStopDue());
         $this->assertTrue((bool) TimeEntry::where('auto_stopped', true)->exists());

@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 class TimersAutoStop extends Command
 {
     protected $signature = 'cops:timers-autostop';
+
     protected $description = 'Stop forgotten timers that ran past the allowed duration and flag them for correction';
 
     public function handle(): int
@@ -20,6 +21,7 @@ class TimersAutoStop extends Command
             $n += app(TimeService::class)->autoStopDue();
         }
         $this->info("Auto-stopped $n timer(s).");
+
         return self::SUCCESS;
     }
 }

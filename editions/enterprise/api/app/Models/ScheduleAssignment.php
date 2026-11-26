@@ -8,12 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class ScheduleAssignment extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_schedule_assignments';
+
     protected $guarded = [];
+
     protected $casts = ['effective_from' => 'date:Y-m-d'];
 
-    public function schedule() { return $this->belongsTo(WorkSchedule::class, 'schedule_id'); }
-    public function employee() { return $this->belongsTo(Employee::class, 'employee_id'); }
+    public function schedule()
+    {
+        return $this->belongsTo(WorkSchedule::class, 'schedule_id');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 }

@@ -9,7 +9,6 @@ use App\Models\MeetingOnlineSession;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\SettingsService;
-use App\Support\Html;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -29,14 +28,25 @@ class OnlineMeetingService
         throw ValidationException::withMessages([$field => [__("meetings.$key", $p)]]);
     }
 
-    private function kind(string $c): string { return Lookup::id('meeting_intervention_kind', $c); }
-    private function st(string $c): string { return Lookup::id('meeting_intervention_status', $c); }
+    private function kind(string $c): string
+    {
+        return Lookup::id('meeting_intervention_kind', $c);
+    }
 
-    public function orgEnabled(Meeting $m): bool { return (bool) SettingsService::get($m->organization_id, 'meeting.online_enabled'); }
+    private function st(string $c): string
+    {
+        return Lookup::id('meeting_intervention_status', $c);
+    }
+
+    public function orgEnabled(Meeting $m): bool
+    {
+        return (bool) SettingsService::get($m->organization_id, 'meeting.online_enabled');
+    }
 
     public function windowOpen(Meeting $m): bool
     {
         $m->loadMissing('status');
+
         return OnlineRules::joinWindowOpen($m->status->code, now(), $m->starts_at, $m->ends_at, (int) SettingsService::get($m->organization_id, 'meeting.online_early_minutes'));
     }
 
@@ -55,30 +65,32 @@ class OnlineMeetingService
     public function enable(Meeting $m, bool $allowGuests, User $by): Meeting
     {
         $m->loadMissing('status');
-        if (!$this->orgEnabled($m)) {
+        if (! $this->orgEnabled($m)) {
             $this->fail('online', 'online_disabled_org');
         }
-        if (!in_array($m->status->code, ['draft', 'scheduled', 'in_progress'], true)) {
+        if (! in_array($m->status->code, ['draft', 'scheduled', 'in_progress'], true)) {
             $this->fail('status', 'online_bad_status');
         }
-        $allowGuests = $allowGuests && !$m->isConfidential();
-        if (!$m->online_room) {
-            $m->online_room = 'cops-' . Str::lower(Str::random(28));
+        $allowGuests = $allowGuests && ! $m->isConfidential();
+        if (! $m->online_room) {
+            $m->online_room = 'cops-'.Str::lower(Str::random(28));
         }
         $m->online_allow_guests = $allowGuests;
         $m->save();
         AuditLogger::log('meeting.online_enabled', $m, [], ['guests' => $allowGuests]);
+
         return $m->refresh();
     }
 
     public function disable(Meeting $m, User $by): Meeting
     {
         $m->loadMissing('status');
-        if (!in_array($m->status->code, ['draft', 'scheduled', 'in_progress'], true)) {
+        if (! in_array($m->status->code, ['draft', 'scheduled', 'in_progress'], true)) {
             $this->fail('status', 'online_bad_status');
         }
         $m->update(['online_room' => null, 'online_allow_guests' => false]);
         AuditLogger::log('meeting.online_disabled', $m, [], []);
+
         return $m->refresh();
     }
 
@@ -86,9 +98,10 @@ class OnlineMeetingService
     {
         $secret = config('jitsi.app_secret');
         $app = config('jitsi.app_id');
-        if (!$secret || !$app) {
+        if (! $secret || ! $app) {
             return null;
         }
+
         return JitsiToken::forUser($app, $secret, config('jitsi.sub') ?: config('jitsi.domain'), $m->online_room, $name, $email, $id, $moderator, time(), (int) config('jitsi.token_ttl_minutes') * 60);
     }
 
@@ -102,14 +115,14 @@ class OnlineMeetingService
     public function join(Meeting $m, User $u): array
     {
         $m->loadMissing('status');
-        if (!$m->online_room) {
+        if (! $m->online_room) {
             $this->fail('online', 'online_not_enabled');
         }
         $inv = $this->access->invitation($u, $m);
-        if (!$m->isHost($u) && (!$inv || $inv->response?->code === 'declined')) {
+        if (! $m->isHost($u) && (! $inv || $inv->response?->code === 'declined')) {
             $this->fail('online', 'online_not_participant');
         }
-        if (!$this->windowOpen($m)) {
+        if (! $this->windowOpen($m)) {
             $this->fail('online', 'online_closed');
         }
         $mod = $this->isModerator($m, $u);
@@ -125,6 +138,7 @@ class OnlineMeetingService
             }
         }
         AuditLogger::log('meeting.online_joined', $m, [], ['moderator' => $mod]);
+
         return $this->joinData($m, $u->name, $this->token($m, $u->id, $u->name, $u->email, $mod), $mod);
     }
 
@@ -132,21 +146,22 @@ class OnlineMeetingService
     public function joinGuest(Meeting $m, MeetingInvitation $inv): array
     {
         $m->loadMissing('status');
-        if (!$m->online_room) {
+        if (! $m->online_room) {
             $this->fail('online', 'online_not_enabled');
         }
         $inv->loadMissing('response');
-        if (!OnlineRules::guestMayJoin((bool) $m->online_allow_guests, $m->isConfidential(), $inv->response?->code)) {
+        if (! OnlineRules::guestMayJoin((bool) $m->online_allow_guests, $m->isConfidential(), $inv->response?->code)) {
             $this->fail('online', 'online_guests_not_allowed');
         }
-        if (!$this->windowOpen($m)) {
+        if (! $this->windowOpen($m)) {
             $this->fail('online', 'online_closed');
         }
         MeetingOnlineSession::where('meeting_id', $m->id)->where('invitation_id', $inv->id)->whereNull('left_at')->update(['left_at' => now()]);
         MeetingOnlineSession::create(['meeting_id' => $m->id, 'invitation_id' => $inv->id, 'moderator' => false, 'joined_at' => now()]);
         AuditLogger::log('meeting.online_guest_joined', $m, [], ['guest' => $inv->displayName()]);
         $name = $inv->displayName() ?: 'Guest';
-        return $this->joinData($m, $name, $this->token($m, 'guest-' . $inv->id, $name, $inv->email(), false), false);
+
+        return $this->joinData($m, $name, $this->token($m, 'guest-'.$inv->id, $name, $inv->email(), false), false);
     }
 
     public function leave(Meeting $m, ?User $u, ?MeetingInvitation $inv): void
@@ -164,18 +179,19 @@ class OnlineMeetingService
     public function request(Meeting $m, ?User $u, ?MeetingInvitation $inv, string $kind, ?string $topic, ?string $agendaItemId): MeetingIntervention
     {
         $m->loadMissing('status');
-        if (!OnlineRules::mayRequest($m->status->code)) {
+        if (! OnlineRules::mayRequest($m->status->code)) {
             $this->fail('status', 'online_not_open');
         }
-        if (!in_array($kind, OnlineRules::KINDS, true)) {
+        if (! in_array($kind, OnlineRules::KINDS, true)) {
             $this->fail('kind', 'intervention_bad_kind');
         }
-        if (!OnlineRules::topicOk($topic)) {
+        if (! OnlineRules::topicOk($topic)) {
             $this->fail('topic', 'intervention_topic_long');
         }
-        if ($agendaItemId && !$m->agendaItems()->whereKey($agendaItemId)->exists()) {
+        if ($agendaItemId && ! $m->agendaItems()->whereKey($agendaItemId)->exists()) {
             $this->fail('agenda_item_id', 'intervention_bad_item');
         }
+
         return DB::transaction(function () use ($m, $u, $inv, $kind, $topic, $agendaItemId) {
             Meeting::whereKey($m->id)->lockForUpdate()->first();               // serialises requests of one meeting
             $open = [$this->st('requested'), $this->st('speaking')];
@@ -185,6 +201,7 @@ class OnlineMeetingService
             $i = MeetingIntervention::create(['meeting_id' => $m->id, 'user_id' => $u?->id, 'invitation_id' => $u ? null : $inv->id, 'agenda_item_id' => $agendaItemId, 'kind_id' => $this->kind($kind),
                 'status_id' => $this->st('requested'), 'topic' => $topic !== null && trim($topic) !== '' ? trim($topic) : null, 'requested_at' => now()]);
             AuditLogger::log('meeting.intervention_requested', $m, [], ['kind' => $kind, 'person' => $i->displayName()]);
+
             return $i->refresh();
         });
     }
@@ -197,11 +214,12 @@ class OnlineMeetingService
     private function move(MeetingIntervention $i, string $to, array $extra, ?User $by, string $auditKey, ?string $note = null): MeetingIntervention
     {
         $from = $i->status->code;
-        if (!OnlineRules::allowed($from, $to)) {
+        if (! OnlineRules::allowed($from, $to)) {
             $this->fail('status', 'intervention_bad_move');
         }
         $i->update(['status_id' => $this->st($to)] + $extra + ($by ? ['decided_by' => $by->id] : []));
         AuditLogger::log($auditKey, $i->meeting, [], ['person' => $i->displayName(), 'kind' => $i->kind->code, 'topic' => $i->topic, 'note' => $note]);
+
         return $i->refresh();
     }
 
@@ -210,16 +228,17 @@ class OnlineMeetingService
     {
         return DB::transaction(function () use ($id, $by) {
             $i = $this->load($id);
-            if (!$this->canFloor($i->meeting, $by)) {
+            if (! $this->canFloor($i->meeting, $by)) {
                 abort(403, 'forbidden');
             }
             $speaking = MeetingIntervention::where('meeting_id', $i->meeting_id)->where('status_id', $this->st('speaking'))->exists();
-            if (!OnlineRules::canGrant($speaking)) {
+            if (! OnlineRules::canGrant($speaking)) {
                 $this->fail('status', 'intervention_someone_speaking');
             }
-            if (!OnlineRules::mayRequest($i->meeting->status->code)) {
+            if (! OnlineRules::mayRequest($i->meeting->status->code)) {
                 $this->fail('status', 'online_not_open');
             }
+
             return $this->move($i, 'speaking', ['granted_at' => now()], $by, 'meeting.intervention_granted');
         });
     }
@@ -228,9 +247,10 @@ class OnlineMeetingService
     {
         return DB::transaction(function () use ($id, $by) {
             $i = $this->load($id);
-            if (!$this->canFloor($i->meeting, $by)) {
+            if (! $this->canFloor($i->meeting, $by)) {
                 abort(403, 'forbidden');
             }
+
             return $this->move($i, 'done', ['finished_at' => now()], $by, 'meeting.intervention_done');
         });
     }
@@ -239,9 +259,10 @@ class OnlineMeetingService
     {
         return DB::transaction(function () use ($id, $by, $note) {
             $i = $this->load($id);
-            if (!$this->canFloor($i->meeting, $by)) {
+            if (! $this->canFloor($i->meeting, $by)) {
                 abort(403, 'forbidden');
             }
+
             return $this->move($i, 'dismissed', ['decision_note' => $note ? Str::limit(trim($note), 300, '') : null, 'finished_at' => now()], $by, 'meeting.intervention_dismissed', $note);
         });
     }
@@ -253,6 +274,7 @@ class OnlineMeetingService
             $i = $this->load($id);
             $mine = $u ? $i->user_id === $u->id : ($inv && $i->invitation_id === $inv->id);
             abort_unless($mine, 404);
+
             return $this->move($i, 'withdrawn', ['finished_at' => now()], null, 'meeting.intervention_withdrawn');
         });
     }
@@ -267,6 +289,7 @@ class OnlineMeetingService
             'agenda_item' => $r->agendaItem?->title, 'requested_at' => $r->requested_at->toIso8601String(), 'granted_at' => $r->granted_at?->toIso8601String(), 'finished_at' => $r->finished_at?->toIso8601String(),
             'position' => ($p = array_search($r->id, $order, true)) === false ? null : $p + 1, 'decision_note' => $r->decision_note,
             'mine' => $u ? $r->user_id === $u->id : ($inv && $r->invitation_id === $inv->id)];
+
         return ['speaking' => $rows->first(fn ($r) => $r->status->code === 'speaking') ? $shape($rows->first(fn ($r) => $r->status->code === 'speaking')) : null,
             'waiting' => collect($order)->map(fn ($id) => $shape($waiting->firstWhere('id', $id)))->values()->all(),
             'history' => $rows->filter(fn ($r) => in_array($r->status->code, ['done', 'dismissed', 'withdrawn'], true))->sortByDesc('requested_at')->take(30)->map($shape)->values()->all()];

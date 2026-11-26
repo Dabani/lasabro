@@ -24,6 +24,7 @@ class OfferPdf
         $pdf->loadHtml($html, 'UTF-8');
         $pdf->setPaper('A4');
         $pdf->render();
+
         return $pdf->output();
     }
 }

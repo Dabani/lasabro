@@ -2,21 +2,28 @@
 
 namespace Tests\Feature;
 
+use App\Models\ApprovalRequest;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\Task;
+use App\Models\TaskStatusHistory;
 use App\Services\Approvals\ApprovalEngine;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundle 08 helpers. */
 class ProjectsTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
-    protected function setUp(): void { parent::setUp(); $this->bootCops(); }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->bootCops();
+    }
 
     private function project($owner, string $code = 'PRJ'): Project
     {
@@ -68,9 +75,9 @@ class ProjectsTest extends TestCase
         $this->postJson("/api/v1/tasks/$id/move", ['status' => 'done'])->assertStatus(422);                 // no direct close
         $this->postJson("/api/v1/tasks/$id/move", ['status' => 'in_review'])->assertOk()->assertJsonPath('data.status', 'in_review');
 
-        $req = \App\Models\ApprovalRequest::where('subject_id', $id)->firstOrFail();
+        $req = ApprovalRequest::where('subject_id', $id)->firstOrFail();
         $this->assertSame('task_review', $req->flow->code);
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         app(ApprovalEngine::class)->act($req->id, $dev, 'approve');                                         // requester cannot approve
     }
 
@@ -84,14 +91,15 @@ class ProjectsTest extends TestCase
         $this->member($p, $reviewer, 'reviewer');
         Sanctum::actingAs($dev);
         $mk = fn ($title) => $this->postJson("/api/v1/projects/{$p->id}/tasks", ['title' => $title, 'assignee_id' => $dev->id])->json('data.id');
-        $a = $mk('A'); $b = $mk('B');
+        $a = $mk('A');
+        $b = $mk('B');
         foreach ([$a, $b] as $id) {
             $this->postJson("/api/v1/tasks/$id/move", ['status' => 'in_progress'])->assertOk();
             $this->postJson("/api/v1/tasks/$id/move", ['status' => 'in_review'])->assertOk();
         }
         $engine = app(ApprovalEngine::class);
-        $engine->act(\App\Models\ApprovalRequest::where('subject_id', $a)->value('id'), $reviewer, 'approve');
-        $engine->act(\App\Models\ApprovalRequest::where('subject_id', $b)->value('id'), $reviewer, 'reject', 'Missing tests');
+        $engine->act(ApprovalRequest::where('subject_id', $a)->value('id'), $reviewer, 'approve');
+        $engine->act(ApprovalRequest::where('subject_id', $b)->value('id'), $reviewer, 'reject', 'Missing tests');
         $this->assertSame('done', Task::find($a)->status->code);
         $this->assertNotNull(Task::find($a)->completed_at);
         $this->assertSame('in_progress', Task::find($b)->status->code);
@@ -123,6 +131,6 @@ class ProjectsTest extends TestCase
         $this->patchJson("/api/v1/tasks/$id", ['title' => 'x'])->assertForbidden();
         $this->postJson("/api/v1/tasks/$id/comments", ['body' => 'hi'])->assertForbidden();
         $this->expectException(\LogicException::class);
-        \App\Models\TaskStatusHistory::where('task_id', $id)->firstOrFail()->update(['note' => 'tampered']);
+        TaskStatusHistory::where('task_id', $id)->firstOrFail()->update(['note' => 'tampered']);
     }
 }

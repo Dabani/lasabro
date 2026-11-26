@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Rules\RichTextMin;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceCorrection;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\AttendancePeriod;
 use App\Models\Employee;
+use App\Rules\RichTextMin;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Hr\Attendance\AttendanceCalculator;
 use App\Services\Hr\Attendance\AttendanceService;
@@ -22,15 +22,32 @@ use Illuminate\Validation\Rule;
 /** Clocking, my attendance, team attendance and corrections (Guide 5.3). */
 class AttendanceController extends Controller
 {
-    private function ctx(): OrganizationContext { return app(OrganizationContext::class); }
-    private function org(): string { return $this->ctx()->organizationId(); }
-    private function tz(): string { return AttendanceService::tz($this->org()); }
-    private function me(Request $r): ?Employee { return Employee::where('user_id', $r->user()->id)->first(); }
+    private function ctx(): OrganizationContext
+    {
+        return app(OrganizationContext::class);
+    }
+
+    private function org(): string
+    {
+        return $this->ctx()->organizationId();
+    }
+
+    private function tz(): string
+    {
+        return AttendanceService::tz($this->org());
+    }
+
+    private function me(Request $r): ?Employee
+    {
+        return Employee::where('user_id', $r->user()->id)->first();
+    }
+
     private function monthOf(Request $r): array
     {
         $m = $r->query('month') ?: CarbonImmutable::instance(now())->setTimezone($this->tz())->format('Y-m');
         abort_unless(preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $m), 422, 'month must be YYYY-MM');
         $first = "$m-01";
+
         return [$m, $first, (new \DateTimeImmutable($first))->modify('last day of this month')->format('Y-m-d')];
     }
 
@@ -52,6 +69,7 @@ class AttendanceController extends Controller
         $events = AttendanceEvent::where('employee_id', $e->id)->where('occurred_at', '>=', gmdate('Y-m-d H:i:s', AttendanceCalculator::localToUtc($tz, $today, '00:00')))->orderBy('occurred_at')->get()
             ->map(fn ($x) => ['direction' => $x->direction, 'at' => $x->occurred_at->toIso8601String()]);
         $day = AttendanceDay::with(['status', 'shift', 'employee'])->where('employee_id', $e->id)->whereDate('work_date', $today)->first();
+
         return ['employee_id' => $e->id, 'name' => $e->full_name, 'state' => $state['state'], 'since' => $state['since']?->toIso8601String(), 'timezone' => $tz, 'server_time' => $now->toIso8601String(),
             'ip_restricted' => $svc->networkRestricted($this->org()), 'geolocation' => $svc->geoMode($this->org()), 'date' => $today, 'shift' => $shift ? ['name' => $shift->name, 'start' => $shift->start_time, 'end' => $shift->end_time] : null,
             'events' => $events, 'day' => $day ? $this->dayShape($day) : null];
@@ -61,6 +79,7 @@ class AttendanceController extends Controller
     {
         $e = $this->me($request);
         abort_unless($e, 404);
+
         return ['data' => $this->todayPayload($e, $svc, $res)];
     }
 
@@ -71,6 +90,7 @@ class AttendanceController extends Controller
         $d = $request->validate(['direction' => ['nullable', Rule::in(['in', 'out'])], 'latitude' => 'nullable|numeric|between:-90,90', 'longitude' => 'nullable|numeric|between:-180,180', 'accuracy' => 'nullable|numeric|min:0|max:100000']);
         $geo = isset($d['latitude'], $d['longitude']) ? ['lat' => $d['latitude'], 'lng' => $d['longitude'], 'accuracy' => $d['accuracy'] ?? null] : null;
         $svc->clock($e, $d['direction'] ?? null, $request->ip(), $geo);
+
         return response()->json(['data' => $this->todayPayload($e->refresh(), $svc, $res)], 201);
     }
 
@@ -78,6 +98,7 @@ class AttendanceController extends Controller
     {
         $days = AttendanceDay::with(['status', 'shift', 'employee'])->whereIn('employee_id', $employeeIds)->whereDate('work_date', '>=', $first)->whereDate('work_date', '<=', $last)
             ->orderBy('work_date')->get();
+
         return ['timezone' => $this->tz(), 'validated' => AttendancePeriod::whereNull('reopened_at')->whereDate('month', $first)->exists(), 'days' => $days->map(fn ($d) => $this->dayShape($d))->values()];
     }
 
@@ -86,6 +107,7 @@ class AttendanceController extends Controller
         $e = $this->me($request);
         abort_unless($e, 404);
         [$m, $first, $last] = $this->monthOf($request);
+
         return ['data' => ['month' => $m] + $this->monthPayload([$e->id], $first, $last, false)];
     }
 
@@ -102,6 +124,7 @@ class AttendanceController extends Controller
         if ($id = $request->query('employee_id')) {
             $q->where('hr_employees.id', $id);
         }
+
         return ['data' => ['month' => $m] + $this->monthPayload($q->pluck('hr_employees.id')->all(), $first, $last, true)];
     }
 
@@ -114,12 +137,14 @@ class AttendanceController extends Controller
         $rows = $people->map(function ($p) use ($days) {
             $d = $days[$p->id] ?? collect();
             $count = fn (string $s) => $d->filter(fn ($x) => $x->status?->code === $s)->count();
+
             return ['employee_id' => $p->id, 'employee' => $p->full_name, 'employee_number' => $p->employee_number, 'present' => $count('present'), 'late' => $count('late'), 'absent' => $count('absent'),
                 'holiday' => $count('holiday'), 'leave' => $count('leave'), 'day_off' => $count('day_off'), 'incomplete' => $count('incomplete'), 'expected_minutes' => (int) $d->sum('expected_minutes'),
                 'worked_minutes' => (int) $d->sum('worked_minutes'), 'late_minutes' => (int) $d->sum('late_minutes'), 'overtime_minutes' => (int) $d->sum('overtime_minutes')];
         })->values();
         $pending = AttendanceCorrection::where('status_id', Lookup::id('attendance_correction_status', 'pending_approval'))->whereDate('work_date', '>=', $first)->whereDate('work_date', '<=', $last)
             ->whereIn('employee_id', $people->pluck('id'))->count();
+
         return ['data' => ['month' => $m, 'validated' => AttendancePeriod::whereNull('reopened_at')->whereDate('month', $first)->exists(), 'pending_corrections' => $pending, 'rows' => $rows]];
     }
 
@@ -142,6 +167,7 @@ class AttendanceController extends Controller
         if ($s = $request->query('status')) {
             $q->where('status_id', Lookup::id('attendance_correction_status', $s));
         }
+
         return ['data' => $q->get()->map(fn ($c) => $this->corrShape($c))];
     }
 
@@ -158,6 +184,7 @@ class AttendanceController extends Controller
             $e = $this->visible($request)->findOrFail($d['employee_id']);
         }
         $c = $svc->requestCorrection($e, $d, $request->user());
+
         return response()->json(['data' => $this->corrShape($c->load(['employee', 'status', 'requester']))], 201);
     }
 
@@ -167,6 +194,7 @@ class AttendanceController extends Controller
         abort_unless($c->requested_by === $request->user()->id, 403, 'forbidden');
         abort_unless($c->status_id === Lookup::id('attendance_correction_status', 'pending_approval') && $c->approval_request_id, 422);
         $engine->cancel($c->approval_request_id, $request->user());
+
         return ['data' => $this->corrShape($c->refresh()->load(['employee', 'status', 'requester']))];
     }
 }

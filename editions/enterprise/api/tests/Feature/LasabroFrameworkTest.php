@@ -20,7 +20,7 @@ class LasabroFrameworkTest extends TestCase
     {
         parent::setUp();
         require_once base_path('tests/Fixtures/plugins/demo/src/DemoServiceProvider.php');
-        $this->cacheFile = sys_get_temp_dir() . '/lasabro-feature-' . bin2hex(random_bytes(4)) . '/lasabro.php';
+        $this->cacheFile = sys_get_temp_dir().'/lasabro-feature-'.bin2hex(random_bytes(4)).'/lasabro.php';
         config(['lasabro.plugin_paths' => [base_path('tests/Fixtures/plugins')], 'lasabro.cache_path' => $this->cacheFile]);
         $this->app->forgetInstance(ManifestSource::class);
         $this->app->forgetInstance(PluginManager::class);
@@ -42,11 +42,11 @@ class LasabroFrameworkTest extends TestCase
     {
         $this->artisan('lasabro:plugin:activate', ['plugin' => 'Lasabro.Demo'])->assertSuccessful();
         $this->assertDatabaseHas('lasabro_plugins', ['code' => 'Lasabro.Demo', 'is_active' => 1]);
-        $this->assertSame(['Lasabro.Demo'], array_column((new PluginCache())->read($this->cacheFile), 'id'));
+        $this->assertSame(['Lasabro.Demo'], array_column((new PluginCache)->read($this->cacheFile), 'id'));
 
         $this->artisan('lasabro:plugin:deactivate', ['plugin' => 'Lasabro.Demo'])->assertSuccessful();
         $this->assertDatabaseHas('lasabro_plugins', ['code' => 'Lasabro.Demo', 'is_active' => 0]);
-        $this->assertSame([], (new PluginCache())->read($this->cacheFile));
+        $this->assertSame([], (new PluginCache)->read($this->cacheFile));
 
         $this->artisan('lasabro:plugin:uninstall', ['plugin' => 'Lasabro.Demo'])->assertSuccessful();
         $this->assertDatabaseMissing('lasabro_plugins', ['code' => 'Lasabro.Demo']);

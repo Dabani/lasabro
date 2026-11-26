@@ -9,12 +9,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class RuleActivation extends Model
 {
-    use HasUlids, BelongsToOrganization, Immutable;
+    use BelongsToOrganization, HasUlids, Immutable;
 
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['created_at' => 'datetime'];
 
-    public function status() { return $this->belongsTo(LookupValue::class, 'status_id'); }
-    public function actor() { return $this->belongsTo(User::class, 'actor_id'); }
+    public function status()
+    {
+        return $this->belongsTo(LookupValue::class, 'status_id');
+    }
+
+    public function actor()
+    {
+        return $this->belongsTo(User::class, 'actor_id');
+    }
 }

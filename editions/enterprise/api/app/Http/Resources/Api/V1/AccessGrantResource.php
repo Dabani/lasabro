@@ -6,11 +6,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AccessGrantResource extends JsonResource
 {
-    private function lv($v, $lang): ?array { return $v ? ['id' => $v->id, 'code' => $v->code, 'label' => $v->label($lang), 'color' => $v->color] : null; }
+    private function lv($v, $lang): ?array
+    {
+        return $v ? ['id' => $v->id, 'code' => $v->code, 'label' => $v->label($lang), 'color' => $v->color] : null;
+    }
 
     public function toArray($request): array
     {
         $lang = optional($request->user())->language_id;
+
         return [
             'id' => $this->id,
             'user' => ['id' => $this->user->id, 'name' => $this->user->name, 'email' => $this->user->email],

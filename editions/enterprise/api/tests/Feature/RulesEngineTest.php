@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\ApprovalFlow;
 use App\Models\LegalParameter;
 use App\Models\RuleSet;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Rules\RuleLifecycle;
 use App\Services\Rules\RuleResolver;
+use App\Services\Rules\RuleValidator;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -15,9 +17,13 @@ use Tests\TestCase;
 /** Not executed in the build environment - run `php artisan test`. */
 class RulesEngineTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
-    protected function setUp(): void { parent::setUp(); $this->bootCops(); }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->bootCops();
+    }
 
     private function set(string $code = 'purchase-approval', bool $legal = false): RuleSet
     {
@@ -28,7 +34,7 @@ class RulesEngineTest extends TestCase
     {
         return app(RuleLifecycle::class)->createVersion($set, $extra + [
             'effective_from' => now()->subDay()->toDateString(), 'conditions' => [['attribute' => 'amount', 'operator' => 'gte', 'decimal' => '1000000.00']],
-            'outcomes' => [['key' => 'approval_flow', 'approval_flow_id' => \App\Models\ApprovalFlow::where('code', 'default_two_level')->value('id')]],
+            'outcomes' => [['key' => 'approval_flow', 'approval_flow_id' => ApprovalFlow::where('code', 'default_two_level')->value('id')]],
         ], $author);
     }
 
@@ -74,7 +80,7 @@ class RulesEngineTest extends TestCase
     {
         $author = $this->makeUser('admin');
         $v = $this->draft($this->set('legal-set', true), $author);
-        $this->assertNotEmpty(app(\App\Services\Rules\RuleValidator::class)->activationBlockers($v));
+        $this->assertNotEmpty(app(RuleValidator::class)->activationBlockers($v));
         $this->expectException(ValidationException::class);
         app(RuleLifecycle::class)->signOff($v, $author, 'self sign-off');                                 // author may not sign off
     }

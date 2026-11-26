@@ -24,7 +24,10 @@ use Illuminate\Validation\ValidationException;
 /** Working-time setup: shifts, schedules and their assignments, one-day overrides, public holidays, allowed networks. Nothing here is pre-filled. */
 class AttendanceSetupController extends Controller
 {
-    private function org(): string { return app(OrganizationContext::class)->organizationId(); }
+    private function org(): string
+    {
+        return app(OrganizationContext::class)->organizationId();
+    }
 
     // ---- shifts ---------------------------------------------------------------------------------------------------
     private function shiftShape(Shift $s): array
@@ -36,16 +39,21 @@ class AttendanceSetupController extends Controller
     private function shiftRules(bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return ['name' => "$req|string|max:150", 'start_time' => "$req|date_format:H:i", 'end_time' => "$req|date_format:H:i|different:start_time", 'break_minutes' => 'sometimes|integer|min:0|max:480',
             'auto_deduct_break' => 'sometimes|boolean', 'grace_minutes' => 'sometimes|integer|min:0|max:120', 'is_active' => 'sometimes|boolean'];
     }
 
-    public function shifts() { return ['data' => Shift::orderBy('start_time')->orderBy('name')->get()->map(fn ($s) => $this->shiftShape($s))]; }
+    public function shifts()
+    {
+        return ['data' => Shift::orderBy('start_time')->orderBy('name')->get()->map(fn ($s) => $this->shiftShape($s))];
+    }
 
     public function storeShift(Request $request)
     {
         $s = Shift::create($request->validate($this->shiftRules(true)));
         AuditLogger::log('attendance.shift_created', $s);
+
         return response()->json(['data' => $this->shiftShape($s->refresh())], 201);
     }
 
@@ -54,6 +62,7 @@ class AttendanceSetupController extends Controller
         $s = Shift::findOrFail($id);
         $s->update($request->validate($this->shiftRules(false)));
         AuditLogger::log('attendance.shift_updated', $s);
+
         return ['data' => $this->shiftShape($s->refresh())];
     }
 
@@ -65,11 +74,14 @@ class AttendanceSetupController extends Controller
 
     private function scheduleRules(bool $create): array
     {
-        return ['name' => ($create ? 'required' : 'sometimes') . '|string|max:150', 'is_active' => 'sometimes|boolean', 'days' => ($create ? 'required' : 'sometimes') . '|array|max:7', 'days.*.weekday' => 'required|integer|between:1,7|distinct',
+        return ['name' => ($create ? 'required' : 'sometimes').'|string|max:150', 'is_active' => 'sometimes|boolean', 'days' => ($create ? 'required' : 'sometimes').'|array|max:7', 'days.*.weekday' => 'required|integer|between:1,7|distinct',
             'days.*.shift_id' => ['required', Rule::exists('hr_shifts', 'id')->where('organization_id', $this->org())]];
     }
 
-    public function schedules() { return ['data' => WorkSchedule::with('days.shift')->orderBy('name')->get()->map(fn ($w) => $this->scheduleShape($w))]; }
+    public function schedules()
+    {
+        return ['data' => WorkSchedule::with('days.shift')->orderBy('name')->get()->map(fn ($w) => $this->scheduleShape($w))];
+    }
 
     public function storeSchedule(Request $request)
     {
@@ -79,9 +91,11 @@ class AttendanceSetupController extends Controller
             foreach ($d['days'] as $day) {
                 ScheduleDay::create(['schedule_id' => $w->id, 'weekday' => $day['weekday'], 'shift_id' => $day['shift_id']]);
             }
+
             return $w;
         });
         AuditLogger::log('attendance.schedule_created', $w);
+
         return response()->json(['data' => $this->scheduleShape($w->load('days.shift'))], 201);
     }
 
@@ -100,6 +114,7 @@ class AttendanceSetupController extends Controller
             }
         });
         AuditLogger::log('attendance.schedule_updated', $w);
+
         return ['data' => $this->scheduleShape($w->refresh()->load('days.shift'))];
     }
 
@@ -110,6 +125,7 @@ class AttendanceSetupController extends Controller
         if ($e = $request->query('employee_id')) {
             $q->where('employee_id', $e);
         }
+
         return ['data' => $q->get()->map(fn ($a) => ['id' => $a->id, 'employee_id' => $a->employee_id, 'employee' => $a->employee?->full_name, 'schedule_id' => $a->schedule_id, 'schedule' => $a->schedule?->name,
             'effective_from' => $a->effective_from->toDateString()])];
     }
@@ -127,6 +143,7 @@ class AttendanceSetupController extends Controller
             }
         }
         AuditLogger::log('attendance.schedule_assigned', null, [], ['schedule_id' => $d['schedule_id'], 'employees' => count($d['employee_ids']), 'effective_from' => $d['effective_from']]);
+
         return response()->json(['data' => ['assigned' => count($d['employee_ids'])]], 201);
     }
 
@@ -140,6 +157,7 @@ class AttendanceSetupController extends Controller
         if ($m = $request->query('month')) {
             $q->whereDate('work_date', '>=', "$m-01")->whereDate('work_date', '<=', (new \DateTimeImmutable("$m-01"))->modify('last day of this month')->format('Y-m-d'));
         }
+
         return ['data' => $q->get()->map(fn ($o) => ['id' => $o->id, 'employee_id' => $o->employee_id, 'work_date' => $o->work_date->toDateString(), 'shift_id' => $o->shift_id, 'shift' => $o->shift?->name, 'reason' => $o->reason])];
     }
 
@@ -153,6 +171,7 @@ class AttendanceSetupController extends Controller
         $o = ShiftOverride::updateOrCreate(['employee_id' => $d['employee_id'], 'work_date' => $d['work_date']], ['shift_id' => $d['shift_id'] ?? null, 'reason' => $d['reason'] ?? null, 'created_by' => $request->user()->id]);
         $svc->recompute(Employee::findOrFail($d['employee_id']), $d['work_date'], $d['work_date']);
         AuditLogger::log('attendance.override_set', $o);
+
         return response()->json(['data' => ['id' => $o->id]], 201);
     }
 
@@ -166,6 +185,7 @@ class AttendanceSetupController extends Controller
         $o->delete();
         $svc->recompute(Employee::findOrFail($o->employee_id), $date, $date);
         AuditLogger::log('attendance.override_removed', $o);
+
         return response()->noContent();
     }
 
@@ -173,6 +193,7 @@ class AttendanceSetupController extends Controller
     public function holidays(Request $request)
     {
         $year = (int) ($request->query('year') ?: now()->year);
+
         return ['data' => PublicHoliday::whereDate('holiday_date', '>=', "$year-01-01")->whereDate('holiday_date', '<=', "$year-12-31")->orderBy('holiday_date')->get()
             ->map(fn ($h) => ['id' => $h->id, 'holiday_date' => $h->holiday_date->toDateString(), 'name' => $h->name])];
     }
@@ -183,6 +204,7 @@ class AttendanceSetupController extends Controller
         $h = PublicHoliday::create($d);
         $svc->recomputeMonth($this->org(), substr($d['holiday_date'], 0, 7));
         AuditLogger::log('attendance.holiday_added', $h);
+
         return response()->json(['data' => ['id' => $h->id, 'holiday_date' => $d['holiday_date'], 'name' => $d['name']]], 201);
     }
 
@@ -193,6 +215,7 @@ class AttendanceSetupController extends Controller
         $h->delete();
         $svc->recomputeMonth($this->org(), $month);
         AuditLogger::log('attendance.holiday_removed', $h);
+
         return response()->noContent();
     }
 
@@ -205,15 +228,20 @@ class AttendanceSetupController extends Controller
     private function siteRules(bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return ['name' => "$req|string|max:120", 'latitude' => "$req|numeric|between:-90,90", 'longitude' => "$req|numeric|between:-180,180", 'radius_meters' => "$req|integer|min:10|max:5000", 'is_active' => 'sometimes|boolean'];
     }
 
-    public function sites() { return ['data' => AttendanceSite::orderBy('name')->get()->map(fn ($s) => $this->siteShape($s))]; }
+    public function sites()
+    {
+        return ['data' => AttendanceSite::orderBy('name')->get()->map(fn ($s) => $this->siteShape($s))];
+    }
 
     public function storeSite(Request $request)
     {
         $s = AttendanceSite::create($request->validate($this->siteRules(true)));
         AuditLogger::log('attendance.site_added', $s);
+
         return response()->json(['data' => $this->siteShape($s->refresh())], 201);
     }
 
@@ -222,6 +250,7 @@ class AttendanceSetupController extends Controller
         $s = AttendanceSite::findOrFail($id);
         $s->update($request->validate($this->siteRules(false)));
         AuditLogger::log('attendance.site_updated', $s);
+
         return ['data' => $this->siteShape($s->refresh())];
     }
 
@@ -230,15 +259,20 @@ class AttendanceSetupController extends Controller
         $s = AttendanceSite::findOrFail($id);
         $s->delete();
         AuditLogger::log('attendance.site_removed', $s);
+
         return response()->noContent();
     }
 
     // ---- allowed networks (optional clock-in restriction) ------------------------------------------------------------------
-    public function networks() { return ['data' => AttendanceNetwork::orderBy('label')->get()->map(fn ($n) => ['id' => $n->id, 'label' => $n->label, 'cidr' => $n->cidr, 'is_active' => $n->is_active])]; }
+    public function networks()
+    {
+        return ['data' => AttendanceNetwork::orderBy('label')->get()->map(fn ($n) => ['id' => $n->id, 'label' => $n->label, 'cidr' => $n->cidr, 'is_active' => $n->is_active])];
+    }
 
     private function networkRules(bool $create): array
     {
         $req = $create ? 'required' : 'sometimes';
+
         return ['label' => "$req|string|max:100", 'cidr' => ["$req", 'string', 'max:64', fn ($a, $v, $fail) => Cidr::valid((string) $v) ?: $fail(__('attendance.cidr_invalid'))], 'is_active' => 'sometimes|boolean'];
     }
 
@@ -246,6 +280,7 @@ class AttendanceSetupController extends Controller
     {
         $n = AttendanceNetwork::create($request->validate($this->networkRules(true)));
         AuditLogger::log('attendance.network_added', $n);
+
         return response()->json(['data' => ['id' => $n->id]], 201);
     }
 
@@ -254,6 +289,7 @@ class AttendanceSetupController extends Controller
         $n = AttendanceNetwork::findOrFail($id);
         $n->update($request->validate($this->networkRules(false)));
         AuditLogger::log('attendance.network_updated', $n);
+
         return ['data' => ['id' => $n->id]];
     }
 
@@ -262,6 +298,7 @@ class AttendanceSetupController extends Controller
         $n = AttendanceNetwork::findOrFail($id);
         $n->delete();
         AuditLogger::log('attendance.network_removed', $n);
+
         return response()->noContent();
     }
 }

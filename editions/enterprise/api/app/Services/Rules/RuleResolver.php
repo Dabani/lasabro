@@ -24,6 +24,7 @@ class RuleResolver
             $cands = array_values(array_filter($cands, fn ($c) => $c['rule_set'] === $ruleSetCode));
         }
         $hit = RuleMatcher::pick($cands, $attributes, $on);
+
         return $hit ? new ResolvedRule($hit['id'], $hit['version'], $hit['rule_set'], $hit['outcomes']) : null;
     }
 
@@ -31,6 +32,7 @@ class RuleResolver
     public function candidates(string $org, string $domain): array
     {
         $gen = Cache::get($this->genKey($org), 1);
+
         return Cache::remember("cops:rules:$org:$gen:$domain", 600, function () use ($org, $domain) {
             return RuleVersion::withoutGlobalScopes()->where('organization_id', $org)
                 ->whereHas('status', fn ($q) => $q->whereIn('code', ['active', 'superseded']))
@@ -55,5 +57,8 @@ class RuleResolver
         Cache::increment($k);
     }
 
-    private function genKey(string $org): string { return "cops:rules:gen:$org"; }
+    private function genKey(string $org): string
+    {
+        return "cops:rules:gen:$org";
+    }
 }

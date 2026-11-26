@@ -18,6 +18,7 @@ use Carbon\CarbonImmutable;
 class HrReminders
 {
     public const STEPS = [30, 14, 7, 1];
+
     private const KINDS = ['probation' => 'probation_end_on', 'contract' => 'contract_end_on'];
 
     public function run(?string $today = null): int
@@ -41,13 +42,14 @@ class HrReminders
                     $params = ['name' => $e->full_name, 'date' => $due->toDateString(), 'days' => $days];
                     AppNotification::create([
                         'organization_id' => $e->organization_id, 'user_id' => $user->id, 'title' => __("hr.reminder.$kind.title", $params, $locale),
-                        'body' => mb_substr(__("hr.reminder.$kind.body", $params, $locale), 0, 500), 'link' => '/hr/employees/' . $e->id,
+                        'body' => mb_substr(__("hr.reminder.$kind.body", $params, $locale), 0, 500), 'link' => '/hr/employees/'.$e->id,
                     ]);
                     $sent++;
                 }
                 HrReminderLog::create($key + ['organization_id' => $e->organization_id, 'sent_at' => now()]);
             }
         }
+
         return $sent;
     }
 
@@ -59,6 +61,7 @@ class HrReminders
         if ($e->manager?->user_id) {
             $ids = $ids->push($e->manager->user_id);
         }
+
         return User::with('language')->whereIn('id', $ids->unique()->values())->get();
     }
 }

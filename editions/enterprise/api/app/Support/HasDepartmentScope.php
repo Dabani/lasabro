@@ -12,8 +12,15 @@ use Illuminate\Database\Eloquent\Builder;
  */
 trait HasDepartmentScope
 {
-    public static function ownerColumn(): string { return 'created_by'; }
-    public static function departmentColumn(): string { return 'department_id'; }
+    public static function ownerColumn(): string
+    {
+        return 'created_by';
+    }
+
+    public static function departmentColumn(): string
+    {
+        return 'department_id';
+    }
 
     public function scopeVisibleTo(Builder $q, User $user): Builder
     {
@@ -22,10 +29,11 @@ trait HasDepartmentScope
             return $q;
         }
         $table = $q->getModel()->getTable();
+
         return $q->where(function (Builder $w) use ($s, $table) {
-            $w->where("$table." . static::ownerColumn(), $s->userId);
+            $w->where("$table.".static::ownerColumn(), $s->userId);
             if ($s->departmentIds) {
-                $w->orWhereIn("$table." . static::departmentColumn(), $s->departmentIds);
+                $w->orWhereIn("$table.".static::departmentColumn(), $s->departmentIds);
             }
         });
     }

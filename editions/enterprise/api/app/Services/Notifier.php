@@ -10,6 +10,8 @@ use App\Models\SupportCase;
 use App\Models\User;
 use App\Support\Lookup;
 use App\Support\Phone;
+use App\Support\Realtime;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /**
@@ -28,21 +30,21 @@ class Notifier
         ?string $organizationId = null,
     ): void {
         $orgId = $organizationId ?? $case?->organization_id ?? app(OrganizationContext::class)->organizationId();
-        $link ??= $case ? '/cases/' . $case->id : null;
+        $link ??= $case ? '/cases/'.$case->id : null;
 
-        $list = $users instanceof \Illuminate\Database\Eloquent\Model ? collect([$users]) : collect($users);
+        $list = $users instanceof Model ? collect([$users]) : collect($users);
         foreach ($list->unique('id') as $user) {
             $locale = $user->language?->code ?? config('ops.default_language');
             $title = __("notify.$key.title", $params, $locale);
             $body = __("notify.$key.body", $params, $locale);
-            $url = $link ? rtrim(config('ops.frontend_url'), '/') . $link : null;
+            $url = $link ? rtrim(config('ops.frontend_url'), '/').$link : null;
 
             if (in_array('in_app', $channels, true)) {
                 $n = AppNotification::create([
                     'organization_id' => $orgId, 'user_id' => $user->id, 'title' => $title, 'body' => mb_substr($body, 0, 500),
                     'case_id' => $case?->id, 'link' => $link,
                 ]);
-                \App\Support\Realtime::emit(new AppNotificationCreated($n));
+                Realtime::emit(new AppNotificationCreated($n));
             }
 
             if (in_array('email', $channels, true) && $user->email) {
@@ -51,7 +53,7 @@ class Notifier
 
             if (in_array('sms', $channels, true) && ($digits = Phone::e164Digits($user->phone))) {
                 $sms = __("notify.$key.sms", $params, $locale);
-                self::queue($orgId, $user, $case, 'sms', $digits, $title, $sms === "notify.$key.sms" ? $title . ': ' . $body : $sms, null, $locale);
+                self::queue($orgId, $user, $case, 'sms', $digits, $title, $sms === "notify.$key.sms" ? $title.': '.$body : $sms, null, $locale);
             }
         }
     }

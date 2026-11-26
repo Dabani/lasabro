@@ -18,13 +18,25 @@ class MinutesAccess
 {
     public function __construct(private MeetingAccess $meetings) {}
 
-    public function isWriter(User $u, Meeting $m): bool { return $m->organizer_id === $u->id || $m->secretary_id === $u->id || $this->meetings->can('meeting.manage_all'); }
+    public function isWriter(User $u, Meeting $m): bool
+    {
+        return $m->organizer_id === $u->id || $m->secretary_id === $u->id || $this->meetings->can('meeting.manage_all');
+    }
 
-    public function isChair(User $u, Meeting $m): bool { return $m->chair_id === $u->id; }
+    public function isChair(User $u, Meeting $m): bool
+    {
+        return $m->chair_id === $u->id;
+    }
 
-    public function isReviewer(User $u, MeetingMinuteVersion $v): bool { return $v->reviewers()->where('user_id', $u->id)->exists(); }
+    public function isReviewer(User $u, MeetingMinuteVersion $v): bool
+    {
+        return $v->reviewers()->where('user_id', $u->id)->exists();
+    }
 
-    private function isHostOrWriter(User $u, Meeting $m): bool { return $this->isWriter($u, $m) || $this->isChair($u, $m); }
+    private function isHostOrWriter(User $u, Meeting $m): bool
+    {
+        return $this->isWriter($u, $m) || $this->isChair($u, $m);
+    }
 
     public function canRead(User $u, Meeting $m, MeetingMinuteVersion $v): bool
     {
@@ -38,6 +50,7 @@ class MinutesAccess
         if ($status === 'approved') {
             return false;
         }
+
         return $this->canReadPublished($u, $m, $v);
     }
 
@@ -45,6 +58,7 @@ class MinutesAccess
     {
         $vis = $v->visibility?->code;
         $participant = $this->meetings->isParticipant($u, $m);
+
         return match ($vis) {
             'participants' => $participant,
             'department' => $participant || $v->recipients()->whereIn('department_id', UserDepartmentAssignment::where('user_id', $u->id)->pluck('department_id'))->exists(),
@@ -64,6 +78,7 @@ class MinutesAccess
         $depts = UserDepartmentAssignment::where('user_id', $u->id)->pluck('department_id');
         $inMeeting = fn ($m) => $m->where('organizer_id', $u->id)->orWhere('secretary_id', $u->id)->orWhere('chair_id', $u->id)->orWhere('facilitator_id', $u->id)
             ->orWhereHas('invitations', fn ($i) => $i->where('user_id', $u->id));
+
         return $q->where(function ($w) use ($u, $depts, $inMeeting) {
             $w->whereHas('minutes.meeting', fn ($m) => $m->where('organizer_id', $u->id)->orWhere('secretary_id', $u->id)->orWhere('chair_id', $u->id))
                 ->orWhereHas('visibility', fn ($v) => $v->where('code', 'organization'))
@@ -91,6 +106,7 @@ class MinutesAccess
         } else {
             $q->whereKey($ids->unique()->values());
         }
+
         return $q->with('language')->get();
     }
 }

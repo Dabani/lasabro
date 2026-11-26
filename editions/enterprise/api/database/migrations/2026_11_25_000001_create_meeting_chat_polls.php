@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Schema;
  * Chat and polls of online meetings. Chat is kept with the meeting (moderators can remove a message, the removal is recorded).
  * Polls are run by the hosts; who voted is stored apart from what was voted, so an anonymous poll cannot be traced back to a person from the vote rows.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('meeting_chat_messages', function (Blueprint $t) {

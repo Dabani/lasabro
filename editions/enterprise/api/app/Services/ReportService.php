@@ -39,6 +39,7 @@ use Illuminate\Support\Str;
 class ReportService
 {
     public const MAX_DAYS = 400;
+
     public const ROW_CAP = 20000;
 
     /** code => [module, icon, any-of permissions, snapshot?]. A snapshot report ignores the period (state "as of now"). */
@@ -57,13 +58,23 @@ class ReportService
 
     public function __construct(private OrganizationContext $ctx) {}
 
-    public function exists(string $code): bool { return isset(self::definitions()[$code]); }
+    public function exists(string $code): bool
+    {
+        return isset(self::definitions()[$code]);
+    }
 
     public function allowed(string $code): bool
     {
         $def = self::definitions()[$code] ?? null;
-        if (!$def) return false;
-        foreach ($def[2] as $perm) if ($this->ctx->can($perm)) return true;
+        if (! $def) {
+            return false;
+        }
+        foreach ($def[2] as $perm) {
+            if ($this->ctx->can($perm)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -72,10 +83,13 @@ class ReportService
     {
         $out = [];
         foreach (self::definitions() as $code => [$module, $icon, , $snapshot]) {
-            if (!$this->allowed($code)) continue;
+            if (! $this->allowed($code)) {
+                continue;
+            }
             $out[] = ['code' => $code, 'module' => $module, 'module_label' => $this->t("module.$module"), 'icon' => $icon, 'snapshot' => $snapshot,
                 'title' => $this->t("def.$code.title"), 'description' => $this->t("def.$code.description")];
         }
+
         return $out;
     }
 
@@ -85,8 +99,12 @@ class ReportService
         $today = CarbonImmutable::now($tz)->startOfDay();
         $toD = $to ? CarbonImmutable::parse($to, $tz)->startOfDay() : $today;
         $fromD = $from ? CarbonImmutable::parse($from, $tz)->startOfDay() : $toD->subDays(89);
-        if ($fromD->gt($toD)) [$fromD, $toD] = [$toD, $fromD];
-        if ($fromD->diffInDays($toD) > self::MAX_DAYS) $fromD = $toD->subDays(self::MAX_DAYS);
+        if ($fromD->gt($toD)) {
+            [$fromD, $toD] = [$toD, $fromD];
+        }
+        if ($fromD->diffInDays($toD) > self::MAX_DAYS) {
+            $fromD = $toD->subDays(self::MAX_DAYS);
+        }
 
         $p = [
             'tz' => $tz, 'today' => $today, 'from' => $fromD, 'to' => $toD,
@@ -164,8 +182,8 @@ class ReportService
 
         $rows = collect($kpis)->map(fn ($k) => [
             'indicator' => $k['label'],
-            'value' => $k['value'] === null ? '—' : $k['value'] . ($k['unit'] ? ' ' . $this->unit($k['unit']) : ''),
-            'status' => $this->t('status.' . $k['tone']),
+            'value' => $k['value'] === null ? '—' : $k['value'].($k['unit'] ? ' '.$this->unit($k['unit']) : ''),
+            'status' => $this->t('status.'.$k['tone']),
         ])->all();
 
         return [
@@ -194,7 +212,9 @@ class ReportService
             $byCase = $created->keyBy('id');
             CaseComment::whereIn('case_id', $byCase->keys())->where('is_internal', false)->orderBy('created_at')->get(['case_id', 'user_id', 'created_at'])
                 ->each(function ($c) use (&$first, $byCase) {
-                    if (isset($first[$c->case_id]) || $c->user_id === $byCase[$c->case_id]->requester_id) return;
+                    if (isset($first[$c->case_id]) || $c->user_id === $byCase[$c->case_id]->requester_id) {
+                        return;
+                    }
                     $first[$c->case_id] = max(0, $byCase[$c->case_id]->created_at->diffInMinutes($c->created_at)) / 60;
                 });
         }
@@ -247,6 +267,7 @@ class ReportService
             $data[] = ['label' => $label, 'opened' => $o[$k], 'resolved' => $r[$k]];
             $rows[] = ['period' => $label, 'opened' => $o[$k], 'resolved' => $r[$k]];
         }
+
         return [[
             'key' => 'trend', 'type' => 'line', 'title' => $this->t('chart.opened_vs_resolved'), 'x' => 'label',
             'series' => [['name' => 'opened', 'label' => $this->t('col.opened'), 'color' => 'brand.6'], ['name' => 'resolved', 'label' => $this->t('col.resolved'), 'color' => 'secondary.6']],
@@ -316,7 +337,7 @@ class ReportService
         $live = $recs->reject(fn ($r) => $code($r) === 'disposed');
 
         $transferOverdue = $recs->filter(fn ($r) => $code($r) === 'inactive' && $r->transfer_due_on && $r->transfer_due_on->toDateString() < $today)->count();
-        $disposalDue = $recs->filter(fn ($r) => $code($r) === 'archived' && !$r->legal_hold && $r->retention_until && $r->retention_until->toDateString() <= $today)->count();
+        $disposalDue = $recs->filter(fn ($r) => $code($r) === 'archived' && ! $r->legal_hold && $r->retention_until && $r->retention_until->toDateString() <= $today)->count();
         $holds = $live->filter(fn ($r) => $r->legal_hold)->count();
 
         $logs = ArchiveAccessLog::whereBetween('created_at', [$p['fromDb'], $p['toDb']])->limit(self::ROW_CAP)->get(['created_at']);
@@ -339,12 +360,16 @@ class ReportService
         $statusCodes = ['active', 'inactive', 'archived', 'disposal_pending', 'disposed'];
         $rows = $recs->groupBy('category_id')->map(function ($g, $id) use ($map, $statusCodes, $code) {
             $row = ['category' => $map[$id]['label'] ?? '—'];
-            foreach ($statusCodes as $s) $row[$s] = $g->filter(fn ($r) => $code($r) === $s)->count();
+            foreach ($statusCodes as $s) {
+                $row[$s] = $g->filter(fn ($r) => $code($r) === $s)->count();
+            }
             $row['total'] = $g->count();
+
             return $row;
         })->sortByDesc('total')->values()->all();
 
         $n = fn (string $c) => $recs->filter(fn ($r) => $code($r) === $c)->count();
+
         return [
             'kpis' => [
                 $this->kpi('records_live', $live->count()),
@@ -380,7 +405,7 @@ class ReportService
 
         $findings = AuditFinding::whereHas('audit')->limit(self::ROW_CAP)->get(['id', 'severity_id', 'status_id', 'due_on']);
         $map = $this->lookupMap($findings->pluck('severity_id')->merge($findings->pluck('status_id')));
-        $open = $findings->filter(fn ($f) => !in_array($map[$f->status_id]['code'] ?? '', ['resolved', 'accepted_risk'], true));
+        $open = $findings->filter(fn ($f) => ! in_array($map[$f->status_id]['code'] ?? '', ['resolved', 'accepted_risk'], true));
         $overdueFindings = $open->filter(fn ($f) => $f->due_on && $f->due_on->toDateString() < $today)->count();
         $bySeverity = $open->groupBy('severity_id')->map(fn ($g, $id) => ['label' => $map[$id]['label'] ?? '—', 'sort' => $map[$id]['sort'] ?? 0, 'value' => $g->count()])
             ->sortBy('sort')->values()->map(fn ($r) => Arr::except($r, 'sort'))->all();
@@ -395,10 +420,14 @@ class ReportService
 
         $b = $this->buckets($p);
         $stack = [];
-        foreach ($b['keys'] as $k) $stack[$k] = ['label' => $b['labels'][$k], 'ok' => 0, 'issues' => 0, 'failed' => 0];
+        foreach ($b['keys'] as $k) {
+            $stack[$k] = ['label' => $b['labels'][$k], 'ok' => 0, 'issues' => 0, 'failed' => 0];
+        }
         foreach ($verifs as $v) {
             $k = $this->bucketKey(CarbonImmutable::parse($v->backup_date->toDateString(), $p['tz']), $b['granularity']);
-            if (!isset($stack[$k])) continue;
+            if (! isset($stack[$k])) {
+                continue;
+            }
             $c = $rmap[$v->result_id]['code'] ?? '';
             $stack[$k][$c === 'verified_ok' ? 'ok' : ($c === 'failed' ? 'failed' : 'issues')]++;
         }
@@ -451,14 +480,15 @@ class ReportService
         $rows = $sessions->map(function ($s) use ($p) {
             $inv = $s->attendees->count();
             $att = $s->attendees->where('attended', true)->count();
+
             return [
                 'date' => $s->session_date->setTimezone($p['tz'])->toDateString(), 'title' => $s->title, 'topic' => $s->topic?->label($this->langId()) ?? '—',
                 'mandatory' => $this->t($s->is_mandatory ? 'yes' : 'no'), 'invited' => $inv, 'attended' => $att,
-                'rate' => $inv ? round(100 * $att / $inv, 1) . ' %' : '—',
+                'rate' => $inv ? round(100 * $att / $inv, 1).' %' : '—',
             ];
         })->values()->all();
         $chart = $sessions->map(fn ($s) => [
-            'label' => $s->session_date->setTimezone($p['tz'])->format('d/m') . ' ' . Str::limit($s->title, 18),
+            'label' => $s->session_date->setTimezone($p['tz'])->format('d/m').' '.Str::limit($s->title, 18),
             'invited' => $s->attendees->count(), 'attended' => $s->attendees->where('attended', true)->count(),
         ])->values()->all();
 
@@ -507,9 +537,11 @@ class ReportService
         $errors = $rows->filter(fn ($r) => $st($r) === 'failed' && $r->error)->groupBy(function ($r) use ($map) {
             $e = preg_replace('/[\w.+-]+@[\w-]+\.[\w.-]+/', '[email]', (string) $r->error);
             $e = preg_replace('/\+?\d[\d\s-]{6,}\d/', '[number]', (string) $e);
-            return ($map[$r->channel_id]['label'] ?? '—') . '||' . mb_substr((string) $e, 0, 120);
+
+            return ($map[$r->channel_id]['label'] ?? '—').'||'.mb_substr((string) $e, 0, 120);
         })->map(function ($g, $key) {
             [$channel, $error] = explode('||', $key, 2);
+
             return ['channel' => $channel, 'error' => $error, 'count' => $g->count()];
         })->sortByDesc('count')->take(50)->values()->all();
 
@@ -545,14 +577,18 @@ class ReportService
     private function daysSinceLastOkBackup(array $p): ?int
     {
         $d = BackupVerification::whereHas('result', fn ($q) => $q->where('code', 'verified_ok'))->max('backup_date');
+
         return $d ? (int) round(CarbonImmutable::parse((string) $d, $p['tz'])->startOfDay()->diffInDays($p['today'])) : null;
     }
 
     private function median(array $v): ?float
     {
-        if (!$v) return null;
+        if (! $v) {
+            return null;
+        }
         sort($v);
         $n = count($v);
+
         return round($n % 2 ? $v[intdiv($n, 2)] : ($v[$n / 2 - 1] + $v[$n / 2]) / 2, 1);
     }
 
@@ -585,6 +621,7 @@ class ReportService
             $labels[$k] = $g === 'week' ? $cur->translatedFormat('d M') : $cur->translatedFormat('M Y');
             $cur = $g === 'week' ? $cur->addWeek() : $cur->addMonth();
         }
+
         return ['granularity' => $g, 'keys' => $keys, 'labels' => $labels];
     }
 
@@ -598,10 +635,15 @@ class ReportService
     {
         $out = array_fill_keys($b['keys'], 0);
         foreach ($timestamps as $ts) {
-            if (!$ts) continue;
+            if (! $ts) {
+                continue;
+            }
             $k = $this->bucketKey(CarbonImmutable::instance($ts)->setTimezone($p['tz']), $b['granularity']);
-            if (isset($out[$k])) $out[$k]++;
+            if (isset($out[$k])) {
+                $out[$k]++;
+            }
         }
+
         return $out;
     }
 
@@ -609,20 +651,32 @@ class ReportService
     private function lookupMap(Collection $ids): array
     {
         $ids = $ids->filter()->unique()->values();
-        if ($ids->isEmpty()) return [];
+        if ($ids->isEmpty()) {
+            return [];
+        }
         $lang = $this->langId();
+
         return LookupValue::with('translations')->whereIn('id', $ids)->get()
             ->mapWithKeys(fn ($v) => [$v->id => ['code' => $v->code, 'label' => $v->label($lang), 'color' => $v->color, 'sort' => $v->sort_order]])->all();
     }
 
-    private function color(?string $c): string { return ($c ?: 'gray') . '.6'; }
+    private function color(?string $c): string
+    {
+        return ($c ?: 'gray').'.6';
+    }
 
-    private function langId(): ?string { return request()->user()?->language_id; }
+    private function langId(): ?string
+    {
+        return request()->user()?->language_id;
+    }
 
     private function timezone(): string
     {
         return $this->ctx->organization()?->timezone?->code ?: config('app.timezone');
     }
 
-    private function t(string $key): string { return __("reports.$key"); }
+    private function t(string $key): string
+    {
+        return __("reports.$key");
+    }
 }

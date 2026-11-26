@@ -12,13 +12,14 @@ class Lookup
     public static function id(string $type, string $code): string
     {
         $key = "$type:$code";
-        if (!isset(static::$cache[$key])) {
+        if (! isset(static::$cache[$key])) {
             static::$cache[$key] = LookupValue::query()
                 ->whereNull('organization_id')
                 ->where('code', $code)
                 ->whereHas('type', fn ($q) => $q->where('code', $type))
                 ->valueOrFail('id');
         }
+
         return static::$cache[$key];
     }
 

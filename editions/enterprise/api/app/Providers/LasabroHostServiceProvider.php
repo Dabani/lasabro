@@ -30,8 +30,8 @@ class LasabroHostServiceProvider extends ServiceProvider
         config(['lasabro.provided' => array_merge(config('lasabro.provided', []), self::PROVIDED)]);
 
         $this->app->afterResolving(DeclarationRegistry::class, function (DeclarationRegistry $registry) {
-            $registry->register(new MenuVisibilityHandler());
-            $registry->register(new WidgetVisibilityHandler());
+            $registry->register(new MenuVisibilityHandler);
+            $registry->register(new WidgetVisibilityHandler);
         });
     }
 }

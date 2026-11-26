@@ -15,6 +15,7 @@ class MinutesChairResolver
     {
         $v = MeetingMinuteVersion::with('minutes.meeting')->find($r->subject_id);
         $chair = $v?->minutes?->meeting?->chair_id;
+
         return $chair ? User::query()->whereKey($chair)->whereHas('status', fn ($s) => $s->where('code', 'active'))->get() : collect();
     }
 }

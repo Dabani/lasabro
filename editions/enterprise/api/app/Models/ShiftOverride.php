@@ -8,11 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class ShiftOverride extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_shift_overrides';
+
     protected $guarded = [];
+
     protected $casts = ['work_date' => 'date:Y-m-d'];
 
-    public function shift() { return $this->belongsTo(Shift::class, 'shift_id'); }
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
+    }
 }

@@ -30,6 +30,7 @@ class Bundle7Test extends TestCase
     {
         $u = User::where('email', 'admin@example.com')->firstOrFail();
         Sanctum::actingAs($u);
+
         return $u;
     }
 

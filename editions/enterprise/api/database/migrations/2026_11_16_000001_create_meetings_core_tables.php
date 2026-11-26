@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Schema;
  * agenda, invitations / RSVP, schedule history. No ENUM and no JSON columns: every state is a lookup.
  * Instants are stored in UTC (App\Casts\UtcDateTime); presentation uses the organization timezone.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('meeting_rooms', function (Blueprint $t) {

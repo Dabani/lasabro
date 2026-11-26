@@ -17,7 +17,7 @@ final class RecurrenceExpander
     /** @return CarbonImmutable[] UTC instants, the first one is $first itself */
     public static function expand(CarbonImmutable $first, string $frequency, int $interval, ?string $endsOn, ?int $count, string $timezone): array
     {
-        if (!in_array($frequency, ['daily', 'weekly', 'monthly'], true)) {
+        if (! in_array($frequency, ['daily', 'weekly', 'monthly'], true)) {
             throw new InvalidArgumentException('frequency');
         }
         if ($interval < 1 || $interval > 52) {
@@ -42,6 +42,7 @@ final class RecurrenceExpander
             }
             $out[] = $at->utc();
         }
+
         return $out;
     }
 }

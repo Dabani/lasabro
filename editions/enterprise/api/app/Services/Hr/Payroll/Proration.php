@@ -12,12 +12,14 @@ use DateTimeImmutable;
 final class Proration
 {
     public const NONE = 0;
+
     public const CALENDAR = 1;
+
     public const WORKING = 2;
 
     /**
-     * @param array<string,bool> $holidays date => true
-     * @return array{factor:string,worked:int,total:int,employed:bool}  factor is a decimal string with 6 places ("1.000000" = the whole period)
+     * @param  array<string,bool>  $holidays  date => true
+     * @return array{factor:string,worked:int,total:int,employed:bool} factor is a decimal string with 6 places ("1.000000" = the whole period)
      */
     public static function factor(string $from, string $to, ?string $hiredOn, ?string $endedOn, int $mode, array $holidays = []): array
     {
@@ -31,6 +33,7 @@ final class Proration
         if ($mode === self::NONE || $total === 0) {
             return ['factor' => '1.000000', 'worked' => $worked, 'total' => $total, 'employed' => true];
         }
+
         return ['factor' => bcdiv((string) $worked, (string) $total, 6), 'worked' => $worked, 'total' => $total, 'employed' => true];
     }
 
@@ -48,6 +51,7 @@ final class Proration
                 $n++;
             }
         }
+
         return $n;
     }
 }

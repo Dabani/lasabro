@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Replaces Laravel's default 0001_01_01_000000_create_users_table.php (delete that file).
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('users', function (Blueprint $t) {

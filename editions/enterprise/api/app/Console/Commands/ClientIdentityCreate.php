@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 class ClientIdentityCreate extends Command
 {
     protected $signature = 'cops:client-identity {organization : organization slug} {client : client code} {email}';
+
     protected $description = 'Create a portal login for a client and print a one-time password (invitations arrive with Phase 3)';
 
     public function handle(): int
@@ -22,6 +23,7 @@ class ClientIdentityCreate extends Command
             'organization_id' => $org->id, 'client_id' => $client->id, 'email' => strtolower($this->argument('email')), 'password' => $password,
         ]);
         $this->info("Created. One-time password (shown once): $password");
+
         return self::SUCCESS;
     }
 }

@@ -8,7 +8,12 @@ class CaseResource extends JsonResource
 {
     private bool $withDescription = false;
 
-    public function withDescription(): static { $this->withDescription = true; return $this; }
+    public function withDescription(): static
+    {
+        $this->withDescription = true;
+
+        return $this;
+    }
 
     private function lv($v, $lang): ?array
     {
@@ -18,6 +23,7 @@ class CaseResource extends JsonResource
     public function toArray($request): array
     {
         $lang = optional($request->user())->language_id;
+
         return [
             'id' => $this->id,
             'reference' => $this->reference,

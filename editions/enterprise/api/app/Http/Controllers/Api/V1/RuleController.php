@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\LegalParameter;
+use App\Models\LookupType;
 use App\Models\RuleSet;
 use App\Models\RuleVersion;
 use App\Services\AuditLogger;
+use App\Services\CodeGenerator;
 use App\Services\OrganizationContext;
 use App\Services\Rules\RuleLifecycle;
 use App\Services\Rules\RuleValidator;
@@ -22,6 +24,7 @@ class RuleController extends Controller
     private function version(RuleVersion $v): array
     {
         $v->loadMissing(['status', 'verification', 'conditions.attribute', 'conditions.operator', 'outcomes.flow', 'history.status', 'history.actor']);
+
         return [
             'id' => $v->id, 'version' => $v->version, 'status' => $v->status->code, 'priority' => $v->priority,
             'effective_from' => $v->effective_from->toDateString(), 'effective_to' => $v->effective_to?->toDateString(),
@@ -36,12 +39,13 @@ class RuleController extends Controller
     private function contentRules(): array
     {
         $org = app(OrganizationContext::class)->organizationId();
+
         return [
             'priority' => 'nullable|integer|min:0|max:100000', 'effective_from' => 'required|date', 'effective_to' => 'nullable|date|after_or_equal:effective_from',
             'rationale' => 'nullable|string|max:5000', 'source_reference' => 'nullable|string|max:255',
             'conditions' => 'array|max:12',
-            'conditions.*.attribute' => ['required', Rule::exists('lookup_values', 'code')->whereIn('lookup_type_id', \App\Models\LookupType::where('code', 'rule_attribute')->pluck('id'))],
-            'conditions.*.operator' => ['required', Rule::exists('lookup_values', 'code')->whereIn('lookup_type_id', \App\Models\LookupType::where('code', 'rule_operator')->pluck('id'))],
+            'conditions.*.attribute' => ['required', Rule::exists('lookup_values', 'code')->whereIn('lookup_type_id', LookupType::where('code', 'rule_attribute')->pluck('id'))],
+            'conditions.*.operator' => ['required', Rule::exists('lookup_values', 'code')->whereIn('lookup_type_id', LookupType::where('code', 'rule_operator')->pluck('id'))],
             'conditions.*.text' => 'nullable|string|max:255', 'conditions.*.decimal' => 'nullable|numeric', 'conditions.*.decimal_to' => 'nullable|numeric',
             'outcomes' => 'required|array|min:1|max:20', 'outcomes.*.key' => 'required|string|max:80|distinct',
             'outcomes.*.approval_flow_id' => ['nullable', Rule::exists('approval_flows', 'id')->where('organization_id', $org)],
@@ -70,16 +74,21 @@ class RuleController extends Controller
         ]);
         $set = RuleSet::create($d + ['owner_user_id' => $request->user()->id, 'created_by' => $request->user()->id]);
         AuditLogger::log('rule.set_created', $set, [], $d);
+
         return response()->json(['id' => $set->id], 201);
     }
 
     // ---- versions ------------------------------------------------------------------------------------------------------
-    public function showVersion(string $id) { return ['data' => $this->version(RuleVersion::findOrFail($id))]; }
+    public function showVersion(string $id)
+    {
+        return ['data' => $this->version(RuleVersion::findOrFail($id))];
+    }
 
     public function storeVersion(Request $request, string $setId)
     {
         $set = RuleSet::findOrFail($setId);
         $v = $this->lifecycle->createVersion($set, $request->validate($this->contentRules()), $request->user());
+
         return response()->json(['data' => $this->version($v)], 201);
     }
 
@@ -91,26 +100,33 @@ class RuleController extends Controller
             'rationale' => $d['rationale'] ?? null, 'source_reference' => $d['source_reference'] ?? null]);
         $this->lifecycle->replaceContent($v, $d);
         AuditLogger::log('rule.version_updated', $v);
+
         return ['data' => $this->version($v->refresh())];
     }
 
     public function impact(Request $request, string $id)
     {
         $d = $request->validate(['samples' => 'required|array|min:1|max:50', 'samples.*' => 'array']);
+
         return $this->lifecycle->impactCheck(RuleVersion::findOrFail($id), $d['samples'], $request->user());
     }
 
-    public function validateVersion(string $id) { return $this->validator->check(RuleVersion::findOrFail($id)); }
+    public function validateVersion(string $id)
+    {
+        return $this->validator->check(RuleVersion::findOrFail($id));
+    }
 
     public function submit(Request $request, string $id)
     {
         $req = $this->lifecycle->submit(RuleVersion::findOrFail($id), $request->user());
+
         return response()->json(['approval_request_id' => $req->id], 202);
     }
 
     public function signOff(Request $request, string $id)
     {
         $d = $request->validate(['note' => 'nullable|string|max:2000']);
+
         return ['data' => $this->version($this->lifecycle->signOff(RuleVersion::findOrFail($id), $request->user(), $d['note'] ?? null))];
     }
 
@@ -135,9 +151,10 @@ class RuleController extends Controller
         $org = app(OrganizationContext::class)->organizationId();
         $code = isset($d['new_value_of'])
             ? LegalParameter::findOrFail($d['new_value_of'])->code
-            : \App\Services\CodeGenerator::key($d['name'], fn ($c) => LegalParameter::withoutGlobalScopes()->where('organization_id', $org)->where('code', $c)->exists());
+            : CodeGenerator::key($d['name'], fn ($c) => LegalParameter::withoutGlobalScopes()->where('organization_id', $org)->where('code', $c)->exists());
         $p = LegalParameter::create(collect($d)->except('new_value_of')->all() + ['code' => $code, 'verification_status_id' => Lookup::id('rule_verification_status', 'unverified')]);
         AuditLogger::log('legal_parameter.created', $p, [], $d);
+
         return response()->json(['id' => $p->id], 201);
     }
 
@@ -147,6 +164,7 @@ class RuleController extends Controller
         $p = LegalParameter::findOrFail($id);
         $p->update(['verification_status_id' => Lookup::id('rule_verification_status', 'verified'), 'verified_by' => $request->user()->id, 'verified_at' => now()]);
         AuditLogger::log('legal_parameter.verified', $p, ['verification' => 'unverified'], ['verification' => 'verified']);
+
         return response()->noContent();
     }
 }

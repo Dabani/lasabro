@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Applicant;
-use App\Models\ApprovalRequest;
 use App\Models\AppNotification;
 use App\Models\AuditLog;
 use App\Models\Employee;
@@ -22,7 +21,7 @@ use Tests\TestCase;
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundle 15 (routes/recruitment.php, HrRecruitmentSeeder). */
 class RecruitmentTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     private User $hr;
 
@@ -40,13 +39,20 @@ class RecruitmentTest extends TestCase
         parent::tearDown();
     }
 
-    private function admin(): User { return User::where('email', 'admin@example.com')->firstOrFail(); }
+    private function admin(): User
+    {
+        return User::where('email', 'admin@example.com')->firstOrFail();
+    }
 
-    private function approve(string $approvalRequestId): void { app(ApprovalEngine::class)->act($approvalRequestId, $this->admin(), 'approve'); }
+    private function approve(string $approvalRequestId): void
+    {
+        app(ApprovalEngine::class)->act($approvalRequestId, $this->admin(), 'approve');
+    }
 
     private function dept(string $name = 'Finance'): string
     {
         Sanctum::actingAs($this->admin());
+
         return $this->postJson('/api/v1/departments', ['name' => $name])->assertCreated()->json('data.id');
     }
 
@@ -55,6 +61,7 @@ class RecruitmentTest extends TestCase
     {
         $u = $this->makeUser('manager');
         $e = Employee::create(['first_name' => $name, 'last_name' => 'Panel', 'category_id' => Lookup::id('employee_category', 'contracted'), 'status_id' => Lookup::id('employee_status', 'active'), 'user_id' => $u->id]);
+
         return [$u, $e];
     }
 
@@ -68,12 +75,14 @@ class RecruitmentTest extends TestCase
         $this->approve($req['approval_request_id']);
         Sanctum::actingAs($this->hr);
         $vac = $this->postJson("/api/v1/requisitions/{$req['id']}/vacancy", [])->assertCreated()->json('data.id');
+
         return [$req['id'], $vac, $dept];
     }
 
     private function applicant(string $vac, string $email = 'jean@example.com'): string
     {
         Sanctum::actingAs($this->hr);
+
         return $this->postJson("/api/v1/vacancies/$vac/applicants", ['first_name' => 'Jean', 'last_name' => 'Habimana', 'email' => $email, 'phone' => '0788000000', 'consent' => true])->assertCreated()->json('data.id');
     }
 
@@ -85,6 +94,7 @@ class RecruitmentTest extends TestCase
         $iid = $this->postJson("/api/v1/applicants/$app/interviews", ['type' => 'interview', 'scheduled_at' => '2026-11-12 10:00:00', 'location' => 'Room 2', 'panel_employee_ids' => [$e->id]])->assertCreated()->json('data.id');
         Sanctum::actingAs($u);
         $this->postJson("/api/v1/interviews/$iid/scorecard", ['score' => 4, 'recommendation' => 'yes', 'strengths' => 'Solid'])->assertCreated();
+
         return $iid;
     }
 

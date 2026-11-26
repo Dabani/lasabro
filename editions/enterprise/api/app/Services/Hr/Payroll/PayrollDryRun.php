@@ -18,6 +18,7 @@ class PayrollDryRun
         foreach ($result['warnings'] ?? [] as $code) {
             $warnings[] = ['code' => $code, 'params' => []];
         }
+
         return ['blockers' => $r['blockers'], 'warnings' => $warnings, 'result' => $result, 'meta' => $r['meta']];
     }
 }

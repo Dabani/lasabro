@@ -39,6 +39,7 @@ class DepartmentAccessController extends Controller
         }
         $a = UserDepartmentAssignment::updateOrCreate(['user_id' => $d['user_id'], 'department_id' => $d['department_id']], ['scope_level_id' => $d['scope_level_id'], 'is_head' => $d['is_head'] ?? false]);
         AuditLogger::log('scope.assigned', $a, [], ['level' => $level, 'department_id' => $d['department_id'], 'is_head' => $a->is_head]);
+
         return response()->json(['id' => $a->id], 201);
     }
 
@@ -47,6 +48,7 @@ class DepartmentAccessController extends Controller
         $a = UserDepartmentAssignment::findOrFail($id);
         $a->delete();
         AuditLogger::log('scope.revoked', $a);
+
         return response()->noContent();
     }
 }

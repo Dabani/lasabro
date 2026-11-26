@@ -10,7 +10,11 @@ class LookupType extends Model
     use HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['is_system' => 'boolean'];
 
-    public function values() { return $this->hasMany(LookupValue::class); }
+    public function values()
+    {
+        return $this->hasMany(LookupValue::class);
+    }
 }

@@ -9,10 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class ClientContact extends Model
 {
-    use HasUlids, BelongsToOrganization, BelongsToClient;
+    use BelongsToClient, BelongsToOrganization, HasUlids;
 
     protected $guarded = [];
+
     protected $casts = ['is_primary' => 'boolean'];
 
-    public function client() { return $this->belongsTo(Client::class); }
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 }

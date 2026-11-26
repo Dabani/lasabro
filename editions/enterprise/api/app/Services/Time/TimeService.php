@@ -13,6 +13,7 @@ use App\Services\Notifier;
 use App\Services\OrganizationContext;
 use App\Services\Projects\ProjectAccess;
 use App\Services\SettingsService;
+use App\Support\Html;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -25,15 +26,31 @@ class TimeService
 {
     public function __construct(private ProjectAccess $access, private OrganizationContext $ctx) {}
 
-    private function now(): string { return gmdate('Y-m-d H:i:s'); }
-    private function orgId(): string { return $this->ctx->organizationId(); }
-    private function setting(string $key) { return SettingsService::get($this->orgId(), $key); }
-    private function fail(string $field, string $key): never { throw ValidationException::withMessages([$field => [__("time.$key")]]); }
+    private function now(): string
+    {
+        return gmdate('Y-m-d H:i:s');
+    }
+
+    private function orgId(): string
+    {
+        return $this->ctx->organizationId();
+    }
+
+    private function setting(string $key)
+    {
+        return SettingsService::get($this->orgId(), $key);
+    }
+
+    private function fail(string $field, string $key): never
+    {
+        throw ValidationException::withMessages([$field => [__("time.$key")]]);
+    }
 
     /** Local calendar date of a UTC timestamp in the organization's timezone. */
     public function workDate(string $utc): string
     {
         $tz = $this->ctx->organization()?->timezone?->code ?: 'UTC';
+
         return (new \DateTimeImmutable($utc, new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone($tz))->format('Y-m-d');
     }
 
@@ -46,10 +63,13 @@ class TimeService
     public function start(User $u, string $projectId, ?string $taskId, ?string $description, ?bool $billable, bool $stopExisting): TimeEntry
     {
         [$project, $task] = $this->target($u, $projectId, $taskId);
+
         return DB::transaction(function () use ($u, $project, $task, $description, $billable, $stopExisting) {
             $open = TimeEntry::where('user_id', $u->id)->whereNull('ended_at')->lockForUpdate()->first();
             if ($open) {
-                if ($this->setting('time.single_timer') && !$stopExisting) $this->fail('timer', 'timer.already_running');
+                if ($this->setting('time.single_timer') && ! $stopExisting) {
+                    $this->fail('timer', 'timer.already_running');
+                }
                 $this->setting('time.single_timer') ? $this->stop($u) : $this->pause($u);
             }
             $now = $this->now();
@@ -60,6 +80,7 @@ class TimeService
                 'status_id' => Lookup::id('time_entry_status', 'draft'),
             ]);
             TimeEntrySegment::create(['time_entry_id' => $e->id, 'user_id' => $u->id, 'started_at' => $now]);
+
             return $e->load(['project:id,code,name', 'task:id,number,title,project_id', 'segments']);
         });
     }
@@ -70,6 +91,7 @@ class TimeService
             $e = TimeEntry::where('user_id', $u->id)->whereNull('ended_at')->lockForUpdate()->first() ?? $this->fail('timer', 'timer.none');
             $seg = TimeEntrySegment::where('time_entry_id', $e->id)->whereNull('ended_at')->first() ?? $this->fail('timer', 'timer.already_paused');
             $seg->update(['ended_at' => $this->now()]);
+
             return $e->load('segments');
         });
     }
@@ -78,10 +100,13 @@ class TimeService
     {
         return DB::transaction(function () use ($u) {
             $e = TimeEntry::where('user_id', $u->id)->whereNull('ended_at')->lockForUpdate()->first() ?? $this->fail('timer', 'timer.none');
-            if (TimeEntrySegment::where('time_entry_id', $e->id)->whereNull('ended_at')->exists()) $this->fail('timer', 'timer.already_running');
+            if (TimeEntrySegment::where('time_entry_id', $e->id)->whereNull('ended_at')->exists()) {
+                $this->fail('timer', 'timer.already_running');
+            }
             $now = $this->now();
             $this->assertNoOverlap($u, $now, null, $e->id);
             TimeEntrySegment::create(['time_entry_id' => $e->id, 'user_id' => $u->id, 'started_at' => $now]);
+
             return $e->load('segments');
         });
     }
@@ -97,10 +122,12 @@ class TimeService
             $seconds = TimerMath::seconds($segs->map(fn ($s) => ['start' => $s->started_at->format('Y-m-d H:i:s'), 'end' => $s->ended_at->format('Y-m-d H:i:s')])->all(), $end);
             if ($seconds <= 0) {
                 $e->delete();
+
                 return null;
             }
             $e->update(['ended_at' => $segs->max('ended_at'), 'duration_seconds' => $seconds, 'auto_stopped' => $auto]);
             AuditLogger::log($auto ? 'time.auto_stopped' : 'time.stopped', $e, [], ['seconds' => $seconds]);
+
             return $e->refresh();
         });
     }
@@ -114,24 +141,30 @@ class TimeService
         foreach (TimeEntry::whereNull('ended_at')->with('segments')->get() as $e) {
             $segs = $e->segments->map(fn ($s) => ['start' => $s->started_at->format('Y-m-d H:i:s'), 'end' => $s->ended_at?->format('Y-m-d H:i:s')])->all();
             $cut = TimerMath::autoStopAt($segs, $max, $now);
-            if ($cut === null) continue;
+            if ($cut === null) {
+                continue;
+            }
             $user = User::find($e->user_id);
             $this->stop($user, true, $cut);
             Notifier::send($user, 'timer_auto_stopped', ['title' => $e->project?->code ?? '', 'hours' => $max / 3600], null, ['in_app', 'email'], '/time', $e->organization_id);
             $n++;
         }
+
         return $n;
     }
 
     // ---- manual entries, edits, adjustments ----------------------------------------------------------------------------------
     public function manual(User $u, array $d): TimeEntry
     {
-        if (!$this->setting('time.manual_allowed')) $this->fail('started_at', 'manual.disabled');
+        if (! $this->setting('time.manual_allowed')) {
+            $this->fail('started_at', 'manual.disabled');
+        }
         [$project, $task] = $this->target($u, $d['project_id'], $d['task_id'] ?? null);
         $this->assertWindow($d['started_at'], $d['ended_at']);
         $this->assertNoOverlap($u, $d['started_at'], $d['ended_at']);
         $workDate = $this->workDate($d['started_at']);
         $this->assertWeekOpen($u, $workDate);
+
         return DB::transaction(function () use ($u, $d, $project, $task, $workDate) {
             $secs = TimerMath::ts($d['ended_at']) - TimerMath::ts($d['started_at']);
             $e = TimeEntry::create([
@@ -140,7 +173,8 @@ class TimeService
                 'description' => $d['description'] ?? null, 'status_id' => Lookup::id('time_entry_status', 'draft'),
             ]);
             TimeEntrySegment::create(['time_entry_id' => $e->id, 'user_id' => $u->id, 'started_at' => $d['started_at'], 'ended_at' => $d['ended_at']]);
-            AuditLogger::log('time.manual_created', $e, [], ['seconds' => $secs, 'reason' => \App\Support\Html::plain($d['reason'])]);
+            AuditLogger::log('time.manual_created', $e, [], ['seconds' => $secs, 'reason' => Html::plain($d['reason'])]);
+
             return $e;
         });
     }
@@ -148,18 +182,31 @@ class TimeService
     public function update(TimeEntry $e, User $u, array $d): TimeEntry
     {
         abort_unless($e->user_id === $u->id, 404);
-        if ($e->status->code !== 'draft' || $e->ended_at === null) $this->fail('entry', 'entry.locked');
+        if ($e->status->code !== 'draft' || $e->ended_at === null) {
+            $this->fail('entry', 'entry.locked');
+        }
+
         return DB::transaction(function () use ($e, $u, $d) {
             $old = $e->only(['description', 'is_billable', 'task_id', 'started_at', 'ended_at']);
             if (array_key_exists('task_id', $d) && $d['task_id'] !== $e->task_id) {
                 [, $task] = $this->target($u, $e->project_id, $d['task_id']);
                 $e->task_id = $task?->id;
             }
-            foreach (['description'] as $f) if (array_key_exists($f, $d)) $e->{$f} = $d[$f];
-            if (array_key_exists('is_billable', $d)) $e->is_billable = $d['is_billable'] && ($e->task?->is_billable ?? true);
+            foreach (['description'] as $f) {
+                if (array_key_exists($f, $d)) {
+                    $e->{$f} = $d[$f];
+                }
+            }
+            if (array_key_exists('is_billable', $d)) {
+                $e->is_billable = $d['is_billable'] && ($e->task?->is_billable ?? true);
+            }
             if (isset($d['started_at'], $d['ended_at'])) {
-                if (!$e->is_manual && !$e->auto_stopped) $this->fail('started_at', 'entry.times_fixed');       // recorded by the timer: only correct if flagged
-                if (trim((string) ($d['reason'] ?? '')) === '') $this->fail('reason', 'manual.reason_required');
+                if (! $e->is_manual && ! $e->auto_stopped) {
+                    $this->fail('started_at', 'entry.times_fixed');
+                }       // recorded by the timer: only correct if flagged
+                if (trim((string) ($d['reason'] ?? '')) === '') {
+                    $this->fail('reason', 'manual.reason_required');
+                }
                 $this->assertWindow($d['started_at'], $d['ended_at']);
                 $this->assertNoOverlap($u, $d['started_at'], $d['ended_at'], $e->id);
                 $this->assertWeekOpen($u, $this->workDate($d['started_at']));
@@ -170,6 +217,7 @@ class TimeService
             }
             $e->save();
             AuditLogger::log('time.updated', $e, $old, collect($d)->except('reason')->all());
+
             return $e->refresh();
         });
     }
@@ -177,7 +225,9 @@ class TimeService
     public function delete(TimeEntry $e, User $u): void
     {
         abort_unless($e->user_id === $u->id, 404);
-        if ($e->status->code !== 'draft' || $e->ended_at === null) $this->fail('entry', 'entry.locked');
+        if ($e->status->code !== 'draft' || $e->ended_at === null) {
+            $this->fail('entry', 'entry.locked');
+        }
         $e->delete();
         AuditLogger::log('time.deleted', $e);
     }
@@ -185,11 +235,19 @@ class TimeService
     /** Corrections to approved/invoiced time are signed adjustment entries with a reason; they follow the normal timesheet approval. */
     public function adjust(TimeEntry $orig, int $seconds, string $reason, User $by, ?string $date): TimeEntry
     {
-        if (!in_array($orig->status->code, ['approved', 'invoiced'], true)) $this->fail('entry', 'adjust.only_locked');
-        if ($seconds === 0 || abs($seconds) > 86400) $this->fail('seconds', 'adjust.range');
-        if (trim($reason) === '') $this->fail('reason', 'manual.reason_required');
+        if (! in_array($orig->status->code, ['approved', 'invoiced'], true)) {
+            $this->fail('entry', 'adjust.only_locked');
+        }
+        if ($seconds === 0 || abs($seconds) > 86400) {
+            $this->fail('seconds', 'adjust.range');
+        }
+        if (trim($reason) === '') {
+            $this->fail('reason', 'manual.reason_required');
+        }
         $net = (int) TimeEntry::where('id', $orig->id)->orWhere('adjusts_entry_id', $orig->id)->sum('duration_seconds');
-        if ($net + $seconds < 0) $this->fail('seconds', 'adjust.below_zero');
+        if ($net + $seconds < 0) {
+            $this->fail('seconds', 'adjust.below_zero');
+        }
         $now = $this->now();
         $workDate = $date ?? $this->workDate($now);
         $this->assertWeekOpen(User::findOrFail($orig->user_id), $workDate);
@@ -199,6 +257,7 @@ class TimeService
             'description' => $orig->description, 'adjusts_entry_id' => $orig->id, 'status_id' => Lookup::id('time_entry_status', 'draft'),
         ]);
         AuditLogger::log('time.adjusted', $e, [], ['original' => $orig->id, 'seconds' => $seconds, 'by' => $by->id, 'reason' => $reason]);
+
         return $e;
     }
 
@@ -207,23 +266,40 @@ class TimeService
     private function target(User $u, string $projectId, ?string $taskId): array
     {
         [$p, $level] = $this->access->find($u, $projectId);
-        if (!ProjectAccess::canEdit($level)) abort(403, 'forbidden');
-        if (in_array($p->status->code, ['completed', 'cancelled', 'delivered', 'closed'], true)) $this->fail('project_id', 'entry.project_closed');
+        if (! ProjectAccess::canEdit($level)) {
+            abort(403, 'forbidden');
+        }
+        if (in_array($p->status->code, ['completed', 'cancelled', 'delivered', 'closed'], true)) {
+            $this->fail('project_id', 'entry.project_closed');
+        }
         $task = null;
         if ($taskId) {
             $task = Task::where('project_id', $p->id)->find($taskId) ?? $this->fail('task_id', 'entry.task_invalid');
-            if ($task->status->code === 'cancelled') $this->fail('task_id', 'entry.task_invalid');
+            if ($task->status->code === 'cancelled') {
+                $this->fail('task_id', 'entry.task_invalid');
+            }
         }
+
         return [$p, $task];
     }
 
     private function assertWindow(string $start, string $end): void
     {
-        $s = TimerMath::ts($start); $e = TimerMath::ts($end); $now = time();
-        if ($e <= $s) $this->fail('ended_at', 'manual.end_before_start');
-        if ($e - $s > 86400) $this->fail('ended_at', 'manual.too_long');
-        if ($e > $now + 60) $this->fail('ended_at', 'manual.future');
-        if ($s < $now - (int) $this->setting('time.manual_max_days_back') * 86400) $this->fail('started_at', 'manual.too_old');
+        $s = TimerMath::ts($start);
+        $e = TimerMath::ts($end);
+        $now = time();
+        if ($e <= $s) {
+            $this->fail('ended_at', 'manual.end_before_start');
+        }
+        if ($e - $s > 86400) {
+            $this->fail('ended_at', 'manual.too_long');
+        }
+        if ($e > $now + 60) {
+            $this->fail('ended_at', 'manual.future');
+        }
+        if ($s < $now - (int) $this->setting('time.manual_max_days_back') * 86400) {
+            $this->fail('started_at', 'manual.too_old');
+        }
     }
 
     /** Reject overlapping time for the same person (open segments count up to now). */
@@ -243,6 +319,8 @@ class TimeService
     private function assertWeekOpen(User $u, string $workDate): void
     {
         $ts = Timesheet::where('user_id', $u->id)->where('week_start', TimerMath::weekStart($workDate))->first();
-        if ($ts && $ts->status->code !== 'draft') $this->fail('started_at', 'entry.week_locked');
+        if ($ts && $ts->status->code !== 'draft') {
+            $this->fail('started_at', 'entry.week_locked');
+        }
     }
 }

@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class PublicHoliday extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_public_holidays';
-    protected $guarded = [];
-    protected $casts = ['holiday_date' => 'date:Y-m-d'];
 
+    protected $guarded = [];
+
+    protected $casts = ['holiday_date' => 'date:Y-m-d'];
 }

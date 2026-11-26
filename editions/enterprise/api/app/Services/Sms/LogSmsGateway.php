@@ -10,6 +10,7 @@ class LogSmsGateway implements SmsGateway
     public function send(string $to, string $message): ?string
     {
         Log::info("[SMS to {$to}] {$message}");
-        return 'log-' . uniqid();
+
+        return 'log-'.uniqid();
     }
 }

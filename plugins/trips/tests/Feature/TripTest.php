@@ -3,10 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Employee;
-use App\Models\Trip;
-use App\Models\TripAdvance;
-use App\Models\TripDeductionConsent;
-use App\Models\TripExpense;
 use App\Models\User;
 use App\Services\FileService;
 use App\Support\Lookup;
@@ -15,6 +11,10 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Trips\Models\Trip;
+use Lasabro\Trips\Models\TripAdvance;
+use Lasabro\Trips\Models\TripDeductionConsent;
+use Lasabro\Trips\Models\TripExpense;
 use Tests\TestCase;
 
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs bundles 17 and 18. Rates and amounts are TEST INPUTS. */

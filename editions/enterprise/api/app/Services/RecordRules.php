@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ArchiveRecord;
+use App\Models\LookupValue;
 use App\Models\RecordEvent;
 use App\Models\RetentionRule;
 use App\Support\Lookup;
@@ -16,21 +17,25 @@ class RecordRules
     public static function abbrev(string $code): string
     {
         $parts = array_filter(explode('_', $code));
+
         return count($parts) > 1 ? strtoupper(implode('', array_map(fn ($p) => $p[0], $parts))) : strtoupper(substr($code, 0, 3));
     }
 
     /** Department code – category – YYYYMMDD */
     public static function indexCode(?string $departmentCode, string $categoryCode, Carbon $date): string
     {
-        return strtoupper($departmentCode ?: 'GEN') . '-' . self::abbrev($categoryCode) . '-' . $date->format('Ymd');
+        return strtoupper($departmentCode ?: 'GEN').'-'.self::abbrev($categoryCode).'-'.$date->format('Ymd');
     }
 
     /** ClientName_ProjectName_YYYYMMDD (digital naming convention). */
     public static function digitalName(ArchiveRecord $r): ?string
     {
-        if (!$r->client_name || !$r->project_name) return null;
+        if (! $r->client_name || ! $r->project_name) {
+            return null;
+        }
         $clean = fn ($s) => preg_replace('/[^A-Za-z0-9]+/', '', Str::ascii($s));
-        return $clean($r->client_name) . '_' . $clean($r->project_name) . '_' . $r->record_date->format('Ymd');
+
+        return $clean($r->client_name).'_'.$clean($r->project_name).'_'.$r->record_date->format('Ymd');
     }
 
     /** @return array{0:int,1:?RetentionRule} years + the rule that decided it (organization rule beats shared default). */
@@ -38,14 +43,15 @@ class RecordRules
     {
         $rule = RetentionRule::where('category_id', $categoryId)->where(fn ($q) => $q->where('organization_id', $orgId)->orWhereNull('organization_id'))
             ->orderByRaw('organization_id is null')->first();
+
         return [$rule?->retention_years ?? SettingsService::get($orgId, 'archive.default_retention_years'), $rule];
     }
 
     /** Sets retention_until and transfer_due_on from the record's current state. Does not save. */
     public static function recompute(ArchiveRecord $r): void
     {
-        $status = $r->status?->code ?? optional(\App\Models\LookupValue::find($r->status_id))->code;
-        $physical = in_array($r->format?->code ?? optional(\App\Models\LookupValue::find($r->format_id))->code, ['physical', 'hybrid'], true);
+        $status = $r->status?->code ?? optional(LookupValue::find($r->status_id))->code;
+        $physical = in_array($r->format?->code ?? optional(LookupValue::find($r->format_id))->code, ['physical', 'hybrid'], true);
 
         if (in_array($status, ['inactive', 'archived', 'disposal_pending'], true)) {
             $start = $r->became_inactive_on ?? $r->record_date;                  // retention clock starts when the record stops being operational

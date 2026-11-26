@@ -20,9 +20,9 @@ class ShortNameBlueprint extends Blueprint
         }
 
         // A deterministic suffix helps distinguish long names.
-        $suffix = '_' . substr(md5($name), 0, 8);
+        $suffix = '_'.substr(md5($name), 0, 8);
 
         return substr($name, 0, 64 - strlen($suffix))
-            . $suffix;
+            .$suffix;
     }
 }

@@ -8,11 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class OnboardingItem extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_onboarding_items';
+
     protected $guarded = [];
+
     protected $casts = ['due_on' => 'date:Y-m-d', 'done_at' => 'datetime'];
 
-    public function employee() { return $this->belongsTo(Employee::class, 'employee_id'); }
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 }

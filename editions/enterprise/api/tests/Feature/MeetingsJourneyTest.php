@@ -19,7 +19,7 @@ use Tests\TestCase;
  */
 class MeetingsJourneyTest extends TestCase
 {
-    use RefreshDatabase, CopsTestHelpers;
+    use CopsTestHelpers, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -46,6 +46,7 @@ class MeetingsJourneyTest extends TestCase
             dump($r->json('error'));
         }
         $r->assertCreated();
+
         return $r->json('data.id');
     }
 
@@ -82,10 +83,10 @@ class MeetingsJourneyTest extends TestCase
 
         // Draft minutes: only the writers, the chair and reviewers can see them.
         $v = $this->postJson("/api/v1/meetings/$id/minutes")->assertCreated()->json('data.id');
-        $body = '<p>' . str_repeat('The board approved the 2027 budget. ', 3) . '</p>';
+        $body = '<p>'.str_repeat('The board approved the 2027 budget. ', 3).'</p>';
         $rev = $this->getJson("/api/v1/minutes/$v")->assertOk()->json('data.revision');
         $this->patchJson("/api/v1/minutes/$v", ['minutes_body' => $body, 'revision' => $rev])->assertOk();
-        $this->patchJson("/api/v1/minutes/$v", ['minutes_body' => $body . 'x', 'revision' => $rev])->assertStatus(422);   // stale revision
+        $this->patchJson("/api/v1/minutes/$v", ['minutes_body' => $body.'x', 'revision' => $rev])->assertStatus(422);   // stale revision
         Sanctum::actingAs($attendee);
         $this->getJson("/api/v1/minutes/$v")->assertNotFound();
 
@@ -142,7 +143,7 @@ class MeetingsJourneyTest extends TestCase
         $this->postJson("/api/v1/meetings/$id/start")->assertOk();
         $v1 = $this->postJson("/api/v1/meetings/$id/minutes")->assertCreated()->json('data.id');
         $rev = $this->getJson("/api/v1/minutes/$v1")->json('data.revision');
-        $this->patchJson("/api/v1/minutes/$v1", ['minutes_body' => '<p>' . str_repeat('Decisions were taken. ', 4) . '</p>', 'revision' => $rev])->assertOk();
+        $this->patchJson("/api/v1/minutes/$v1", ['minutes_body' => '<p>'.str_repeat('Decisions were taken. ', 4).'</p>', 'revision' => $rev])->assertOk();
         $this->postJson("/api/v1/minutes/$v1/submit")->assertOk();
         $request = $this->getJson("/api/v1/minutes/$v1")->json('data.approval_request_id');
         Sanctum::actingAs($chair);

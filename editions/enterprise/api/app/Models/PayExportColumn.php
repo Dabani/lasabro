@@ -8,13 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayExportColumn extends Model
 {
-    use HasUlids, BelongsToOrganization;
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'pay_export_columns';
+
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['truncate' => 'boolean', 'decimals' => 'integer', 'width' => 'integer', 'position' => 'integer'];
 
-    public function scheme() { return $this->belongsTo(PayScheme::class, 'scheme_id'); }
-    public function component() { return $this->belongsTo(PayComponent::class, 'component_id'); }
+    public function scheme()
+    {
+        return $this->belongsTo(PayScheme::class, 'scheme_id');
+    }
+
+    public function component()
+    {
+        return $this->belongsTo(PayComponent::class, 'component_id');
+    }
 }

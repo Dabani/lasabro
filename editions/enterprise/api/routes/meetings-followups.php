@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\V1 as V1;
+use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
 /* Routes (resolutions and action items). Required from routes/api.php inside the authenticated "org.context" group. */

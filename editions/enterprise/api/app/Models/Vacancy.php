@@ -3,20 +3,36 @@
 namespace App\Models;
 
 use App\Support\BelongsToOrganization;
+use App\Support\HasGeneratedCode;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
 class Vacancy extends Model
 {
-    use \App\Support\HasGeneratedCode;
+    use HasGeneratedCode;
+
     protected static string $codeEntity = 'vacancy';
-    use HasUlids, BelongsToOrganization;
+
+    use BelongsToOrganization, HasUlids;
 
     protected $table = 'hr_vacancies';
+
     protected $guarded = [];
+
     protected $casts = ['opened_on' => 'date:Y-m-d', 'closes_on' => 'date:Y-m-d'];
 
-    public function requisition() { return $this->belongsTo(Requisition::class, 'requisition_id'); }
-    public function status() { return $this->belongsTo(LookupValue::class, 'status_id'); }
-    public function applicants() { return $this->hasMany(Applicant::class, 'vacancy_id'); }
+    public function requisition()
+    {
+        return $this->belongsTo(Requisition::class, 'requisition_id');
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(LookupValue::class, 'status_id');
+    }
+
+    public function applicants()
+    {
+        return $this->hasMany(Applicant::class, 'vacancy_id');
+    }
 }

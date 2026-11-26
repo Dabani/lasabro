@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Department;
 use App\Models\DashboardWidget;
+use App\Models\Department;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\Membership;
@@ -79,7 +79,7 @@ class DemoOrganizationSeeder extends Seeder
             }
         }
 
-        if (!config('ops.seed_admin_password')) {
+        if (! config('ops.seed_admin_password')) {
             $this->command?->warn("Generated admin password (shown once): {$password}");
         }
     }

@@ -28,6 +28,7 @@ class ReportController extends Controller
     {
         $data = $this->build($request, $code);
         AuditLogger::log('report.viewed', null, [], ['report' => $code, 'from' => $data['meta']['from'], 'to' => $data['meta']['to']]);
+
         return response()->json(['data' => $data]);
     }
 
@@ -62,7 +63,10 @@ class ReportController extends Controller
     /** Spreadsheet formula injection: a cell that starts with = + - @ (or a control character) is prefixed with an apostrophe. */
     private static function safeCell(mixed $v): mixed
     {
-        if (!is_string($v) || $v === '') return $v;
-        return preg_match('/^[=+\-@\t\r]/', $v) ? "'" . $v : $v;
+        if (! is_string($v) || $v === '') {
+            return $v;
+        }
+
+        return preg_match('/^[=+\-@\t\r]/', $v) ? "'".$v : $v;
     }
 }

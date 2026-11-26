@@ -23,16 +23,21 @@ class ProjectFileController extends Controller
 {
     public function __construct(private ProjectAccess $access) {}
 
-    private function with(): array { return ['classification.translations', 'status.translations', 'owner']; }
+    private function with(): array
+    {
+        return ['classification.translations', 'status.translations', 'owner'];
+    }
 
     private function target(Request $r, string $kind, string $id): array
     {
         if ($kind === 'project') {
             [$p, $level] = $this->access->find($r->user(), $id);
+
             return [$p->id, $level];
         }
         $t = Task::findOrFail($id);
         [, $level] = $this->access->find($r->user(), $t->project_id);
+
         return [$t->id, $level];
     }
 
@@ -42,6 +47,7 @@ class ProjectFileController extends Controller
         [$linkId] = $this->target($request, $kind, $id);
         $q = FileAccess::scopeVisible(FileAsset::query())->with($this->with())->whereHas('status', fn ($s) => $s->where('code', 'active'))
             ->whereHas('links', fn ($l) => $l->where('link_type_id', Lookup::id('file_link_type', $kind))->where('link_id', $linkId))->orderByDesc('created_at');
+
         return FileResource::collection($q->get());
     }
 
@@ -55,6 +61,7 @@ class ProjectFileController extends Controller
 
         $asset = FileService::store($request->file('file'), $request->user(), $d, ['type' => $kind, 'id' => $linkId])->load($this->with());
         AuditLogger::log('file.uploaded', $asset, [], ['name' => $asset->name, $kind => $linkId, 'sha256' => $asset->currentVersion->sha256]);
+
         return (new FileResource($asset))->response()->setStatusCode(201);
     }
 }

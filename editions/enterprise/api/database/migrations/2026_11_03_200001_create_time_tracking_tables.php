@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /** Time entries (server-side timer segments), weekly timesheets, rate cards. Money is DECIMAL(15,2); timestamps are UTC. */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('rate_cards', function (Blueprint $t) {
@@ -90,9 +91,16 @@ return new class extends Migration {
 
     public function down(): void
     {
-        foreach (['time_entry_segments', 'time_entries', 'timesheets'] as $t) Schema::dropIfExists($t);
+        foreach (['time_entry_segments', 'time_entries', 'timesheets'] as $t) {
+            Schema::dropIfExists($t);
+        }
         Schema::table('tasks', fn (Blueprint $t) => $t->dropColumn('is_billable'));
-        Schema::table('projects', function (Blueprint $t) { $t->dropForeign(['rate_card_id']); $t->dropColumn('rate_card_id'); });
-        foreach (['rate_card_lines', 'rate_cards'] as $t) Schema::dropIfExists($t);
+        Schema::table('projects', function (Blueprint $t) {
+            $t->dropForeign(['rate_card_id']);
+            $t->dropColumn('rate_card_id');
+        });
+        foreach (['rate_card_lines', 'rate_cards'] as $t) {
+            Schema::dropIfExists($t);
+        }
     }
 };

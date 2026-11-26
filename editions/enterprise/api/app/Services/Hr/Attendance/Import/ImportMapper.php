@@ -12,15 +12,19 @@ namespace App\Services\Hr\Attendance\Import;
 final class ImportMapper
 {
     private const EMPLOYEE = ['employee number', 'employee', 'number', 'badge', 'badge number', 'user id', 'userid', 'person id', 'emp no', 'emp id', 'employee id', 'staff id', 'staff number', 'card no', 'card', 'id', 'code', 'no'];
+
     private const TIMESTAMP = ['timestamp', 'datetime', 'date time', 'date and time', 'punch', 'check time', 'checktime', 'event time'];
+
     private const DATE = ['date', 'day', 'work date', 'punch date', 'attendance date'];
+
     private const TIME = ['time', 'hour', 'punch time', 'clock time'];
+
     private const DIRECTION = ['direction', 'type', 'in out', 'in/out', 'status', 'state', 'event', 'punch state', 'attendance state', 'check type', 'checktype', 'flag', 'mode'];
 
     /**
-     * @param array<int,array<int,mixed>> $rows every row of the sheet, header included
-     * @param array<string,mixed> $profile
-     * @param array<int,array{column:string,direction:string}> $slots daily layout only
+     * @param  array<int,array<int,mixed>>  $rows  every row of the sheet, header included
+     * @param  array<string,mixed>  $profile
+     * @param  array<int,array{column:string,direction:string}>  $slots  daily layout only
      * @return array{fatal:?array{key:string,params:array},columns:array<string,string>,punches:array<int,array{line:int,ref:string,ts:int,dir:?string}>,rejected:array<int,array{line:int,reason:string}>,ignored:int,total:int}
      */
     public static function map(array $rows, array $profile, array $slots, string $orgTz): array
@@ -53,7 +57,7 @@ final class ImportMapper
                     $slotCols[] = ['index' => $i, 'dir' => $s['direction'], 'label' => $label($i)];
                 }
             }
-            if (!$slotCols && !$missing) {
+            if (! $slotCols && ! $missing) {
                 return self::fail('no_slot_columns');
             }
         } else {
@@ -85,7 +89,7 @@ final class ImportMapper
             }
         }
         $columns = ['employee' => $label($emp), 'timestamp' => $label($ts), 'date' => $label($dateCol), 'time' => $label($timeCol), 'direction' => $label($dirCol),
-            'slots' => implode(', ', array_map(fn ($s) => $s['label'] . ' (' . $s['dir'] . ')', $slotCols))];
+            'slots' => implode(', ', array_map(fn ($s) => $s['label'].' ('.$s['dir'].')', $slotCols))];
         if ($missing) {
             return ['fatal' => ['key' => 'columns_missing', 'params' => ['columns' => implode(', ', array_unique($missing))]], 'columns' => $columns, 'punches' => [], 'rejected' => [], 'ignored' => 0, 'total' => 0];
         }
@@ -95,7 +99,7 @@ final class ImportMapper
         $ignored = $total = 0;
         for ($i = $headerRow; $i < count($rows); $i++) {
             $row = $rows[$i];
-            if (!array_filter($row, fn ($c) => CellParser::text($c) !== '')) {
+            if (! array_filter($row, fn ($c) => CellParser::text($c) !== '')) {
                 continue;
             }
             $line = $i + 1;
@@ -103,12 +107,14 @@ final class ImportMapper
             $ref = CellParser::text($row[$emp] ?? null);
             if ($ref === '') {
                 $rejected[] = ['line' => $line, 'reason' => 'missing_employee'];
+
                 continue;
             }
             if ($daily) {
                 $date = CellParser::date($row[$dateCol] ?? null, $formats);
                 if ($date === null) {
                     $rejected[] = ['line' => $line, 'reason' => 'bad_timestamp'];
+
                     continue;
                 }
                 foreach ($slotCols as $s) {
@@ -119,6 +125,7 @@ final class ImportMapper
                     $sec = CellParser::timeOfDay($cell);
                     $sec === null ? $rejected[] = ['line' => $line, 'reason' => 'bad_timestamp'] : $punches[] = ['line' => $line, 'ref' => $ref, 'ts' => CellParser::timestamp($date, $sec, $tz), 'dir' => $s['dir']];
                 }
+
                 continue;
             }
             if ($ts !== null) {
@@ -130,19 +137,23 @@ final class ImportMapper
             }
             if ($stamp === null) {
                 $rejected[] = ['line' => $line, 'reason' => 'bad_timestamp'];
+
                 continue;
             }
             $dir = $dirCol === null ? null : $map->classify($row[$dirCol] ?? null);
             if ($dir === 'ignore') {
                 $ignored++;
+
                 continue;
             }
             if ($dir === 'invalid') {
                 $rejected[] = ['line' => $line, 'reason' => 'bad_direction'];
+
                 continue;
             }
             $punches[] = ['line' => $line, 'ref' => $ref, 'ts' => $stamp, 'dir' => $dir];
         }
+
         return ['fatal' => null, 'columns' => $columns, 'punches' => $punches, 'rejected' => $rejected, 'ignored' => $ignored, 'total' => $total];
     }
 

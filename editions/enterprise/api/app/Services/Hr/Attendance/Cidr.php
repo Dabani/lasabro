@@ -12,12 +12,13 @@ final class Cidr
         if ($bin === false) {
             return false;
         }
+
         return $bits === null || (ctype_digit($bits) && (int) $bits <= strlen($bin) * 8);
     }
 
     public static function contains(string $cidr, string $ip): bool
     {
-        if (!self::valid($cidr)) {
+        if (! self::valid($cidr)) {
             return false;
         }
         [$net, $bits] = array_pad(explode('/', $cidr, 2), 2, null);
@@ -36,6 +37,7 @@ final class Cidr
             return true;
         }
         $mask = (0xFF << (8 - $rest)) & 0xFF;
+
         return (ord($a[$full]) & $mask) === (ord($b[$full]) & $mask);
     }
 }

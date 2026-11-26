@@ -48,6 +48,7 @@ final class JournalBuilder
             $debit = bcadd($debit, $l['debit'], 2);
             $credit = bcadd($credit, $l['credit'], 2);
         }
+
         return ['lines' => $lines, 'missing' => array_keys($missing), 'balanced' => bccomp($debit, $credit, 2) === 0, 'debit' => $debit, 'credit' => $credit];
     }
 }

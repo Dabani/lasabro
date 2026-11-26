@@ -16,13 +16,17 @@ class MeetingAccess
 {
     public function __construct(private OrganizationContext $ctx) {}
 
-    public function can(string $permission): bool { return $this->ctx->can($permission); }
+    public function can(string $permission): bool
+    {
+        return $this->ctx->can($permission);
+    }
 
     /** @param string[] $with */
     public function find(User $u, string $id, array $with = []): Meeting
     {
         $m = Meeting::query()->visibleTo($u)->with($with)->whereKey($id)->first();
         abort_unless($m, 404);
+
         return $m;
     }
 
@@ -47,7 +51,10 @@ class MeetingAccess
         return $m->chair_id === $u->id || $this->can('meeting.manage_all');
     }
 
-    public function requireManage(User $u, Meeting $m): void { abort_unless($this->canManage($u, $m), 403, 'forbidden'); }
+    public function requireManage(User $u, Meeting $m): void
+    {
+        abort_unless($this->canManage($u, $m), 403, 'forbidden');
+    }
 
     /**
      * Seeing a confidential meeting only because of the "view confidential" permission (not as a host or invitee) is an audited event.
@@ -55,7 +62,7 @@ class MeetingAccess
      */
     public function auditOverride(User $u, Meeting $m): void
     {
-        if ($m->isConfidential() && !$this->isParticipant($u, $m)) {
+        if ($m->isConfidential() && ! $this->isParticipant($u, $m)) {
             AuditLogger::log('meeting.confidential_viewed', $m, [], ['code' => $m->code]);
         }
     }
@@ -63,6 +70,6 @@ class MeetingAccess
     /** Item-level confidentiality: hosts, the presenter and holders of "view confidential" see a confidential agenda item. */
     public function canSeeItem(User $u, Meeting $m, object $item): bool
     {
-        return !$item->is_confidential || $m->isHost($u) || $item->presenter_id === $u->id || $this->can('meeting.view_confidential');
+        return ! $item->is_confidential || $m->isHost($u) || $item->presenter_id === $u->id || $this->can('meeting.view_confidential');
     }
 }

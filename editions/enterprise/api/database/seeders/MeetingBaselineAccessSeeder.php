@@ -22,7 +22,7 @@ class MeetingBaselineAccessSeeder extends Seeder
     public function run(): void
     {
         $ids = Permission::whereIn('code', self::CODES)->pluck('id')->all();
-        if (!$ids) {
+        if (! $ids) {
             return;
         }
         foreach (Organization::all() as $org) {

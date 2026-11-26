@@ -17,6 +17,7 @@ use App\Services\OrganizationContext;
 use App\Support\AppliesListQuery;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -32,10 +33,11 @@ class CaseController extends Controller
     protected function visible()
     {
         $q = SupportCase::query();
-        if (!$this->ctx->can('case.view_all')) {
+        if (! $this->ctx->can('case.view_all')) {
             $me = request()->user()->id;
             $q->where(fn ($w) => $w->where('requester_id', $me)->orWhere('assignee_id', $me));
         }
+
         return $q;
     }
 
@@ -55,6 +57,7 @@ class CaseController extends Controller
         if ($request->boolean('mine')) {
             $q->where('requester_id', $request->user()->id);
         }
+
         return $this->respondList($request, $q, CaseResource::class,
             ['reference', 'title', 'requester.name'], ['created_at', 'reference', 'title', 'updated_at'],
             ['status_id', 'type_id', 'priority_id', 'assignee_id'],
@@ -66,7 +69,7 @@ class CaseController extends Controller
         $case = $this->visible()->with($this->with())->findOrFail($id);
         $staff = $this->ctx->can('case.view_all');
 
-        $comments = $case->comments()->with('user')->when(!$staff, fn ($q) => $q->where('is_internal', false))->orderBy('created_at')->get();
+        $comments = $case->comments()->with('user')->when(! $staff, fn ($q) => $q->where('is_internal', false))->orderBy('created_at')->get();
         $events = $case->events()->with(['type', 'user'])->orderBy('id')->get();
 
         // Resolve reference ids carried by events into labels (status/priority -> lookup label, assignee -> user name).
@@ -74,7 +77,7 @@ class CaseController extends Controller
         $lookups = LookupValue::with('translations')->whereIn('id', $events->pluck('old_ref')->merge($events->pluck('new_ref'))->filter()->unique())->get()->keyBy('id');
         $users = User::whereIn('id', $events->where('type.code', 'assigned')->pluck('old_ref')->merge($events->where('type.code', 'assigned')->pluck('new_ref'))->filter()->unique())->pluck('name', 'id');
 
-        $ref = fn ($e, $v) => !$v ? null : ($e->type->code === 'assigned' ? ($users[$v] ?? '—') : ($e->type->code === 'due_changed' ? $v : ($lookups[$v]?->label($lang) ?? '—')));
+        $ref = fn ($e, $v) => ! $v ? null : ($e->type->code === 'assigned' ? ($users[$v] ?? '—') : ($e->type->code === 'due_changed' ? $v : ($lookups[$v]?->label($lang) ?? '—')));
 
         return response()->json(['data' => array_merge((new CaseResource($case))->withDescription()->resolve($request), [
             'comments' => $comments->map(fn ($c) => [
@@ -109,6 +112,7 @@ class CaseController extends Controller
                 'department_id' => $d['department_id'] ?? null, 'requester_id' => $user->id,
             ]);
             CaseEvent::create(['case_id' => $case->id, 'user_id' => $user->id, 'event_type_id' => Lookup::id('case_event_type', 'created')]);
+
             return $case;
         });
         $case->load($this->with());
@@ -134,11 +138,11 @@ class CaseController extends Controller
         ]);
 
         $workflow = array_intersect_key($d, array_flip(['status_id', 'priority_id', 'due_at']));
-        abort_if($workflow && !$this->ctx->can('case.update_status'), 403);
-        abort_if(array_key_exists('assignee_id', $d) && !$this->ctx->can('case.assign'), 403);
+        abort_if($workflow && ! $this->ctx->can('case.update_status'), 403);
+        abort_if(array_key_exists('assignee_id', $d) && ! $this->ctx->can('case.assign'), 403);
 
         $newStatus = isset($d['status_id']) ? LookupValue::findOrFail($d['status_id']) : null;
-        abort_if($newStatus && in_array($newStatus->code, ['closed', 'cancelled'], true) && !$this->ctx->can('case.close'), 403);
+        abort_if($newStatus && in_array($newStatus->code, ['closed', 'cancelled'], true) && ! $this->ctx->can('case.close'), 403);
 
         if (isset($d['assignee_id'])) {
             $ok = Notifier::usersWithPermission($this->ctx->organizationId(), 'case.update_status')->contains('id', $d['assignee_id']);
@@ -159,17 +163,28 @@ class CaseController extends Controller
                 $case->resolved_at = in_array($newStatus->code, ['resolved', 'closed'], true) ? ($case->resolved_at ?? now()) : null;
                 $case->closed_at = in_array($newStatus->code, ['closed', 'cancelled'], true) ? now() : null;
             }
-            if (isset($d['priority_id']) && $d['priority_id'] !== $case->priority_id) { $log('priority_changed', $case->priority_id, $d['priority_id']); $case->priority_id = $d['priority_id']; }
-            if (array_key_exists('assignee_id', $d) && $d['assignee_id'] !== $case->assignee_id) { $log('assigned', $case->assignee_id, $d['assignee_id']); $case->assignee_id = $d['assignee_id']; }
+            if (isset($d['priority_id']) && $d['priority_id'] !== $case->priority_id) {
+                $log('priority_changed', $case->priority_id, $d['priority_id']);
+                $case->priority_id = $d['priority_id'];
+            }
+            if (array_key_exists('assignee_id', $d) && $d['assignee_id'] !== $case->assignee_id) {
+                $log('assigned', $case->assignee_id, $d['assignee_id']);
+                $case->assignee_id = $d['assignee_id'];
+            }
             if (array_key_exists('due_at', $d)) {
-                $new = $d['due_at'] ? \Illuminate\Support\Carbon::parse($d['due_at']) : null;
-                if (($new?->toIso8601String()) !== ($case->due_at?->toIso8601String())) { $log('due_changed', $case->due_at?->toDateString(), $new?->toDateString()); $case->due_at = $new; }
+                $new = $d['due_at'] ? Carbon::parse($d['due_at']) : null;
+                if (($new?->toIso8601String()) !== ($case->due_at?->toIso8601String())) {
+                    $log('due_changed', $case->due_at?->toDateString(), $new?->toDateString());
+                    $case->due_at = $new;
+                }
             }
             $case->save();
         });
 
         $case->refresh()->load($this->with());
-        foreach ($changes as $c) { AuditLogger::log("case.$c", $case, [], ['reference' => $case->reference]); }
+        foreach ($changes as $c) {
+            AuditLogger::log("case.$c", $case, [], ['reference' => $case->reference]);
+        }
 
         $params = ['ref' => $case->reference, 'title' => $case->title, 'status' => $case->status->label(), 'user' => $actor->name];
         if (in_array('status_changed', $changes, true) && $case->requester_id !== $actor->id) {
@@ -190,15 +205,17 @@ class CaseController extends Controller
         $staff = $this->ctx->can('case.view_all');
 
         $internal = (bool) ($d['is_internal'] ?? false);
-        abort_if($internal && !$staff, 403);
-        abort_if(!$staff && in_array($case->status->code, ['closed', 'cancelled'], true), 422, __('api.in_use'));
+        abort_if($internal && ! $staff, 403);
+        abort_if(! $staff && in_array($case->status->code, ['closed', 'cancelled'], true), 422, __('api.in_use'));
 
         $c = CaseComment::create(['case_id' => $case->id, 'user_id' => $actor->id, 'body' => $d['body'], 'is_internal' => $internal]);
         AuditLogger::log('case.commented', $case, [], ['internal' => $internal ? 'yes' : 'no']);
 
         $params = ['ref' => $case->reference, 'title' => $case->title, 'user' => $actor->name];
         if ($internal) {
-            if ($case->assignee && $case->assignee_id !== $actor->id) Notifier::send($case->assignee->loadMissing('language'), 'case_comment', $params, $case, ['in_app']);
+            if ($case->assignee && $case->assignee_id !== $actor->id) {
+                Notifier::send($case->assignee->loadMissing('language'), 'case_comment', $params, $case, ['in_app']);
+            }
         } elseif ($actor->id === $case->requester_id) {
             $to = $case->assignee ? collect([$case->assignee->loadMissing('language')]) : Notifier::usersWithPermission($this->ctx->organizationId(), 'case.notify_new');
             Notifier::send($to->reject(fn ($u) => $u->id === $actor->id), 'case_comment', $params, $case, ['in_app', 'email']);

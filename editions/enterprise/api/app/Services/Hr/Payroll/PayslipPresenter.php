@@ -15,8 +15,9 @@ final class PayslipPresenter
             'amount' => (string) $l->amount, 'taxable' => $l->taxable, 'pensionable' => $l->pensionable, 'statutory_type' => $l->statutory_type, 'version_id' => $l->version_id,
             'bands' => $l->bands->map(fn ($b) => ['lower' => (string) $b->lower, 'upper' => $b->upper === null ? null : (string) $b->upper, 'rate' => (string) $b->rate, 'part' => (string) $b->part, 'amount' => (string) $b->amount])->values()->all()];
         $by = fn (string $k) => $p->lines->filter(fn ($l) => $l->kind->code === $k)->map($line)->values()->all();
+
         return ['id' => $p->id, 'status' => $p->status->code, 'run' => ['id' => $p->run->id, 'code' => $p->run->code, 'kind' => $p->run->kind->code, 'status' => $p->run->status->code,
-                'period_from' => $p->run->period_from->toDateString(), 'period_to' => $p->run->period_to->toDateString(), 'paid_on' => $p->run->paid_on?->toDateString()],
+            'period_from' => $p->run->period_from->toDateString(), 'period_to' => $p->run->period_to->toDateString(), 'paid_on' => $p->run->paid_on?->toDateString()],
             'employee' => ['id' => $p->employee_id, 'name' => $p->employee_name, 'number' => $p->employee_number], 'currency' => $p->currency_code, 'category' => $p->category_code,
             'proration' => ['factor' => $p->proration_factor === null ? null : (string) $p->proration_factor, 'worked_days' => $p->worked_days, 'period_days' => $p->period_days],
             'totals' => ['gross' => (string) $p->gross, 'taxable_earnings' => (string) $p->taxable_earnings, 'pensionable_earnings' => (string) $p->pensionable_earnings, 'employee_contributions' => (string) $p->employee_contributions,
@@ -35,6 +36,7 @@ final class PayslipPresenter
             $params[$k] = $v;
         }
         $key = Lang::has("payroll.check.$code", $locale) ? "payroll.check.$code" : "payrun.flag.$code";
+
         return __($key, $params, $locale);
     }
 }

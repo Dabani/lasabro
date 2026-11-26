@@ -9,8 +9,21 @@ use App\Services\Approvals\ApprovalOutcomeHandler;
 class RequisitionApprovalHandler implements ApprovalOutcomeHandler
 {
     public function __construct(private RecruitmentService $svc) {}
-    public function approved(ApprovalRequest $r): void { $this->svc->requisitionOutcome($r->subject_id, 'approved'); }
-    public function rejected(ApprovalRequest $r): void { $this->svc->requisitionOutcome($r->subject_id, 'rejected'); }
+
+    public function approved(ApprovalRequest $r): void
+    {
+        $this->svc->requisitionOutcome($r->subject_id, 'approved');
+    }
+
+    public function rejected(ApprovalRequest $r): void
+    {
+        $this->svc->requisitionOutcome($r->subject_id, 'rejected');
+    }
+
     public function returned(ApprovalRequest $r): void {}
-    public function cancelled(ApprovalRequest $r): void { $this->svc->requisitionOutcome($r->subject_id, 'cancelled'); }
+
+    public function cancelled(ApprovalRequest $r): void
+    {
+        $this->svc->requisitionOutcome($r->subject_id, 'cancelled');
+    }
 }

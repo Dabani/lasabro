@@ -29,7 +29,7 @@ class MeetingsOnlineSeeder extends Seeder
             $start = (int) (LookupValue::where('lookup_type_id', $type->id)->max('sort_order') ?? -1);
             foreach ($rows as $i => [$c, $color, $en, $fr, $rw, $sw]) {
                 $v = LookupValue::firstOrNew(['lookup_type_id' => $type->id, 'organization_id' => null, 'code' => $c]);
-                if (!$v->exists) {
+                if (! $v->exists) {
                     $v->sort_order = $start + 1 + $i;
                 }
                 $v->fill(['color' => $color, 'icon' => null, 'is_system' => true, 'is_active' => true])->save();

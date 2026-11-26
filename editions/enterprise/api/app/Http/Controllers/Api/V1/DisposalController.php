@@ -21,7 +21,10 @@ class DisposalController extends Controller
 {
     public function __construct(private OrganizationContext $ctx) {}
 
-    private function with(): array { return ['status.translations', 'proposer', 'decider', 'executor']; }
+    private function with(): array
+    {
+        return ['status.translations', 'proposer', 'decider', 'executor'];
+    }
 
     private function row(DisposalBatch $b, $lang, bool $records = false): array
     {
@@ -31,7 +34,10 @@ class DisposalController extends Controller
             'executed_by' => $b->executor?->name, 'executed_at' => $b->executed_at?->toIso8601String(), 'method' => $b->method, 'witness' => $b->witness,
             'records_count' => $b->records_count ?? $b->records()->count(), 'created_at' => $b->created_at->toIso8601String(), 'can_decide' => $b->status->code === 'pending' && $b->proposed_by !== request()->user()->id && $this->ctx->can('archive.approve_disposal'),
         ];
-        if ($records) $r['records'] = $b->records()->with(['category.translations', 'format'])->get()->map(fn ($x) => ['id' => $x->id, 'reference' => $x->reference, 'title' => $x->title, 'index_code' => $x->index_code, 'category' => $x->category->label($lang), 'format' => $x->format->code, 'retention_until' => $x->retention_until?->toDateString()])->values();
+        if ($records) {
+            $r['records'] = $b->records()->with(['category.translations', 'format'])->get()->map(fn ($x) => ['id' => $x->id, 'reference' => $x->reference, 'title' => $x->title, 'index_code' => $x->index_code, 'category' => $x->category->label($lang), 'format' => $x->format->code, 'retention_until' => $x->retention_until?->toDateString()])->values();
+        }
+
         return $r;
     }
 
@@ -41,6 +47,7 @@ class DisposalController extends Controller
         $rows = ArchiveRecord::with(['category.translations', 'format', 'location'])->whereHas('status', fn ($s) => $s->where('code', 'archived'))
             ->whereDate('retention_until', '<=', today())->where('legal_hold', false)->orderBy('retention_until')->limit(500)->get();
         $lang = $request->user()->language_id;
+
         return response()->json(['data' => $rows->map(fn ($r) => ['id' => $r->id, 'reference' => $r->reference, 'title' => $r->title, 'index_code' => $r->index_code,
             'category' => $r->category->label($lang), 'format' => $r->format->code, 'retention_until' => $r->retention_until->toDateString(), 'location' => $r->location?->code])]);
     }
@@ -48,6 +55,7 @@ class DisposalController extends Controller
     public function index(Request $request)
     {
         $rows = DisposalBatch::with($this->with())->withCount('records')->orderByDesc('created_at')->limit(100)->get();
+
         return response()->json(['data' => $rows->map(fn ($b) => $this->row($b, $request->user()->language_id))]);
     }
 
@@ -63,7 +71,7 @@ class DisposalController extends Controller
         $records = ArchiveRecord::with('status')->whereIn('id', $ids)->get();
         abort_unless($records->count() === count($ids), 422, __('api.record_not_eligible'));
         foreach ($records as $r) {
-            abort_unless($r->status->code === 'archived' && !$r->legal_hold && $r->retention_until && $r->retention_until->lte(today()), 422, __('api.record_not_eligible'));
+            abort_unless($r->status->code === 'archived' && ! $r->legal_hold && $r->retention_until && $r->retention_until->lte(today()), 422, __('api.record_not_eligible'));
         }
 
         $b = DB::transaction(function () use ($records, $d, $request) {
@@ -73,11 +81,13 @@ class DisposalController extends Controller
                 $r->update(['status_id' => Lookup::id('record_status', 'disposal_pending')]);
                 RecordRules::event($r, 'disposal_proposed', null, null, $b->reference);
             }
+
             return $b;
         });
         AuditLogger::log('disposal.proposed', $b, [], ['reference' => $b->reference, 'records' => (string) $records->count()]);
         $approvers = Notifier::usersWithPermission($this->ctx->organizationId(), 'archive.approve_disposal')->reject(fn ($u) => $u->id === $request->user()->id);
         Notifier::send($approvers, 'disposal_proposed', ['ref' => $b->reference, 'user' => $request->user()->name, 'count' => $records->count()], null, ['in_app', 'email'], '/archive/disposal', $this->ctx->organizationId());
+
         return response()->json(['data' => ['id' => $b->id, 'reference' => $b->reference]], 201);
     }
 
@@ -98,12 +108,20 @@ class DisposalController extends Controller
             }
         });
         AuditLogger::log("disposal.$decision", $b, [], ['reference' => $b->reference], $d['note'] ?? null);
-        Notifier::send($b->proposer->loadMissing('language'), 'disposal_decided', ['ref' => $b->reference, 'user' => $request->user()->name, 'decision' => __('api.decision_' . ($decision === 'approved' ? 'approved' : 'rejected'))], null, ['in_app', 'email'], '/archive/disposal', $this->ctx->organizationId());
+        Notifier::send($b->proposer->loadMissing('language'), 'disposal_decided', ['ref' => $b->reference, 'user' => $request->user()->name, 'decision' => __('api.decision_'.($decision === 'approved' ? 'approved' : 'rejected'))], null, ['in_app', 'email'], '/archive/disposal', $this->ctx->organizationId());
+
         return $this->show($request, $id);
     }
 
-    public function approve(Request $request, string $id) { return $this->decide($request, $id, 'approved'); }
-    public function reject(Request $request, string $id) { return $this->decide($request, $id, 'rejected'); }
+    public function approve(Request $request, string $id)
+    {
+        return $this->decide($request, $id, 'approved');
+    }
+
+    public function reject(Request $request, string $id)
+    {
+        return $this->decide($request, $id, 'rejected');
+    }
 
     /** Carry out the disposal: records become "disposed" (the register entry stays as evidence); attached digital files are removed. */
     public function execute(Request $request, string $id)
@@ -123,6 +141,7 @@ class DisposalController extends Controller
             $b->update(['status_id' => Lookup::id('disposal_status', 'executed'), 'executed_by' => $request->user()->id, 'executed_at' => now(), 'method' => $d['method'], 'witness' => $d['witness'] ?? null]);
         });
         AuditLogger::log('disposal.executed', $b, [], ['reference' => $b->reference, 'method' => $d['method']]);
+
         return $this->show($request, $id);
     }
 
@@ -134,8 +153,11 @@ class DisposalController extends Controller
 
         $html = view('pdf.destruction', ['b' => $b, 'org' => $this->ctx->organization(), 'records' => $b->records()->with(['category.translations', 'format'])->get()])->render();
         $pdf = new Dompdf(['defaultFont' => 'DejaVu Sans', 'isRemoteEnabled' => false]);
-        $pdf->loadHtml($html, 'UTF-8'); $pdf->setPaper('A4'); $pdf->render();
+        $pdf->loadHtml($html, 'UTF-8');
+        $pdf->setPaper('A4');
+        $pdf->render();
         AuditLogger::log('disposal.certificate_generated', $b, [], ['reference' => $b->reference]);
-        return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="' . $b->reference . '.pdf"', 'X-Content-Type-Options' => 'nosniff']);
+
+        return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="'.$b->reference.'.pdf"', 'X-Content-Type-Options' => 'nosniff']);
     }
 }

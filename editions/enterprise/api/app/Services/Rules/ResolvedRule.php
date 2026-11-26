@@ -12,5 +12,8 @@ class ResolvedRule
         public readonly array $outcomes,      // outcome_key => typed value (flow id, text, decimal, integer or boolean)
     ) {}
 
-    public function get(string $key, mixed $default = null): mixed { return $this->outcomes[$key] ?? $default; }
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return $this->outcomes[$key] ?? $default;
+    }
 }

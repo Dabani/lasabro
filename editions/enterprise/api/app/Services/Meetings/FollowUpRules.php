@@ -14,6 +14,7 @@ final class FollowUpRules
         'completed' => ['open'],
         'cancelled' => [],
     ];
+
     public const ACTION = [
         'open' => ['in_progress', 'done', 'cancelled'],
         'in_progress' => ['open', 'done', 'cancelled'],
@@ -22,17 +23,32 @@ final class FollowUpRules
         'cancelled' => [],
     ];
 
-    private static function table(string $kind): array { return $kind === 'resolution' ? self::RESOLUTION : self::ACTION; }
+    private static function table(string $kind): array
+    {
+        return $kind === 'resolution' ? self::RESOLUTION : self::ACTION;
+    }
 
-    public static function allowed(string $kind, string $from, string $to): bool { return in_array($to, self::table($kind)[$from] ?? [], true); }
+    public static function allowed(string $kind, string $from, string $to): bool
+    {
+        return in_array($to, self::table($kind)[$from] ?? [], true);
+    }
 
     /** Meetings that have started can record resolutions and actions. */
-    public static function canRecord(string $meetingStatus): bool { return in_array($meetingStatus, ['in_progress', 'held', 'closed'], true); }
+    public static function canRecord(string $meetingStatus): bool
+    {
+        return in_array($meetingStatus, ['in_progress', 'held', 'closed'], true);
+    }
 
-    public static function isActive(string $status): bool { return in_array($status, ['open', 'in_progress'], true); }
+    public static function isActive(string $status): bool
+    {
+        return in_array($status, ['open', 'in_progress'], true);
+    }
 
     /** The text of an item can change while it is active. */
-    public static function editable(string $status): bool { return self::isActive($status); }
+    public static function editable(string $status): bool
+    {
+        return self::isActive($status);
+    }
 
     /** Moves that need a written reason: cancelling and re-opening finished work. */
     public static function needsReason(string $kind, string $from, string $to): bool
@@ -41,7 +57,10 @@ final class FollowUpRules
     }
 
     /** Completion evidence: a note of 3+ characters or at least one file. */
-    public static function evidenceOk(?string $note, int $files): bool { return $files > 0 || mb_strlen(trim((string) $note)) >= 3; }
+    public static function evidenceOk(?string $note, int $files): bool
+    {
+        return $files > 0 || mb_strlen(trim((string) $note)) >= 3;
+    }
 
     /**
      * May this person make this move? The responsible person / owner reports progress and completion; the people who run the meeting
@@ -49,32 +68,37 @@ final class FollowUpRules
      */
     public static function canMove(string $kind, string $from, string $to, bool $isOwner, bool $isRunner): bool
     {
-        if (!self::allowed($kind, $from, $to)) {
+        if (! self::allowed($kind, $from, $to)) {
             return false;
         }
         if ($kind === 'action' && $to === 'closed') {
-            return $isRunner && !$isOwner;
+            return $isRunner && ! $isOwner;
         }
         if ($isRunner) {
             return true;
         }
-        return $isOwner && in_array($to, ['in_progress', 'done', 'completed', 'open'], true) && !($from === 'completed' || $from === 'done');
+
+        return $isOwner && in_array($to, ['in_progress', 'done', 'completed', 'open'], true) && ! ($from === 'completed' || $from === 'done');
     }
 
-    public static function isOverdue(string $status, ?string $dueOn, string $today): bool { return $dueOn !== null && self::isActive($status) && $dueOn < $today; }
+    public static function isOverdue(string $status, ?string $dueOn, string $today): bool
+    {
+        return $dueOn !== null && self::isActive($status) && $dueOn < $today;
+    }
 
     public static function dueSoon(string $status, ?string $dueOn, string $today, int $days): bool
     {
-        if ($dueOn === null || !self::isActive($status) || $dueOn < $today) {
+        if ($dueOn === null || ! self::isActive($status) || $dueOn < $today) {
             return false;
         }
-        return $dueOn <= date('Y-m-d', strtotime($today . " +$days days"));
+
+        return $dueOn <= date('Y-m-d', strtotime($today." +$days days"));
     }
 
     /** Overdue reminders repeat every $repeatDays days (at least 1), never twice on the same day. */
     public static function overdueDue(?string $lastAlertedOn, string $today, int $repeatDays): bool
     {
-        return $lastAlertedOn === null || $lastAlertedOn <= date('Y-m-d', strtotime($today . ' -' . max(1, $repeatDays) . ' days'));
+        return $lastAlertedOn === null || $lastAlertedOn <= date('Y-m-d', strtotime($today.' -'.max(1, $repeatDays).' days'));
     }
 
     public static function daysOverdue(?string $dueOn, string $today): int

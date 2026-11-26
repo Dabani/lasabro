@@ -8,7 +8,9 @@ use LogicException;
 class AssetEvent extends Model
 {
     public $timestamps = false;
+
     protected $guarded = [];
+
     protected $casts = ['created_at' => 'datetime'];
 
     protected static function booted(): void
@@ -17,6 +19,13 @@ class AssetEvent extends Model
         static::deleting(fn () => throw new LogicException('Asset events are append-only.'));
     }
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function type() { return $this->belongsTo(LookupValue::class, 'event_type_id'); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(LookupValue::class, 'event_type_id');
+    }
 }

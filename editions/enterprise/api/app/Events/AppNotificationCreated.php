@@ -15,9 +15,15 @@ class AppNotificationCreated implements ShouldBroadcastNow
 
     public function __construct(public AppNotification $notification) {}
 
-    public function broadcastOn(): array { return [new PrivateChannel('users.' . $this->notification->user_id)]; }
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('users.'.$this->notification->user_id)];
+    }
 
-    public function broadcastAs(): string { return 'notification.created'; }
+    public function broadcastAs(): string
+    {
+        return 'notification.created';
+    }
 
     public function broadcastWith(): array
     {

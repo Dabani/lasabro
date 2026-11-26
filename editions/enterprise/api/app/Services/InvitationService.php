@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Models\UserInvitation;
 use App\Support\Lookup;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -26,7 +27,10 @@ class InvitationService
 {
     public const RESEND_SECONDS = 60;
 
-    public static function ttlDays(): int { return (int) config('ops.invitation_days', 7); }
+    public static function ttlDays(): int
+    {
+        return (int) config('ops.invitation_days', 7);
+    }
 
     /** @return array{0: UserInvitation, 1: bool} the invitation and whether the e-mail was handed to the mail server */
     public function issue(User $user, ?User $by = null, ?string $organizationId = null): array
@@ -37,6 +41,7 @@ class InvitationService
 
         $inv = DB::transaction(function () use ($user, $by, $organizationId, $raw, $count) {
             UserInvitation::where('user_id', $user->id)->whereNull('accepted_at')->delete();   // only one live link at a time
+
             return UserInvitation::create([
                 'user_id' => $user->id, 'organization_id' => $organizationId, 'token_hash' => hash('sha256', $raw),
                 'sent_by' => $by?->id, 'send_count' => $count + 1, 'last_sent_at' => now(),
@@ -51,7 +56,8 @@ class InvitationService
     public function throttled(User $user): bool
     {
         $last = UserInvitation::where('user_id', $user->id)->whereNull('accepted_at')->max('last_sent_at');
-        return $last && now()->diffInSeconds(\Illuminate\Support\Carbon::parse($last), true) < self::RESEND_SECONDS;
+
+        return $last && now()->diffInSeconds(Carbon::parse($last), true) < self::RESEND_SECONDS;
     }
 
     /** @return array{0: ?UserInvitation, 1: ?User, 2: ?string} invitation, user, problem (null = valid | invalid | used | expired) */
@@ -60,10 +66,19 @@ class InvitationService
         $user = User::with('status')->where('email', Str::lower(trim($email)))->first();
         $inv = $user ? UserInvitation::where('user_id', $user->id)->where('token_hash', hash('sha256', $token))->first() : null;
 
-        if (!$inv) return [null, null, 'invalid'];
-        if ($inv->accepted_at) return [$inv, $user, 'used'];
-        if ($user->status?->code !== 'invited') return [$inv, $user, 'invalid'];
-        if ($inv->isExpired()) return [$inv, $user, 'expired'];
+        if (! $inv) {
+            return [null, null, 'invalid'];
+        }
+        if ($inv->accepted_at) {
+            return [$inv, $user, 'used'];
+        }
+        if ($user->status?->code !== 'invited') {
+            return [$inv, $user, 'invalid'];
+        }
+        if ($inv->isExpired()) {
+            return [$inv, $user, 'expired'];
+        }
+
         return [$inv, $user, null];
     }
 
@@ -78,6 +93,7 @@ class InvitationService
             UserInvitation::where('user_id', $user->id)->whereNull('accepted_at')->delete();
             DB::table('sessions')->where('user_id', $user->id)->delete();
         });
+
         return $user->refresh();
     }
 
@@ -90,7 +106,7 @@ class InvitationService
     private function send(User $user, string $raw, ?User $by, ?string $organizationId): bool
     {
         $locale = $user->language?->code ?? config('ops.default_language', 'en');
-        $url = rtrim(config('ops.frontend_url'), '/') . '/activate?token=' . $raw . '&email=' . urlencode($user->email);
+        $url = rtrim(config('ops.frontend_url'), '/').'/activate?token='.$raw.'&email='.urlencode($user->email);
         $org = $organizationId ? Organization::find($organizationId)?->name : null;
         $error = null;
 

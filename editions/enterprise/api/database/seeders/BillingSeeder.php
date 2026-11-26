@@ -82,7 +82,9 @@ class BillingSeeder extends Seeder
             $start = LookupValue::where('lookup_type_id', $type->id)->max('sort_order');
             foreach ($rows as $i => [$c, $color, $en, $fr, $rw, $sw]) {
                 $v = LookupValue::updateOrCreate(['lookup_type_id' => $type->id, 'organization_id' => null, 'code' => $c], ['color' => $color, 'icon' => null, 'sort_order' => ($start ?? -1) + 1 + $i, 'is_system' => true, 'is_active' => true]);
-                foreach (['en' => $en, 'fr' => $fr, 'rw' => $rw, 'sw' => $sw] as $lc => $label) $v->translations()->updateOrCreate(['language_id' => $langs[$lc]], ['label' => $label]);
+                foreach (['en' => $en, 'fr' => $fr, 'rw' => $rw, 'sw' => $sw] as $lc => $label) {
+                    $v->translations()->updateOrCreate(['language_id' => $langs[$lc]], ['label' => $label]);
+                }
             }
         }
         Lookup::flush();

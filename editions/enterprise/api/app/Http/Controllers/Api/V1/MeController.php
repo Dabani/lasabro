@@ -7,12 +7,12 @@ use App\Http\Resources\Api\V1\OrganizationResource;
 use App\Models\Membership;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\FileService;
 use App\Services\OrganizationContext;
+use App\Support\PasswordRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Services\FileService;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class MeController extends Controller
@@ -49,6 +49,7 @@ class MeController extends Controller
         $old = $user->only(array_keys($data));
         $user->update($data);
         AuditLogger::log('profile.updated', $user, $old, $data);
+
         return $this->show($request, app(OrganizationContext::class));
     }
 
@@ -57,13 +58,14 @@ class MeController extends Controller
         $user = $request->user();
         $data = $request->validate([
             'current_password' => 'required|string',
-            'password' => ['required', 'confirmed', ...\App\Support\PasswordRules::for($user->email)],
+            'password' => ['required', 'confirmed', ...PasswordRules::for($user->email)],
         ]);
-        if (!Hash::check($data['current_password'], $user->password)) {
+        if (! Hash::check($data['current_password'], $user->password)) {
             throw ValidationException::withMessages(['current_password' => [__('api.invalid_credentials')]]);
         }
         $user->update(['password' => $data['password'], 'must_change_password' => false]);
         AuditLogger::log('profile.password_changed', $user);
+
         return response()->json(['message' => __('api.saved')]);
     }
 
@@ -75,6 +77,7 @@ class MeController extends Controller
         $asset = FileService::storeSingle($request->file('avatar'), $user, 'user_avatar', $user->id);
         $user->update(['avatar_path' => $asset->currentVersion->storage_path]);
         AuditLogger::log('profile.avatar_changed', $user);
+
         return response()->json(['message' => __('api.saved')]);
     }
 
@@ -82,6 +85,7 @@ class MeController extends Controller
     {
         $sameOrg = Membership::where('organization_id', app(OrganizationContext::class)->organizationId())->where('user_id', $user->id)->exists();
         abort_unless($sameOrg && $user->avatar_path && Storage::disk(FileService::disk())->exists($user->avatar_path), 404);
+
         return Storage::disk(FileService::disk())->response($user->avatar_path, null, ['X-Content-Type-Options' => 'nosniff']);
     }
 
@@ -91,6 +95,7 @@ class MeController extends Controller
         $ok = Membership::where('user_id', $request->user()->id)->where('organization_id', $request->organization_id)->exists();
         abort_unless($ok, 403);
         $request->session()->put('active_organization_id', $request->organization_id);
+
         return response()->json(['message' => __('api.saved')]);
     }
 }

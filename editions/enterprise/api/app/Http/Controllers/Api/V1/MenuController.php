@@ -16,15 +16,22 @@ class MenuController extends Controller
             ->orderBy('sort_order')->get();
 
         $build = function (?string $parent, int $depth) use (&$build, $items, $ctx) {
-            if ($depth > 3) return [];
+            if ($depth > 3) {
+                return [];
+            }
             $out = [];
             foreach ($items->where('parent_id', $parent) as $i) {
-                if ($i->permission && !$ctx->can($i->permission->code)) continue;
+                if ($i->permission && ! $ctx->can($i->permission->code)) {
+                    continue;
+                }
                 $children = $build($i->id, $depth + 1);
-                if (!$i->route && !$children) continue;
+                if (! $i->route && ! $children) {
+                    continue;
+                }
                 $out[] = ['id' => $i->id, 'code' => $i->code, 'label_key' => $i->label_key, 'label' => $i->label,
-                          'icon' => $i->icon, 'route' => $i->route, 'children' => $children];
+                    'icon' => $i->icon, 'route' => $i->route, 'children' => $children];
             }
+
             return $out;
         };
 

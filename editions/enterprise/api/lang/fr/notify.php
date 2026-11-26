@@ -250,8 +250,4 @@ return [
         'body' => 'La dépense « :what » pour « :title » a été approuvée.',
     ],
     // COPS Phase 5b trips
-    'trip_advance_overdue' => [
-        'title' => 'Avance non justifiÃ©e : :trip',
-        'body' => 'L\'avance de :name pour Â« :trip Â» a dÃ©passÃ© sa date de justification de :days jour(s).',
-    ],
 ];

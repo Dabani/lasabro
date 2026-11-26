@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\InvoiceRowResource;
-use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
-use App\Models\Project;
 use App\Services\Billing\CreditNoteService;
 use App\Services\Billing\InvoicePdf;
 use App\Services\Billing\InvoiceService;
@@ -32,14 +30,18 @@ class InvoiceController extends Controller
     private function visible(Request $r)
     {
         $q = Invoice::query();
-        if (!$this->ctx->can('billing.view_all')) {
+        if (! $this->ctx->can('billing.view_all')) {
             $viewAll = $this->ctx->can('project.view_all');
             $q->whereHas('project', fn ($p) => $p->visibleTo($r->user(), $viewAll));
         }
+
         return $q;
     }
 
-    private function find(Request $r, string $id): Invoice { return $this->visible($r)->with(['status', 'project:id,code,name', 'client:id,name'])->findOrFail($id); }
+    private function find(Request $r, string $id): Invoice
+    {
+        return $this->visible($r)->with(['status', 'project:id,code,name', 'client:id,name'])->findOrFail($id);
+    }
 
     public function index(Request $request)
     {
@@ -52,6 +54,7 @@ class InvoiceController extends Controller
         $i = $this->find($request, $id);
         $i->load(['lines.kind', 'payments.method', 'creditNotes.status', 'taxRate.verification']);
         $s = $i->status->code;
+
         return ['data' => [
             'id' => $i->id, 'number' => $i->number, 'status' => $s, 'project_id' => $i->project_id, 'project' => $i->project?->name, 'project_code' => $i->project?->code,
             'client' => $i->client_name ?? $i->client?->name, 'currency_code' => $i->currency_code, 'issue_date' => $i->issue_date?->toDateString(), 'due_date' => $i->due_date?->toDateString(),
@@ -75,6 +78,7 @@ class InvoiceController extends Controller
     public function generate(Request $request, string $projectId)
     {
         [$p] = $this->access->find($request->user(), $projectId);
+
         return response()->json(['data' => ['id' => $this->invoices->generateDraft($p, $request->user())->id]], 201);
     }
 
@@ -84,6 +88,7 @@ class InvoiceController extends Controller
         $d = $request->validate(['notes' => 'nullable|string|max:3000', 'payment_terms_days' => 'sometimes|integer|min:0|max:365', 'tax_exempt' => 'sometimes|boolean',
             'tax_rate_id' => ['nullable', Rule::exists('tax_rates', 'id')->where('organization_id', $this->ctx->organizationId())]]);
         $this->invoices->updateDraft($i, $d);
+
         return $this->show($request, $id);
     }
 
@@ -92,32 +97,37 @@ class InvoiceController extends Controller
         $i = $this->find($request, $id);
         $d = $request->validate(['description' => 'required|string|max:500', 'quantity' => 'required|numeric|min:0.0001|max:99999999', 'unit_price' => 'required|numeric|min:0|max:9999999999999']);
         $this->invoices->addManualLine($i, $d['description'], (string) $d['quantity'], number_format((float) $d['unit_price'], 2, '.', ''));
+
         return $this->show($request, $id);
     }
 
     public function removeLine(Request $request, string $id, string $lineId)
     {
         $this->invoices->removeLine($this->find($request, $id), $lineId);
+
         return $this->show($request, $id);
     }
 
     public function cancel(Request $request, string $id)
     {
         $this->invoices->cancelDraft($this->find($request, $id));
+
         return response()->noContent();
     }
 
     public function issue(Request $request, string $id)
     {
         $this->invoices->requestIssue($this->find($request, $id), $request->user());
+
         return $this->show($request, $id);
     }
 
     public function pdf(Request $request, string $id)
     {
         $i = $this->find($request, $id);
-        $name = ($i->number ?? 'DRAFT-' . $i->project?->code) . '.pdf';
-        return response((new InvoicePdf())->render($i), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => "attachment; filename=\"$name\"", 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store']);
+        $name = ($i->number ?? 'DRAFT-'.$i->project?->code).'.pdf';
+
+        return response((new InvoicePdf)->render($i), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => "attachment; filename=\"$name\"", 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store']);
     }
 
     // ---- payments and credit notes -------------------------------------------------------------------------------------------
@@ -127,6 +137,7 @@ class InvoiceController extends Controller
         $d = $request->validate(['amount' => 'required|numeric|gt:0|max:9999999999999', 'paid_on' => 'required|date|before_or_equal:today', 'method_id' => ['required', Rule::exists('lookup_values', 'id')],
             'reference' => 'nullable|string|max:120', 'notes' => 'nullable|string|max:1000']);
         $this->payments->record($i, number_format((float) $d['amount'], 2, '.', ''), $d['paid_on'], $d['method_id'], $d['reference'] ?? null, $d['notes'] ?? null, $request->user());
+
         return $this->show($request, $id);
     }
 
@@ -135,6 +146,7 @@ class InvoiceController extends Controller
         $i = $this->find($request, $id);
         $d = $request->validate(['reason' => 'required|string|min:5|max:1000']);
         $this->payments->reverse(InvoicePayment::where('invoice_id', $i->id)->findOrFail($paymentId), $d['reason'], $request->user());
+
         return $this->show($request, $id);
     }
 
@@ -143,6 +155,7 @@ class InvoiceController extends Controller
         $i = $this->find($request, $id);
         $d = $request->validate(['amount' => 'required|numeric|gt:0|max:9999999999999', 'reason' => 'required|string|min:5|max:2000']);
         $this->notes->request($i, number_format((float) $d['amount'], 2, '.', ''), $d['reason'], $request->user());
+
         return $this->show($request, $id);
     }
 }

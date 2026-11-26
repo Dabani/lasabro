@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\AssetResource;
 use App\Imports\AssetsImport;
 use App\Models\Asset;
+use App\Models\Location;
 use App\Models\LookupType;
 use App\Models\LookupValue;
 use App\Models\Membership;
 use App\Models\User;
-use App\Models\Location;
 use App\Services\AssetLog;
 use App\Services\AuditLogger;
 use App\Services\IncidentService;
@@ -40,9 +40,10 @@ class AssetController extends Controller
     protected function visible()
     {
         $q = Asset::query();
-        if (!$this->ctx->can('asset.manage') && !$this->ctx->can('asset.approve_movement')) {
+        if (! $this->ctx->can('asset.manage') && ! $this->ctx->can('asset.approve_movement')) {
             $q->where('assigned_user_id', request()->user()->id);
         }
+
         return $q;
     }
 
@@ -59,7 +60,9 @@ class AssetController extends Controller
     public function index(Request $request)
     {
         $q = $this->visible()->with($this->with());
-        if ($request->boolean('mine')) $q->where('assigned_user_id', $request->user()->id);
+        if ($request->boolean('mine')) {
+            $q->where('assigned_user_id', $request->user()->id);
+        }
 
         return $this->respondList($request, $q, AssetResource::class,
             ['asset_tag', 'name', 'serial_number', 'manufacturer', 'model', 'assignee.name'], ['asset_tag', 'name', 'created_at', 'purchase_date'],
@@ -76,8 +79,8 @@ class AssetController extends Controller
         $ids = $events->pluck('old_ref')->merge($events->pluck('new_ref'))->filter()->unique();
         $lookups = LookupValue::with('translations')->whereIn('id', $ids)->get()->keyBy('id');
         $users = User::whereIn('id', $ids)->pluck('name', 'id');
-        $locs = Location::whereIn('id', $ids)->get()->mapWithKeys(fn ($l) => [$l->id => $l->code . ' — ' . $l->name]);
-        $res = fn ($v) => !$v ? null : ($lookups[$v]?->label($lang) ?? $users[$v] ?? $locs[$v] ?? $v);
+        $locs = Location::whereIn('id', $ids)->get()->mapWithKeys(fn ($l) => [$l->id => $l->code.' — '.$l->name]);
+        $res = fn ($v) => ! $v ? null : ($lookups[$v]?->label($lang) ?? $users[$v] ?? $locs[$v] ?? $v);
 
         return response()->json(['data' => array_merge((new AssetResource($a))->resolve($request), [
             'events' => $events->map(fn ($e) => [
@@ -112,9 +115,11 @@ class AssetController extends Controller
                 'status_id' => Lookup::id('asset_status', 'in_stock'),
             ]);
             AssetLog::event($a, 'registered');
+
             return $a;
         });
         AuditLogger::log('asset.registered', $asset, [], ['asset_tag' => $asset->asset_tag, 'name' => $asset->name]);
+
         return (new AssetResource($asset->load($this->with())))->response()->setStatusCode(201);
     }
 
@@ -122,7 +127,9 @@ class AssetController extends Controller
     {
         $a = $this->visible()->findOrFail($id);
         $d = $request->validate($this->rules($a) + ['status_id' => ['sometimes', $this->lookupRule('asset_status')]]);
-        if (empty($d['condition_id'])) unset($d['condition_id']);
+        if (empty($d['condition_id'])) {
+            unset($d['condition_id']);
+        }
 
         if (isset($d['status_id'])) {
             $new = LookupValue::findOrFail($d['status_id']);
@@ -133,9 +140,15 @@ class AssetController extends Controller
 
         $old = $a->only(['status_id', 'condition_id', 'location_id']);
         $a->update($d);
-        if ($a->status_id !== $old['status_id']) AssetLog::event($a, 'status_changed', $old['status_id'], $a->status_id);
-        if ($a->condition_id !== $old['condition_id']) AssetLog::event($a, 'condition_changed', $old['condition_id'], $a->condition_id);
-        if ($a->location_id !== $old['location_id']) AssetLog::event($a, 'location_changed', $old['location_id'], $a->location_id);
+        if ($a->status_id !== $old['status_id']) {
+            AssetLog::event($a, 'status_changed', $old['status_id'], $a->status_id);
+        }
+        if ($a->condition_id !== $old['condition_id']) {
+            AssetLog::event($a, 'condition_changed', $old['condition_id'], $a->condition_id);
+        }
+        if ($a->location_id !== $old['location_id']) {
+            AssetLog::event($a, 'location_changed', $old['location_id'], $a->location_id);
+        }
         AuditLogger::log('asset.updated', $a, [], ['asset_tag' => $a->asset_tag]);
 
         return new AssetResource($a->refresh()->load($this->with()));
@@ -148,7 +161,7 @@ class AssetController extends Controller
         abort_if(in_array($a->status->code, self::UNAVAILABLE, true), 422, __('api.asset_assign_blocked'));
         $d = $request->validate(['user_id' => 'nullable|string', 'location_id' => ['nullable', $this->orgRule('locations')], 'note' => 'nullable|string|max:250']);
 
-        if (!empty($d['user_id'])) {
+        if (! empty($d['user_id'])) {
             abort_unless(Membership::where('organization_id', $this->ctx->organizationId())->where('user_id', $d['user_id'])->exists(), 422, __('api.invalid_role'));
             $prev = $a->assigned_user_id;
             $a->update(['assigned_user_id' => $d['user_id'], 'status_id' => Lookup::id('asset_status', 'assigned')] + (isset($d['location_id']) ? ['location_id' => $d['location_id']] : []));
@@ -159,6 +172,7 @@ class AssetController extends Controller
             AssetLog::event($a, 'returned', $prev, null, $d['note'] ?? null);
         }
         AuditLogger::log('asset.assignment_changed', $a, [], ['asset_tag' => $a->asset_tag, 'assigned_to' => $d['user_id'] ?? 'stock']);
+
         return new AssetResource($a->refresh()->load($this->with()));
     }
 
@@ -173,13 +187,14 @@ class AssetController extends Controller
             $old = $a->status_id;
             $a->update(['status_id' => Lookup::id('asset_status', $d['kind'])]);
             AssetLog::event($a, 'reported_lost', $old, $a->status_id, $d['kind']);
+
             return IncidentService::report([
-                'title' => ucfirst($d['kind']) . ' equipment: ' . $a->asset_tag . ' — ' . $a->name,
+                'title' => ucfirst($d['kind']).' equipment: '.$a->asset_tag.' — '.$a->name,
                 'description' => $d['description'], 'severity_id' => Lookup::id('incident_severity', 'high'),
                 'detected_at' => $d['detected_at'] ?? null, 'impact' => null, 'immediate_action' => null,
             ], $request->user(), $a, 'high');
         });
-        AuditLogger::log('asset.reported_' . $d['kind'], $a, [], ['asset_tag' => $a->asset_tag, 'incident' => $case->reference]);
+        AuditLogger::log('asset.reported_'.$d['kind'], $a, [], ['asset_tag' => $a->asset_tag, 'incident' => $case->reference]);
 
         return response()->json(['data' => ['case_id' => $case->id, 'reference' => $case->reference]], 201);
     }
@@ -190,6 +205,7 @@ class AssetController extends Controller
         $import = new AssetsImport($this->ctx);
         Excel::import($import, $request->file('file'));
         AuditLogger::log('asset.imported', null, [], ['created' => $import->created, 'skipped' => count($import->errors)]);
+
         return response()->json(['created' => $import->created, 'errors' => $import->errors]);
     }
 }

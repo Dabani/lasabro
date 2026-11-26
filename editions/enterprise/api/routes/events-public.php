@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\V1 as V1;
+use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
 
 /* Registration and ticket pages for people without an account. Public (the personal links are the credentials) and rate limited. Required from routes/api.php next to meetings-public.php. */

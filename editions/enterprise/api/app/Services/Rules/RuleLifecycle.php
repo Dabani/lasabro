@@ -32,6 +32,7 @@ class RuleLifecycle
             $this->replaceContent($v, $data);
             $this->record($v, 'draft', $by, 'created');
             AuditLogger::log('rule.version_created', $v, [], ['rule_set' => $set->code, 'version' => $next]);
+
             return $v;
         });
     }
@@ -39,7 +40,7 @@ class RuleLifecycle
     /** Only drafts and impact-checked drafts may change; editing sends an impact-checked draft back to draft. */
     public function replaceContent(RuleVersion $v, array $data): void
     {
-        if (!$v->isDraftLike()) {
+        if (! $v->isDraftLike()) {
             $this->fail('not_editable');
         }
         $v->conditions()->delete();
@@ -64,7 +65,9 @@ class RuleLifecycle
     /** What-if simulation on sample transactions: which version decides today vs. with this version included. */
     public function impactCheck(RuleVersion $v, array $samples, User $by): array
     {
-        if (!$v->isDraftLike()) $this->fail('not_editable');
+        if (! $v->isDraftLike()) {
+            $this->fail('not_editable');
+        }
         $v->load(['ruleSet.domain', 'conditions.attribute', 'conditions.operator', 'outcomes']);
         $domain = $v->ruleSet->domain->code;
         $current = $this->resolver->candidates($v->organization_id, $domain);
@@ -86,32 +89,41 @@ class RuleLifecycle
                 'changes' => ($before['id'] ?? null) !== ($after['id'] ?? null),
             ];
         }
-        $this->setStatus($v, 'impact_check', $by, 'impact check on ' . count($samples) . ' sample(s)');
+        $this->setStatus($v, 'impact_check', $by, 'impact check on '.count($samples).' sample(s)');
+
         return ['samples' => $rows, 'validation' => $this->validator->check($v)];
     }
 
     public function submit(RuleVersion $v, User $by): ApprovalRequest
     {
-        if ($v->status->code !== 'impact_check') $this->fail($v->status->code === 'draft' ? 'impact_check_required' : 'not_editable');
+        if ($v->status->code !== 'impact_check') {
+            $this->fail($v->status->code === 'draft' ? 'impact_check_required' : 'not_editable');
+        }
         $problems = $this->validator->check($v);
         if ($problems['errors']) {
             throw ValidationException::withMessages(['rule' => array_map(fn ($e) => __("foundation.rule.$e"), $problems['errors'])]);
         }
         $v->loadMissing('ruleSet');
-        $req = $this->approvals->submit('rule_activation', $v->id, $by, $v->ruleSet->name . ' v' . $v->version, ['department_id' => null]);
+        $req = $this->approvals->submit('rule_activation', $v->id, $by, $v->ruleSet->name.' v'.$v->version, ['department_id' => null]);
         $v->update(['approval_request_id' => $req->id, 'submitted_at' => now()]);
         $this->setStatus($v, 'pending_approval', $by, 'submitted for approval');
+
         return $req;
     }
 
     public function signOff(RuleVersion $v, User $by, ?string $note): RuleVersion
     {
         $v->loadMissing('ruleSet');
-        if (!$v->ruleSet->is_legal_profile) $this->fail('not_legal_profile');
-        if ($v->created_by === $by->id) $this->fail('author_cannot_signoff');
+        if (! $v->ruleSet->is_legal_profile) {
+            $this->fail('not_legal_profile');
+        }
+        if ($v->created_by === $by->id) {
+            $this->fail('author_cannot_signoff');
+        }
         $v->update(['verification_status_id' => Lookup::id('rule_verification_status', 'verified'), 'signed_off_by' => $by->id, 'signed_off_at' => now(), 'signoff_note' => $note]);
         $this->record($v, $v->status->code, $by, 'legal sign-off');
         AuditLogger::log('rule.signed_off', $v, [], ['note' => $note]);
+
         return $v->refresh();
     }
 
@@ -122,7 +134,8 @@ class RuleLifecycle
         $problems = $this->validator->check($v);
         $blockers = array_merge($problems['errors'], $this->validator->activationBlockers($v));
         if ($blockers) {
-            $this->revert($v, 'activation blocked: ' . implode(', ', $blockers));
+            $this->revert($v, 'activation blocked: '.implode(', ', $blockers));
+
             return;
         }
         DB::transaction(function () use ($v) {
@@ -130,9 +143,11 @@ class RuleLifecycle
                 ->whereHas('status', fn ($q) => $q->where('code', 'active'))->get();
             foreach ($previous as $p) {
                 $end = $v->effective_from->copy()->subDay();
-                if ($end->lt($p->effective_from)) $end = $p->effective_from->copy()->subDay();
+                if ($end->lt($p->effective_from)) {
+                    $end = $p->effective_from->copy()->subDay();
+                }
                 $p->update(['status_id' => Lookup::id('rule_status', 'superseded'), 'effective_to' => $p->effective_to && $p->effective_to->lt($end) ? $p->effective_to : $end]);
-                $this->record($p, 'superseded', null, 'superseded by v' . $v->version);
+                $this->record($p, 'superseded', null, 'superseded by v'.$v->version);
             }
             $v->update(['status_id' => Lookup::id('rule_status', 'active'), 'activated_at' => now()]);
             $this->record($v, 'active', null, 'approved and activated');
@@ -158,6 +173,7 @@ class RuleLifecycle
                 RuleResolver::flush($v->organization_id);
                 $n++;
             });
+
         return $n;
     }
 

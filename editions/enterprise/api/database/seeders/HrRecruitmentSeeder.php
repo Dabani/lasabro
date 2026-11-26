@@ -58,7 +58,7 @@ class HrRecruitmentSeeder extends Seeder
                 ->steps()->withoutGlobalScopes()->updateOrCreate(['step_order' => 1], ['organization_id' => $org->id, 'label' => $stepLabel, 'step_type_id' => Lookup::id('approval_step_type', $stepType), 'role_id' => $roleId, 'escalate_after_hours' => 72]);
             $flow('workforce_requisition_default', 'Workforce requisition (HR manager)', 'workforce_requisition', 'HR manager', 'role', $hr?->id);
             $flow('applicant_selection_default', 'Applicant selection (department head)', 'applicant_selection', 'Department head', 'department_head', null);
-            if (!OnboardingTemplateItem::withoutGlobalScopes()->where('organization_id', $org->id)->exists()) {
+            if (! OnboardingTemplateItem::withoutGlobalScopes()->where('organization_id', $org->id)->exists()) {
                 foreach (self::ONBOARDING as $i => [$title, $offset]) {
                     OnboardingTemplateItem::withoutGlobalScopes()->create(['organization_id' => $org->id, 'title' => $title, 'offset_days' => $offset, 'sort_order' => $i + 1, 'is_active' => true]);
                 }
@@ -112,7 +112,7 @@ class HrRecruitmentSeeder extends Seeder
             $start = (int) (LookupValue::where('lookup_type_id', $type->id)->max('sort_order') ?? -1);
             foreach ($rows as $i => [$c, $color, $en, $fr, $rw, $sw]) {
                 $v = LookupValue::firstOrNew(['lookup_type_id' => $type->id, 'organization_id' => null, 'code' => $c]);
-                if (!$v->exists) {
+                if (! $v->exists) {
                     $v->sort_order = $start + 1 + $i;                       // the order is set once; re-running never reshuffles it
                 }
                 $v->fill(['color' => $color, 'icon' => null, 'is_system' => true, 'is_active' => true])->save();
