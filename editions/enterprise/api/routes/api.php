@@ -14,6 +14,7 @@ Route::prefix('v1')->group(function () {
     // ---- public ------------------------------------------------------------------------------
     Route::get('public/config', [V1\PublicController::class, 'config']);
     Route::get('public/logo', [V1\PublicController::class, 'logo']);
+    Route::get('kit/manifest', [V1\KitController::class, 'manifest'])->middleware('throttle:60,1');   // edition, theme, active plugins for any frontend
     Route::get('health', [V1\HealthController::class, 'ping'])->middleware('throttle:health');   // Bundle 7: minimal readiness probe
 
     Route::post('auth/login', [V1\AuthController::class, 'login'])->middleware('throttle:login');

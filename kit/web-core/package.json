@@ -1,0 +1,22 @@
+{
+  "name": "@lasabro/kit",
+  "version": "0.1.0",
+  "description": "LASABRO startup kit, web core: plugin registry, manifest, theme tokens. No UI framework inside, so React, Vue, Angular or Flutter-web shells can all use it.",
+  "license": "MIT",
+  "author": "Robert MAKUTA <dabani.rm@gmail.com> (https://dabani.github.io)",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "bin": { "lasabro-web-sync": "./bin/lasabro-web-sync.mjs" },
+  "files": ["src", "bin"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,0 +1,683 @@
+[
+  {
+    "path": "/dashboard",
+    "permission": [
+      "dashboard.view"
+    ],
+    "component": "DashboardPage"
+  },
+  {
+    "path": "/assets",
+    "permission": [
+      "asset.view"
+    ],
+    "component": "AssetsPage"
+  },
+  {
+    "path": "/assets/movements",
+    "permission": [
+      "asset.request_movement"
+    ],
+    "component": "MovementsPage"
+  },
+  {
+    "path": "/access-register",
+    "permission": [
+      "access.view"
+    ],
+    "component": "AccessRegisterPage"
+  },
+  {
+    "path": "/incidents",
+    "permission": [
+      "case.view_own"
+    ],
+    "component": "IncidentsPage"
+  },
+  {
+    "path": "/archive/records",
+    "permission": [
+      "archive.view"
+    ],
+    "component": "RecordsPage"
+  },
+  {
+    "path": "/archive/access",
+    "permission": [
+      "archive.view"
+    ],
+    "component": "ArchiveAccessPage"
+  },
+  {
+    "path": "/archive/inventory",
+    "permission": [
+      "archive.manage"
+    ],
+    "component": "InventoryPage"
+  },
+  {
+    "path": "/archive/disposal",
+    "permission": [
+      "archive.manage",
+      "archive.approve_disposal"
+    ],
+    "component": "DisposalPage"
+  },
+  {
+    "path": "/archive/retention",
+    "permission": [
+      "archive.view"
+    ],
+    "component": "RetentionPage"
+  },
+  {
+    "path": "/compliance/calendar",
+    "permission": [
+      "compliance.view"
+    ],
+    "component": "ComplianceCalendarPage"
+  },
+  {
+    "path": "/compliance/backups",
+    "permission": [
+      "backup.manage",
+      "compliance.view"
+    ],
+    "component": "BackupsPage"
+  },
+  {
+    "path": "/compliance/training",
+    "permission": [
+      "training.view",
+      "training.manage"
+    ],
+    "component": "TrainingPage"
+  },
+  {
+    "path": "/compliance/audits",
+    "permission": [
+      "compliance.view"
+    ],
+    "component": "AuditsPage"
+  },
+  {
+    "path": "/compliance/reports",
+    "permission": [
+      "report.receive",
+      "compliance.view"
+    ],
+    "component": "ManagementReportsPage"
+  },
+  {
+    "path": "/compliance/legal",
+    "permission": [
+      "archive.view"
+    ],
+    "component": "LegalReferencesPage"
+  },
+  {
+    "path": "/reports",
+    "permission": [
+      "report.view",
+      "report.receive"
+    ],
+    "component": "ReportsPage"
+  },
+  {
+    "path": "/reports/:code",
+    "permission": [
+      "report.view",
+      "report.receive"
+    ],
+    "component": "ReportViewPage"
+  },
+  {
+    "path": "/files",
+    "permission": [
+      "file.view"
+    ],
+    "component": "FilesPage"
+  },
+  {
+    "path": "/cases",
+    "permission": [
+      "case.view_own"
+    ],
+    "component": "CasesPage"
+  },
+  {
+    "path": "/cases/:id",
+    "permission": [
+      "case.view_own"
+    ],
+    "component": "CaseDetailPage"
+  },
+  {
+    "path": "/support/chats",
+    "permission": [
+      "chat.moderate"
+    ],
+    "component": "SupportChatsPage"
+  },
+  {
+    "path": "/admin/users",
+    "permission": [
+      "user.view"
+    ],
+    "component": "UsersPage"
+  },
+  {
+    "path": "/admin/roles",
+    "permission": [
+      "role.view"
+    ],
+    "component": "RolesPage"
+  },
+  {
+    "path": "/admin/organization",
+    "permission": [
+      "organization.view"
+    ],
+    "component": "OrganizationPage"
+  },
+  {
+    "path": "/admin/departments",
+    "permission": [
+      "department.view"
+    ],
+    "component": "DepartmentsPage"
+  },
+  {
+    "path": "/admin/locations",
+    "permission": [
+      "location.view"
+    ],
+    "component": "LocationsPage"
+  },
+  {
+    "path": "/admin/lookups",
+    "permission": [
+      "lookup.view"
+    ],
+    "component": "LookupsPage"
+  },
+  {
+    "path": "/admin/audit-log",
+    "permission": [
+      "audit_log.view"
+    ],
+    "component": "AuditLogPage"
+  },
+  {
+    "path": "/approvals",
+    "permission": [
+      "approval.view",
+      "approval.act"
+    ],
+    "component": "ApprovalsPage"
+  },
+  {
+    "path": "/hr/employees",
+    "permission": [
+      "employee.view"
+    ],
+    "component": "EmployeesPage"
+  },
+  {
+    "path": "/hr/positions",
+    "permission": [
+      "employee.view",
+      "hr.structure.manage"
+    ],
+    "component": "PositionsPage"
+  },
+  {
+    "path": "/hr/employment-changes",
+    "permission": [
+      "hr.history.manage"
+    ],
+    "component": "EmploymentChangesPage"
+  },
+  {
+    "path": "/hr/reviews",
+    "permission": [
+      "hr.reviews.manage",
+      "hr.reviews.write",
+      "hr.self.view"
+    ],
+    "component": "ReviewsPage"
+  },
+  {
+    "path": "/me/employment",
+    "permission": [
+      "hr.self.view"
+    ],
+    "component": "MyEmploymentPage"
+  },
+  {
+    "path": "/hr/requisitions",
+    "permission": [
+      "hr.requisition.create",
+      "hr.requisition.approve",
+      "hr.recruitment.manage"
+    ],
+    "component": "RequisitionsPage"
+  },
+  {
+    "path": "/hr/recruitment",
+    "permission": [
+      "hr.recruitment.manage"
+    ],
+    "component": "RecruitmentPage"
+  },
+  {
+    "path": "/hr/interviews",
+    "permission": [
+      "hr.interview.score",
+      "hr.recruitment.manage"
+    ],
+    "component": "InterviewsPage"
+  },
+  {
+    "path": "/attendance/clock",
+    "permission": [
+      "hr.attendance.clock"
+    ],
+    "component": "ClockPage"
+  },
+  {
+    "path": "/attendance/team",
+    "permission": [
+      "hr.attendance.view",
+      "hr.attendance.manage"
+    ],
+    "component": "TeamAttendancePage"
+  },
+  {
+    "path": "/attendance/setup",
+    "permission": [
+      "hr.attendance.manage"
+    ],
+    "component": "AttendanceSetupPage"
+  },
+  {
+    "path": "/attendance/import",
+    "permission": [
+      "hr.attendance.manage"
+    ],
+    "component": "AttendanceImportPage"
+  },
+  {
+    "path": "/leave/me",
+    "permission": [
+      "hr.leave.request"
+    ],
+    "component": "MyLeavePage"
+  },
+  {
+    "path": "/leave/team",
+    "permission": [
+      "hr.leave.view",
+      "hr.leave.manage"
+    ],
+    "component": "TeamLeavePage"
+  },
+  {
+    "path": "/leave/setup",
+    "permission": [
+      "hr.leave.manage",
+      "hr.leave.legal.manage",
+      "hr.leave.profile",
+      "rules.view"
+    ],
+    "component": "LeaveSetupPage"
+  },
+  {
+    "path": "/trips",
+    "permission": [
+      "hr.trip.request",
+      "hr.trip.view",
+      "hr.trip.finance"
+    ],
+    "component": "TripsPage"
+  },
+  {
+    "path": "/trips/finance",
+    "permission": [
+      "hr.trip.finance"
+    ],
+    "component": "TripsFinancePage"
+  },
+  {
+    "path": "/trips/rates",
+    "permission": [
+      "hr.trip.configure",
+      "hr.trip.finance"
+    ],
+    "component": "TripRatesPage"
+  },
+  {
+    "path": "/trips/:id/authorization",
+    "permission": [
+      "hr.trip.request",
+      "hr.trip.view",
+      "hr.trip.finance"
+    ],
+    "component": "TripAuthorizationPage"
+  },
+  {
+    "path": "/trips/:id",
+    "permission": [
+      "hr.trip.request",
+      "hr.trip.view",
+      "hr.trip.finance"
+    ],
+    "component": "TripDetailPage"
+  },
+  {
+    "path": "/payroll/setup",
+    "permission": [
+      "hr.payroll.view",
+      "hr.payroll.configure",
+      "hr.payroll.verify",
+      "hr.payroll.prepare"
+    ],
+    "component": "PayrollSetupPage"
+  },
+  {
+    "path": "/payroll/runs",
+    "permission": [
+      "hr.payroll.view",
+      "hr.payroll.configure",
+      "hr.payroll.verify",
+      "hr.payroll.prepare",
+      "hr.payroll.review",
+      "hr.payroll.approve",
+      "hr.payroll.approve_md",
+      "hr.payroll.lock",
+      "hr.payroll.pay",
+      "hr.payroll.declare"
+    ],
+    "component": "PayrollRunsPage"
+  },
+  {
+    "path": "/payroll/runs/:id",
+    "permission": [
+      "hr.payroll.view",
+      "hr.payroll.configure",
+      "hr.payroll.verify",
+      "hr.payroll.prepare",
+      "hr.payroll.review",
+      "hr.payroll.approve",
+      "hr.payroll.approve_md",
+      "hr.payroll.lock",
+      "hr.payroll.pay",
+      "hr.payroll.declare"
+    ],
+    "component": "PayrollRunDetailPage"
+  },
+  {
+    "path": "/payroll/payslips/:id",
+    "permission": [
+      "hr.payroll.view",
+      "hr.payroll.configure",
+      "hr.payroll.verify",
+      "hr.payroll.prepare",
+      "hr.payroll.review",
+      "hr.payroll.approve",
+      "hr.payroll.approve_md",
+      "hr.payroll.lock",
+      "hr.payroll.pay",
+      "hr.payroll.declare"
+    ],
+    "component": "PayslipPage"
+  },
+  {
+    "path": "/payroll/exports",
+    "permission": [
+      "hr.payroll.export",
+      "hr.payroll.export.configure"
+    ],
+    "component": "PayrollExportsPage"
+  },
+  {
+    "path": "/payroll/me",
+    "permission": [
+      "hr.payslip.own"
+    ],
+    "component": "MyPayslipsPage"
+  },
+  {
+    "path": "/payroll/me/:id",
+    "permission": [
+      "hr.payslip.own"
+    ],
+    "component": "MyPayslipPage"
+  },
+  {
+    "path": "/meetings",
+    "permission": [
+      "meeting.view"
+    ],
+    "component": "MeetingsPage"
+  },
+  {
+    "path": "/events",
+    "permission": [
+      "event.view"
+    ],
+    "component": "EventsPage"
+  },
+  {
+    "path": "/events/:id",
+    "permission": [
+      "event.view"
+    ],
+    "component": "EventDetailPage"
+  },
+  {
+    "path": "/suppliers",
+    "permission": [
+      "procurement.view"
+    ],
+    "component": "SuppliersPage"
+  },
+  {
+    "path": "/suppliers/:id",
+    "permission": [
+      "procurement.view"
+    ],
+    "component": "SupplierDetailPage"
+  },
+  {
+    "path": "/requisitions",
+    "permission": [
+      "procurement.requisition.create"
+    ],
+    "component": "PurchaseRequisitionsPage"
+  },
+  {
+    "path": "/requisitions/:id",
+    "permission": [
+      "procurement.requisition.create"
+    ],
+    "component": "PurchaseRequisitionDetailPage"
+  },
+  {
+    "path": "/purchase-orders",
+    "permission": [
+      "procurement.receive"
+    ],
+    "component": "PurchaseOrdersPage"
+  },
+  {
+    "path": "/purchase-orders/:id",
+    "permission": [
+      "procurement.receive"
+    ],
+    "component": "PurchaseOrderDetailPage"
+  },
+  {
+    "path": "/rfqs",
+    "permission": [
+      "procurement.manage"
+    ],
+    "component": "RfqsPage"
+  },
+  {
+    "path": "/rfqs/:id",
+    "permission": [
+      "procurement.manage"
+    ],
+    "component": "RfqDetailPage"
+  },
+  {
+    "path": "/supplier-invoices",
+    "permission": [
+      "procurement.invoice",
+      "procurement.invoice.approve",
+      "procurement.invoice.pay"
+    ],
+    "component": "SupplierInvoicesPage"
+  },
+  {
+    "path": "/supplier-invoices/:id",
+    "permission": [
+      "procurement.invoice",
+      "procurement.invoice.approve",
+      "procurement.invoice.pay"
+    ],
+    "component": "SupplierInvoiceDetailPage"
+  },
+  {
+    "path": "/meetings/rooms",
+    "permission": [
+      "meeting.room.manage"
+    ],
+    "component": "MeetingRoomsPage"
+  },
+  {
+    "path": "/meetings/:id",
+    "permission": [
+      "meeting.view"
+    ],
+    "component": "MeetingDetailPage"
+  },
+  {
+    "path": "/meeting-checkin/:token",
+    "permission": [
+      "meeting.view"
+    ],
+    "component": "MeetingCheckinPage"
+  },
+  {
+    "path": "/minutes",
+    "permission": [
+      "meeting.view"
+    ],
+    "component": "MinutesPage"
+  },
+  {
+    "path": "/follow-ups",
+    "permission": [
+      "meeting.view"
+    ],
+    "component": "FollowUpsPage"
+  },
+  {
+    "path": "/minutes/:id",
+    "permission": [
+      "meeting.view"
+    ],
+    "component": "MinutesDetailPage"
+  },
+  {
+    "path": "/clients",
+    "permission": [
+      "client.view"
+    ],
+    "component": "ClientsPage"
+  },
+  {
+    "path": "/admin/rules",
+    "permission": [
+      "rules.view"
+    ],
+    "component": "RulesPage"
+  },
+  {
+    "path": "/admin/approval-flows",
+    "permission": [
+      "approval.configure"
+    ],
+    "component": "ApprovalFlowsPage"
+  },
+  {
+    "path": "/admin/department-access",
+    "permission": [
+      "scope.manage"
+    ],
+    "component": "DepartmentAccessPage"
+  },
+  {
+    "path": "/projects",
+    "permission": [
+      "project.view"
+    ],
+    "component": "ProjectsPage"
+  },
+  {
+    "path": "/projects/:id",
+    "permission": [
+      "project.view"
+    ],
+    "component": "ProjectDetailPage"
+  },
+  {
+    "path": "/time",
+    "permission": [
+      "time.track"
+    ],
+    "component": "TimePage"
+  },
+  {
+    "path": "/admin/rate-cards",
+    "permission": [
+      "rates.view"
+    ],
+    "component": "RateCardsPage"
+  },
+  {
+    "path": "/invoices",
+    "permission": [
+      "billing.view"
+    ],
+    "component": "InvoicesPage"
+  },
+  {
+    "path": "/invoices/:id",
+    "permission": [
+      "billing.view"
+    ],
+    "component": "InvoiceDetailPage"
+  },
+  {
+    "path": "/admin/tax-rates",
+    "permission": [
+      "billing.configure"
+    ],
+    "component": "TaxRatesPage"
+  },
+  {
+    "path": "/admin/client-portal",
+    "permission": [
+      "client.manage"
+    ],
+    "component": "ClientPortalAdminPage"
+  },
+  {
+    "path": "/profile",
+    "permission": null,
+    "component": "ProfilePage"
+  }
+]

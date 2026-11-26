@@ -39,6 +39,14 @@ class SettingsService
         'procurement.tax_rate_percent' => ['decimal', 0],    // expected tax rate on invoices, in percent; 0 = tax is not checked
         'meeting.followup_due_soon_days' => ['integer', 2],      // resolutions and actions due within this many days are announced to their owner
         'meeting.followup_overdue_repeat_days' => ['integer', 3], // an overdue item is announced again every this many days
+        'appearance.preset' => ['string', 'lasabro'],   // theme preset: lasabro (default) or cops-classic
+        'appearance.primary' => ['string', ''],   // primary colour #rrggbb; empty = the preset colour
+        'appearance.secondary' => ['string', ''],   // secondary colour #rrggbb; empty = the preset colour
+        'appearance.font_family' => ['string', ''],   // CSS font family; empty = the preset font
+        'appearance.radius' => ['string', ''],   // corner radius xs|sm|md|lg|xl; empty = the preset radius
+        'appearance.layout' => ['string', ''],   // layout id (sidebar); empty = the preset layout
+        'appearance.navbar_width' => ['integer', 0],   // sidebar width in px (220-360); 0 = the preset width
+        'appearance.header_height' => ['integer', 0],   // top bar height in px (48-80); 0 = the preset height
     ];
 
     public static function get(string $orgId, string $key)

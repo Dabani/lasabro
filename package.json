@@ -8,6 +8,14 @@
     "web:dev": "npm --prefix editions/enterprise/web run dev",
     "web:test": "npm --prefix editions/enterprise/web test",
     "web:build": "npm --prefix editions/enterprise/web run build:check",
-    "api:test": "cd editions/enterprise/api && php artisan test"
-  }
+    "api:test": "cd editions/enterprise/api && php artisan test",
+    "kit:test": "npm test --workspace kit/web-core --workspace kit/web-react",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present"
+  },
+  "workspaces": [
+    "kit/web-core",
+    "kit/web-react",
+    "editions/enterprise/web"
+  ]
 }

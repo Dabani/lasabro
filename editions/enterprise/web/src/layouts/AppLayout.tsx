@@ -14,6 +14,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ChatWidget } from '@/components/ChatWidget';
 import { RouteBoundary } from '@/components/RouteBoundary';
+import { Slot, useKit } from '@lasabro/kit-react';
 
 export function AppLayout() {
   const { t } = useTranslation();
@@ -22,19 +23,22 @@ export function AppLayout() {
   const [opened, { toggle, close }] = useDisclosure(false);
   const { setColorScheme } = useMantineColorScheme();
   const scheme = useComputedColorScheme('light');
+  const { theme } = useKit();
 
   if (!me) return null;
   const topRole = [...me.roles].sort((a, b) => b.level - a.level)[0];
 
   return (
-    <AppShell header={{ height: 60 }} navbar={{ width: 280, breakpoint: 'md', collapsed: { mobile: !opened } }} padding={{ base: 'sm', sm: 'md', lg: 'lg' }}>
+    <AppShell header={{ height: theme.tokens.headerHeight }} navbar={{ width: theme.tokens.navbarWidth, breakpoint: 'md', collapsed: { mobile: !opened } }} padding={{ base: 'sm', sm: 'md', lg: 'lg' }}>
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" aria-label="Menu" />
             <BrandLogo name={me.organization.name} hasLogo={me.organization.has_logo} />
+            <Slot name="header.left" can={can} />
           </Group>
           <Group gap="xs" wrap="nowrap">
+            <Slot name="header.right" can={can} />
             <InstallPrompt />
             <LanguageSwitcher />
             <ActionIcon variant="subtle" size="lg" aria-label={t('common.theme')} onClick={() => setColorScheme(scheme === 'dark' ? 'light' : 'dark')}>
@@ -64,11 +68,14 @@ export function AppLayout() {
 
       <AppShell.Navbar p="sm">
         <AppShell.Section grow component={ScrollArea}><SidebarMenu onNavigate={close} /></AppShell.Section>
+        <Slot name="sidebar.bottom" can={can} />
       </AppShell.Navbar>
 
       <AppShell.Main>
         <OfflineBanner />
+        <Slot name="page.header" can={can} />
         <RouteBoundary><Outlet /></RouteBoundary>
+        <Slot name="page.footer" can={can} />
         {can('chat.use') && <ChatWidget />}
       </AppShell.Main>
     </AppShell>

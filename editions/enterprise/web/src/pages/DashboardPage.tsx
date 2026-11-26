@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { PageHeader } from '@/components/PageHeader';
+import { useWidgetComponent } from '@lasabro/kit-react';
 import { iconFor } from '@/lib/icons';
 import { fmtDateTime } from '@/lib/format';
 import type { Widget } from '@/types';
@@ -19,6 +20,7 @@ function WidgetBody({ w }: { w: Widget }) {
   const { t, i18n } = useTranslation();
   const { me } = useAuth();
   const Icon = iconFor(w.icon);
+  const Custom = useWidgetComponent(w.code);   // supplied by a web plugin; none exist for the built-in widgets
 
   if (w.type === 'welcome') {
     return (
@@ -59,7 +61,7 @@ function WidgetBody({ w }: { w: Widget }) {
           ))}
         </Stack>
       );
-    default: return <ComingSoon />;
+    default: return Custom ? <Custom widget={w} /> : <ComingSoon />;
   }
 }
 

@@ -10,6 +10,13 @@ return [
     ],
 
     /*
+    | Default theme preset served to frontends (lasabro, cops-classic). The organization setting appearance.preset overrides it.
+    */
+    'theme' => [
+        'preset' => env('LASABRO_THEME_PRESET', 'lasabro'),
+    ],
+
+    /*
     | Composer package type that marks a package as a LASABRO plugin (composer.json "type").
     */
     'package_type' => 'lasabro-plugin',

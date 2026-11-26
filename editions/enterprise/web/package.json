@@ -9,9 +9,12 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
-    "build:check": "npm run build && node scripts/check-bundle-size.mjs"
+    "build:check": "npm run build && node scripts/check-bundle-size.mjs",
+    "plugins:sync": "lasabro-web-sync"
   },
   "dependencies": {
+    "@lasabro/kit": "*",
+    "@lasabro/kit-react": "*",
     "@mantine/charts": "9.7.2",
     "@mantine/core": "9.7.2",
     "@mantine/dropzone": "^9.7.2",
