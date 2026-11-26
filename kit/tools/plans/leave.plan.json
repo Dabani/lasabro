@@ -1,0 +1,97 @@
+{
+  "id": "Lasabro.Leave",
+  "slug": "leave",
+  "namespace": "Leave",
+  "title": "Leave",
+  "tier": "domain",
+  "description": "Leave policies, statutory minimums, balances and ledger, requests with approval, accrual and year-end jobs, and the leave lookup used by attendance.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Rules": "^1.0",
+    "Lasabro.Files": "^1.0",
+    "Lasabro.Hr": "^1.0",
+    "Lasabro.Attendance": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "people.leave_*"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "Leave*",
+        "LegalLeaveRule"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "LeaveController",
+        "LeaveFileController",
+        "LeaveSetupController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Services/Hr/Leave",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "app/Console/Commands",
+      "include": [
+        "LeaveAccrue",
+        "LeaveYearEnd"
+      ],
+      "to": "src/Console",
+      "ns": "Console"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "HrLeaveSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/LeaveServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/leave.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_16_000001_create_hr_leave_tables.php"
+  ],
+  "lang": [
+    "*/leave.php"
+  ],
+  "tests": [
+    "tests/Feature/LeaveTest.php",
+    "tests/Unit/LeaveMathTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/leave\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\LeaveServiceProvider::class,"
+    ]
+  }
+}

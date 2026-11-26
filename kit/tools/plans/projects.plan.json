@@ -1,0 +1,104 @@
+{
+  "id": "Lasabro.Projects",
+  "slug": "projects",
+  "namespace": "Projects",
+  "title": "Projects",
+  "tier": "domain",
+  "description": "Projects, tasks and Kanban boards, milestones, team and client visibility, and task review with approval.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Files": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "projects"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "LookupValueTranslation",
+        "Milestone",
+        "ProjectMember",
+        "RuleCondition",
+        "RuleOutcome",
+        "Task",
+        "TaskComment",
+        "TaskStatusHistory"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "ProjectController",
+        "ProjectFileController",
+        "TaskController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Http/Resources/Api/V1",
+      "include": [
+        "ProjectRowResource"
+      ],
+      "to": "src/Http/Resources",
+      "ns": "Http\\Resources"
+    },
+    {
+      "from": "app/Services/Projects",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "ProjectsSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/ProjectsServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/projects.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_03_100001_create_projects_core_tables.php"
+  ],
+  "lang": [
+    "*/projects.php"
+  ],
+  "lang_blocks": {
+    "notify.php": [
+      "task_assigned"
+    ]
+  },
+  "tests": [
+    "tests/Feature/ProjectsTest.php",
+    "tests/Unit/ProjectsPureLogicTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/projects\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\ProjectsServiceProvider::class,"
+    ]
+  }
+}

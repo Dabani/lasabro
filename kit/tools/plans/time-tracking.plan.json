@@ -1,0 +1,102 @@
+{
+  "id": "Lasabro.TimeTracking",
+  "slug": "time-tracking",
+  "namespace": "TimeTracking",
+  "title": "Time tracking",
+  "tier": "domain",
+  "description": "Timers and manual time entries, weekly timesheets with approval, rate cards and time reports.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Hr": "^1.0",
+    "Lasabro.Projects": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "admin.rate_cards",
+    "time"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "RateCard",
+        "RateCardLine",
+        "TimeEntry",
+        "TimeEntrySegment",
+        "Timesheet"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "RateCardController",
+        "TimeController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Services/Time",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "app/Console/Commands",
+      "include": [
+        "TimersAutoStop"
+      ],
+      "to": "src/Console",
+      "ns": "Console"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "TimeSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/TimeServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/time.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_03_200001_create_time_tracking_tables.php"
+  ],
+  "lang": [
+    "*/time.php"
+  ],
+  "lang_blocks": {
+    "notify.php": [
+      "timer_auto_stopped"
+    ]
+  },
+  "tests": [
+    "tests/Feature/TimeTrackingTest.php",
+    "tests/Unit/TimePureLogicTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/time\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\TimeServiceProvider::class,"
+    ]
+  }
+}

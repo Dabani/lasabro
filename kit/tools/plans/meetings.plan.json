@@ -1,0 +1,232 @@
+{
+  "id": "Lasabro.Meetings",
+  "slug": "meetings",
+  "namespace": "Meetings",
+  "title": "Meetings and events",
+  "tier": "domain",
+  "description": "Meetings with rooms, agendas, invitations, attendance, minutes, follow-ups, online sessions with chat and polls, and events with registration and expenses.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Files": "^1.0",
+    "Lasabro.Hr": "^1.0",
+    "Lasabro.Projects": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "meetings",
+    "meetings.events",
+    "meetings.followups",
+    "meetings.list",
+    "meetings.minutes",
+    "meetings.rooms"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "Event",
+        "EventAttendance",
+        "EventExpense",
+        "EventRegistration",
+        "EventStatusHistory",
+        "Meeting",
+        "MeetingAction",
+        "MeetingAgendaItem",
+        "MeetingAttendance",
+        "MeetingAttendanceHistory",
+        "MeetingChatMessage",
+        "MeetingFollowupHistory",
+        "MeetingIntervention",
+        "MeetingInvitation",
+        "MeetingMinuteComment",
+        "MeetingMinuteDistribution",
+        "MeetingMinuteRecipient",
+        "MeetingMinuteReviewer",
+        "MeetingMinuteStatusHistory",
+        "MeetingMinuteVersion",
+        "MeetingMinutes",
+        "MeetingOnlineSession",
+        "MeetingPoll",
+        "MeetingPollOption",
+        "MeetingPollVote",
+        "MeetingPollVoter",
+        "MeetingRecurrence",
+        "MeetingResolution",
+        "MeetingRoom",
+        "MeetingRoomBooking",
+        "MeetingScheduleHistory",
+        "MeetingStatusHistory"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "EventController",
+        "EventExpenseController",
+        "EventPublicController",
+        "MeetingAgendaController",
+        "MeetingAttendanceController",
+        "MeetingCollabController",
+        "MeetingCollabPublicController",
+        "MeetingController",
+        "MeetingFileController",
+        "MeetingFollowUpController",
+        "MeetingInvitationController",
+        "MeetingMinutesController",
+        "MeetingOnlineController",
+        "MeetingOnlinePublicController",
+        "MeetingPublicController",
+        "MeetingRoomController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Http/Resources/Api/V1",
+      "include": [
+        "EventRowResource",
+        "FollowUpRowResource",
+        "MeetingRowResource",
+        "MinutesLibraryResource"
+      ],
+      "to": "src/Http/Resources",
+      "ns": "Http\\Resources"
+    },
+    {
+      "from": "app/Services/Meetings",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services/Meetings",
+      "ns": "Services\\Meetings"
+    },
+    {
+      "from": "app/Services/Events",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services/Events",
+      "ns": "Services\\Events"
+    },
+    {
+      "from": "app/Console/Commands",
+      "include": [
+        "MeetingsFollowups",
+        "MeetingsRemind"
+      ],
+      "to": "src/Console",
+      "ns": "Console"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "MeetingsSeeder",
+        "MeetingBaselineAccessSeeder",
+        "MeetingsAttendanceSeeder",
+        "MeetingsMinutesSeeder",
+        "MeetingsFollowUpSeeder",
+        "MeetingsOnlineSeeder",
+        "MeetingsCollabSeeder",
+        "EventsSeeder",
+        "EventsExpensesSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/MeetingsServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/meetings.php",
+      "routes/meetings-public.php",
+      "routes/meetings-attendance.php",
+      "routes/meetings-minutes.php",
+      "routes/meetings-followups.php",
+      "routes/meetings-collab.php",
+      "routes/meetings-collab-public.php",
+      "routes/meetings-online.php",
+      "routes/meetings-online-public.php",
+      "routes/events.php",
+      "routes/events-public.php",
+      "routes/events-expenses.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_16_000001_create_meetings_core_tables.php",
+    "2026_11_16_000002_create_meeting_attendance_tables.php",
+    "2026_11_17_000001_create_meeting_minutes_tables.php",
+    "2026_11_18_000001_create_meeting_followup_tables.php",
+    "2026_11_19_000001_create_events_tables.php",
+    "2026_11_19_000002_create_event_expenses_table.php",
+    "2026_11_24_000001_create_meeting_online.php",
+    "2026_11_25_000001_create_meeting_chat_polls.php"
+  ],
+  "lang": [
+    "*/meetings.php",
+    "*/events.php"
+  ],
+  "lang_blocks": {
+    "notify.php": [
+      "meeting_invited",
+      "meeting_updated",
+      "meeting_cancelled",
+      "meeting_reminder",
+      "meeting_agenda_circulated",
+      "meeting_rsvp_declined",
+      "meeting_rsvp_proposed",
+      "meeting_minutes_review",
+      "meeting_minutes_returned",
+      "meeting_minutes_published",
+      "meeting_followup_assigned",
+      "meeting_followup_due",
+      "meeting_followup_overdue",
+      "meeting_followup_done",
+      "event_registered",
+      "event_waitlisted",
+      "event_waitlist_promoted",
+      "event_cancelled",
+      "event_expense_returned",
+      "event_expense_approved"
+    ]
+  },
+  "tests": [
+    "tests/Feature/MeetingsJourneyTest.php",
+    "tests/Unit/MeetingsPureLogicTest.php",
+    "tests/Unit/MeetingAttendanceRulesTest.php",
+    "tests/Unit/MinutesRulesTest.php",
+    "tests/Unit/FollowUpRulesTest.php",
+    "tests/Unit/OnlineMeetingRulesTest.php",
+    "tests/Unit/CollabRulesTest.php",
+    "tests/Unit/EventRulesTest.php",
+    "tests/Unit/ExpenseRulesTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/meetings\\.php';",
+      "require __DIR__ \\. '/meetings\\-public\\.php';",
+      "require __DIR__ \\. '/meetings\\-attendance\\.php';",
+      "require __DIR__ \\. '/meetings\\-minutes\\.php';",
+      "require __DIR__ \\. '/meetings\\-followups\\.php';",
+      "require __DIR__ \\. '/meetings\\-collab\\.php';",
+      "require __DIR__ \\. '/meetings\\-collab\\-public\\.php';",
+      "require __DIR__ \\. '/meetings\\-online\\.php';",
+      "require __DIR__ \\. '/meetings\\-online\\-public\\.php';",
+      "require __DIR__ \\. '/events\\.php';",
+      "require __DIR__ \\. '/events\\-public\\.php';",
+      "require __DIR__ \\. '/events\\-expenses\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\MeetingsServiceProvider::class,"
+    ]
+  }
+}

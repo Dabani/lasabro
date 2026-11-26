@@ -1,0 +1,228 @@
+{
+  "projects": {
+    "id": "Lasabro.Projects",
+    "title": "Projects",
+    "namespace": "Projects",
+    "description": "Projects, tasks and Kanban boards, milestones, team and client visibility, and task review with approval.",
+    "routes": [
+      "routes/projects.php"
+    ],
+    "service_dirs": [
+      "app/Services/Projects"
+    ],
+    "provider": "ProjectsServiceProvider",
+    "seeders": [
+      "ProjectsSeeder"
+    ],
+    "commands": [],
+    "migrations": [
+      "create_projects_core_tables"
+    ],
+    "lang": [
+      "projects"
+    ],
+    "tests": [
+      "tests/Feature/ProjectsTest.php",
+      "tests/Unit/ProjectsPureLogicTest.php"
+    ],
+    "lang_blocks": {
+      "notify.php": [
+        "task_assigned"
+      ]
+    }
+  },
+  "time": {
+    "id": "Lasabro.TimeTracking",
+    "title": "Time tracking",
+    "namespace": "TimeTracking",
+    "description": "Timers and manual time entries, weekly timesheets with approval, rate cards and time reports.",
+    "routes": [
+      "routes/time.php"
+    ],
+    "service_dirs": [
+      "app/Services/Time"
+    ],
+    "provider": "TimeServiceProvider",
+    "seeders": [
+      "TimeSeeder"
+    ],
+    "commands": [
+      "TimersAutoStop"
+    ],
+    "migrations": [
+      "create_time_tracking_tables"
+    ],
+    "lang": [
+      "time"
+    ],
+    "tests": [
+      "tests/Feature/TimeTrackingTest.php",
+      "tests/Unit/TimePureLogicTest.php"
+    ],
+    "lang_blocks": {
+      "notify.php": [
+        "timer_auto_stopped"
+      ]
+    }
+  },
+  "billing": {
+    "id": "Lasabro.Billing",
+    "title": "Billing",
+    "namespace": "Billing",
+    "description": "Invoices from approved time and fixed fees, payments, credit notes, tax rates, PDF documents and overdue reminders.",
+    "routes": [
+      "routes/billing.php"
+    ],
+    "service_dirs": [
+      "app/Services/Billing"
+    ],
+    "provider": "BillingServiceProvider",
+    "seeders": [
+      "BillingSeeder"
+    ],
+    "commands": [
+      "InvoicesOverdue"
+    ],
+    "migrations": [
+      "create_billing_tables"
+    ],
+    "lang": [
+      "billing"
+    ],
+    "tests": [
+      "tests/Feature/BillingTest.php",
+      "tests/Unit/InvoiceMathTest.php"
+    ],
+    "lang_blocks": {
+      "notify.php": [
+        "invoice_overdue"
+      ]
+    }
+  },
+  "portal": {
+    "id": "Lasabro.Portal",
+    "title": "Client portal",
+    "namespace": "Portal",
+    "description": "Separate sign-in for external clients with two-factor authentication, and the screens through which they follow projects, files and invoices.",
+    "routes": [
+      "routes/portal.php",
+      "routes/portal-admin.php"
+    ],
+    "service_dirs": [
+      "app/Services/Portal"
+    ],
+    "provider": "PortalServiceProvider",
+    "seeders": [
+      "PortalSeeder"
+    ],
+    "commands": [
+      "ClientIdentityCreate"
+    ],
+    "migrations": [
+      "create_client_portal_tables"
+    ],
+    "lang": [
+      "portal"
+    ],
+    "tests": [
+      "tests/Feature/PortalTest.php",
+      "tests/Feature/PortalAndScopeTest.php",
+      "tests/Unit/PortalPureLogicTest.php"
+    ],
+    "lang_blocks": {
+      "notify.php": [
+        "portal_client_comment",
+        "portal_client_upload"
+      ]
+    }
+  },
+  "meetings": {
+    "id": "Lasabro.Meetings",
+    "title": "Meetings and events",
+    "namespace": "Meetings",
+    "description": "Meetings with rooms, agendas, invitations, attendance, minutes, follow-ups, online sessions with chat and polls, and events with registration and expenses.",
+    "routes": [
+      "routes/meetings.php",
+      "routes/meetings-public.php",
+      "routes/meetings-attendance.php",
+      "routes/meetings-minutes.php",
+      "routes/meetings-followups.php",
+      "routes/meetings-collab.php",
+      "routes/meetings-collab-public.php",
+      "routes/meetings-online.php",
+      "routes/meetings-online-public.php",
+      "routes/events.php",
+      "routes/events-public.php",
+      "routes/events-expenses.php"
+    ],
+    "service_dirs": [
+      "app/Services/Meetings",
+      "app/Services/Events"
+    ],
+    "provider": "MeetingsServiceProvider",
+    "seeders": [
+      "MeetingsSeeder",
+      "MeetingBaselineAccessSeeder",
+      "MeetingsAttendanceSeeder",
+      "MeetingsMinutesSeeder",
+      "MeetingsFollowUpSeeder",
+      "MeetingsOnlineSeeder",
+      "MeetingsCollabSeeder",
+      "EventsSeeder",
+      "EventsExpensesSeeder"
+    ],
+    "commands": [
+      "MeetingsFollowups",
+      "MeetingsRemind"
+    ],
+    "migrations": [
+      "create_meetings_core_tables",
+      "create_meeting_attendance_tables",
+      "create_meeting_minutes_tables",
+      "create_meeting_followup_tables",
+      "create_events_tables",
+      "create_event_expenses_table",
+      "create_meeting_online",
+      "create_meeting_chat_polls"
+    ],
+    "lang": [
+      "meetings",
+      "events"
+    ],
+    "tests": [
+      "tests/Feature/MeetingsJourneyTest.php",
+      "tests/Unit/MeetingsPureLogicTest.php",
+      "tests/Unit/MeetingAttendanceRulesTest.php",
+      "tests/Unit/MinutesRulesTest.php",
+      "tests/Unit/FollowUpRulesTest.php",
+      "tests/Unit/OnlineMeetingRulesTest.php",
+      "tests/Unit/CollabRulesTest.php",
+      "tests/Unit/EventRulesTest.php",
+      "tests/Unit/ExpenseRulesTest.php"
+    ],
+    "lang_blocks": {
+      "notify.php": [
+        "meeting_invited",
+        "meeting_updated",
+        "meeting_cancelled",
+        "meeting_reminder",
+        "meeting_agenda_circulated",
+        "meeting_rsvp_declined",
+        "meeting_rsvp_proposed",
+        "meeting_minutes_review",
+        "meeting_minutes_returned",
+        "meeting_minutes_published",
+        "meeting_followup_assigned",
+        "meeting_followup_due",
+        "meeting_followup_overdue",
+        "meeting_followup_done",
+        "event_registered",
+        "event_waitlisted",
+        "event_waitlist_promoted",
+        "event_cancelled",
+        "event_expense_returned",
+        "event_expense_approved"
+      ]
+    }
+  }
+}

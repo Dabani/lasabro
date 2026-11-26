@@ -1,0 +1,99 @@
+{
+  "id": "Lasabro.Trips",
+  "slug": "trips",
+  "namespace": "Trips",
+  "title": "Business trips",
+  "tier": "domain",
+  "description": "Business trips: requests with approval, travelers, rates and per-diems, bookings, advances, expenses, settlement and advance reminders.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Rules": "^1.0",
+    "Lasabro.Files": "^1.0",
+    "Lasabro.Hr": "^1.0",
+    "Lasabro.Attendance": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "people.trips*"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "Trip*"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "TripController",
+        "TripSetupController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Services/Hr/Trips",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "app/Console/Commands",
+      "include": [
+        "TripsRemind"
+      ],
+      "to": "src/Console",
+      "ns": "Console"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "HrTripSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/TripServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/trips.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_17_000001_create_hr_trip_tables.php"
+  ],
+  "lang": [
+    "*/trips.php"
+  ],
+  "lang_blocks": {
+    "notify.php": [
+      "trip_advance_overdue"
+    ]
+  },
+  "tests": [
+    "tests/Feature/TripTest.php",
+    "tests/Unit/TripMathTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/trips\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\TripServiceProvider::class,"
+    ]
+  }
+}

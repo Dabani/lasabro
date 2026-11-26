@@ -1,0 +1,113 @@
+{
+  "id": "Lasabro.Billing",
+  "slug": "billing",
+  "namespace": "Billing",
+  "title": "Billing",
+  "tier": "domain",
+  "description": "Invoices from approved time and fixed fees, payments, credit notes, tax rates, PDF documents and overdue reminders.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Clients": "^1.0",
+    "Lasabro.Rules": "^1.0",
+    "Lasabro.Projects": "^1.0",
+    "Lasabro.TimeTracking": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "admin.tax_rates",
+    "invoices"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "CreditNote",
+        "Invoice",
+        "InvoiceLine",
+        "InvoiceLineSource",
+        "InvoicePayment",
+        "TaxRate"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "BillingAdminController",
+        "InvoiceController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Http/Resources/Api/V1",
+      "include": [
+        "InvoiceRowResource"
+      ],
+      "to": "src/Http/Resources",
+      "ns": "Http\\Resources"
+    },
+    {
+      "from": "app/Services/Billing",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "app/Console/Commands",
+      "include": [
+        "InvoicesOverdue"
+      ],
+      "to": "src/Console",
+      "ns": "Console"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "BillingSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/BillingServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/billing.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_03_300001_create_billing_tables.php"
+  ],
+  "lang": [
+    "*/billing.php"
+  ],
+  "lang_blocks": {
+    "notify.php": [
+      "invoice_overdue"
+    ]
+  },
+  "tests": [
+    "tests/Feature/BillingTest.php",
+    "tests/Unit/InvoiceMathTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/billing\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\BillingServiceProvider::class,"
+    ]
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "id": "Lasabro.Procurement",
+  "slug": "procurement",
+  "namespace": "Procurement",
+  "title": "Procurement",
+  "tier": "domain",
+  "description": "Suppliers, purchase requisitions, requests for quotation, purchase orders, goods receipts and supplier invoices, with approval flows and controlled documents.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Approvals": "^1.0",
+    "Lasabro.Rules": "^1.0",
+    "Lasabro.Files": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "procurement",
+    "procurement.*"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "GoodsReceipt*",
+        "PurchaseOrder*",
+        "PurchaseRequisition*",
+        "Rfq*",
+        "Supplier*"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "ProcurementFileController",
+        "PurchaseOrderController",
+        "PurchaseRequisitionController",
+        "RfqController",
+        "SupplierController",
+        "SupplierInvoiceController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Http/Resources/Api/V1",
+      "include": [
+        "PurchaseOrderRowResource",
+        "RequisitionRowResource",
+        "RfqRowResource",
+        "SupplierInvoiceRowResource",
+        "SupplierRowResource"
+      ],
+      "to": "src/Http/Resources",
+      "ns": "Http\\Resources"
+    },
+    {
+      "from": "app/Services/Procurement",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "Procurement*Seeder",
+        "ProcurementSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/ProcurementServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/procurement.php",
+      "routes/procurement-orders.php",
+      "routes/procurement-rfqs.php",
+      "routes/procurement-files.php",
+      "routes/procurement-invoices.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_20_000001_create_procurement_suppliers_requisitions.php",
+    "2026_11_21_000001_create_purchase_orders_and_receipts.php",
+    "2026_11_22_000001_create_supplier_invoices.php",
+    "2026_11_23_000001_create_rfqs.php"
+  ],
+  "lang": [
+    "*/procurement.php"
+  ],
+  "tests": [
+    "tests/Unit/ProcurementRulesTest.php",
+    "tests/Unit/OrderRulesTest.php",
+    "tests/Unit/RfqRulesTest.php",
+    "tests/Unit/InvoiceRulesTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/procurement\\.php';",
+      "require __DIR__ \\. '/procurement-orders\\.php';",
+      "require __DIR__ \\. '/procurement-rfqs\\.php';",
+      "require __DIR__ \\. '/procurement-files\\.php';",
+      "require __DIR__ \\. '/procurement-invoices\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\ProcurementServiceProvider::class,"
+    ]
+  },
+  "lang_blocks": {
+    "notify.php": [
+      "supplier_decided",
+      "requisition_decided",
+      "po_decided",
+      "po_issued",
+      "goods_received"
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "id": "Lasabro.Portal",
+  "slug": "portal",
+  "namespace": "Portal",
+  "title": "Client portal",
+  "tier": "domain",
+  "description": "Separate sign-in for external clients with two-factor authentication, and the screens through which they follow projects, files and invoices.",
+  "requires": {
+    "Lasabro.Core": "^1.0",
+    "Lasabro.Clients": "^1.0",
+    "Lasabro.Files": "^1.0",
+    "Lasabro.Billing": "^1.0",
+    "Lasabro.Projects": "^1.0"
+  },
+  "suggests": {},
+  "frontends": {},
+  "declares": [
+    "seeders",
+    "menu"
+  ],
+  "menu": [
+    "admin.client_portal"
+  ],
+  "classes": [
+    {
+      "from": "app/Models",
+      "include": [
+        "ClientInvitation",
+        "ClientRecoveryCode",
+        "PortalFileShare",
+        "ProjectComment"
+      ],
+      "to": "src/Models",
+      "ns": "Models"
+    },
+    {
+      "from": "app/Http/Controllers/Api/V1",
+      "include": [
+        "PortalAdminController",
+        "PortalAuthController",
+        "PortalController"
+      ],
+      "to": "src/Http/Controllers",
+      "ns": "Http\\Controllers"
+    },
+    {
+      "from": "app/Services/Portal",
+      "include": [
+        "*"
+      ],
+      "to": "src/Services",
+      "ns": "Services"
+    },
+    {
+      "from": "app/Console/Commands",
+      "include": [
+        "ClientIdentityCreate"
+      ],
+      "to": "src/Console",
+      "ns": "Console"
+    },
+    {
+      "from": "database/seeders",
+      "include": [
+        "PortalSeeder"
+      ],
+      "to": "database/seeders",
+      "ns": "Database\\Seeders"
+    }
+  ],
+  "provider": {
+    "from": "app/Providers/PortalServiceProvider.php"
+  },
+  "routes": {
+    "files": [
+      "routes/portal.php",
+      "routes/portal-admin.php"
+    ]
+  },
+  "migrations": [
+    "2026_11_03_400001_create_client_portal_tables.php"
+  ],
+  "lang": [
+    "*/portal.php"
+  ],
+  "lang_blocks": {
+    "notify.php": [
+      "portal_client_comment",
+      "portal_client_upload"
+    ]
+  },
+  "tests": [
+    "tests/Feature/PortalTest.php",
+    "tests/Feature/PortalAndScopeTest.php",
+    "tests/Unit/PortalPureLogicTest.php"
+  ],
+  "host_remove_lines": {
+    "routes/api.php": [
+      "require __DIR__ \\. '/portal\\.php';",
+      "require __DIR__ \\. '/portal\\-admin\\.php';"
+    ],
+    "bootstrap/providers.php": [
+      "App\\\\Providers\\\\PortalServiceProvider::class,"
+    ]
+  }
+}
