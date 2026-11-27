@@ -7,11 +7,8 @@ use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\FileAsset;
 use App\Models\Invoice;
-use App\Models\Milestone;
 use App\Models\PortalFileShare;
-use App\Models\Project;
 use App\Models\ProjectComment;
-use App\Models\ProjectMember;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Billing\InvoicePdf;
@@ -23,6 +20,9 @@ use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Milestone;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
 
 /**
  * Everything a client sees. Every model below is client-scoped (BelongsToClient) so another client's identifier answers 404, and the

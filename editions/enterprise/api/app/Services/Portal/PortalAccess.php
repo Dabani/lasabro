@@ -2,8 +2,8 @@
 
 namespace App\Services\Portal;
 
-use App\Models\Project;
-use App\Models\Task;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
 
 /** Portal visibility rules in one place: what the client may see, and the progress figure shown instead of task details. */
 class PortalAccess

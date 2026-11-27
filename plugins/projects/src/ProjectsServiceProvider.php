@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Providers;
+namespace Lasabro\Projects;
 
-use App\Services\Projects\ProjectReviewerResolver;
-use App\Services\Projects\TaskReviewApprovalHandler;
-use Illuminate\Support\ServiceProvider;
+use Lasabro\Framework\PluginServiceProvider;
+use Lasabro\Projects\Services\ProjectReviewerResolver;
+use Lasabro\Projects\Services\TaskReviewApprovalHandler;
 
 /** Registers the task_review approval handler and the project_reviewer step resolver. */
-class ProjectsServiceProvider extends ServiceProvider
+class ProjectsServiceProvider extends PluginServiceProvider
 {
-    public function boot(): void
+    protected function bootPlugin(): void
     {
         config([
             'cops.approval_handlers' => array_merge(config('cops.approval_handlers', []), ['task_review' => TaskReviewApprovalHandler::class]),

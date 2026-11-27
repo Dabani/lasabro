@@ -3,15 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\ApprovalRequest;
-use App\Models\Project;
-use App\Models\ProjectMember;
-use App\Models\Task;
-use App\Models\TaskStatusHistory;
 use App\Services\Approvals\ApprovalEngine;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Models\TaskStatusHistory;
 use Tests\TestCase;
 
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundle 08 helpers. */

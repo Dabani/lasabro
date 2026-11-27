@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\LookupValue;
-use App\Models\Project;
 use App\Models\RateCard;
 use App\Models\RateCardLine;
 use App\Services\AuditLogger;
@@ -13,6 +12,7 @@ use App\Support\LookupRule;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Project;
 
 /** Billing rates are confidential: rates.view / rates.manage only. Every change is audited and lines are effective-dated, never overwritten. */
 class RateCardController extends Controller

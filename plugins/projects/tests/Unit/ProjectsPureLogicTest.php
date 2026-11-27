@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Services\Projects\TaskGraph;
-use App\Services\Projects\TaskWorkflow;
+use Lasabro\Projects\Services\TaskGraph;
+use Lasabro\Projects\Services\TaskWorkflow;
 use PHPUnit\Framework\TestCase;
 
 class ProjectsPureLogicTest extends TestCase

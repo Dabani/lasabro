@@ -6,6 +6,8 @@ use App\Support\BelongsToOrganization;
 use App\Support\Lookup;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
 use LogicException;
 
 class TimeEntry extends Model

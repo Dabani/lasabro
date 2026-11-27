@@ -5,12 +5,12 @@ namespace Lasabro\Procurement\Models;
 use App\Casts\UtcDateTime;
 use App\Models\Department;
 use App\Models\LookupValue;
-use App\Models\Project;
 use App\Models\User;
 use App\Support\BelongsToOrganization;
 use App\Support\HasGeneratedCode;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Lasabro\Projects\Models\Project;
 
 class PurchaseRequisition extends Model
 {

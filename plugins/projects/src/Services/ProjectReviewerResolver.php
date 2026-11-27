@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\Projects;
+namespace Lasabro\Projects\Services;
 
 use App\Models\ApprovalRequest;
 use App\Models\ApprovalStep;
-use App\Models\ProjectMember;
-use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Lasabro\Projects\Models\ProjectMember;
+use Lasabro\Projects\Models\Task;
 
 /** Approval step type "project_reviewer": the reviewers and managers of the task's project, plus its owner. */
 class ProjectReviewerResolver

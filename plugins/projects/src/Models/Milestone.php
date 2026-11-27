@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace Lasabro\Projects\Models;
 
 use App\Support\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services\Projects;
+namespace Lasabro\Projects\Services;
 
 use App\Models\ApprovalRequest;
-use App\Models\Task;
 use App\Services\Approvals\ApprovalOutcomeHandler;
+use Lasabro\Projects\Models\Task;
 
 /** Applies the reviewers' decision to the task: approved -> done; anything else sends it back to in_progress. */
 class TaskReviewApprovalHandler implements ApprovalOutcomeHandler

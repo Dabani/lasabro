@@ -6,6 +6,7 @@ use App\Support\BelongsToOrganization;
 use App\Support\HasGeneratedCode;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Lasabro\Projects\Models\Task;
 
 class MeetingResolution extends Model
 {

@@ -1,0 +1,170 @@
+{
+  "plugin": "Lasabro.Projects",
+  "moved": {
+    "App\\Http\\Controllers\\Api\\V1\\ProjectController": "Lasabro\\Projects\\Http\\Controllers\\ProjectController",
+    "App\\Http\\Controllers\\Api\\V1\\ProjectFileController": "Lasabro\\Projects\\Http\\Controllers\\ProjectFileController",
+    "App\\Http\\Controllers\\Api\\V1\\TaskController": "Lasabro\\Projects\\Http\\Controllers\\TaskController",
+    "App\\Http\\Resources\\Api\\V1\\ProjectRowResource": "Lasabro\\Projects\\Http\\Resources\\ProjectRowResource",
+    "App\\Models\\Milestone": "Lasabro\\Projects\\Models\\Milestone",
+    "App\\Models\\Project": "Lasabro\\Projects\\Models\\Project",
+    "App\\Models\\ProjectMember": "Lasabro\\Projects\\Models\\ProjectMember",
+    "App\\Models\\Task": "Lasabro\\Projects\\Models\\Task",
+    "App\\Models\\TaskComment": "Lasabro\\Projects\\Models\\TaskComment",
+    "App\\Models\\TaskStatusHistory": "Lasabro\\Projects\\Models\\TaskStatusHistory",
+    "App\\Providers\\ProjectsServiceProvider": "Lasabro\\Projects\\ProjectsServiceProvider",
+    "App\\Services\\Projects\\ProjectAccess": "Lasabro\\Projects\\Services\\ProjectAccess",
+    "App\\Services\\Projects\\ProjectReviewerResolver": "Lasabro\\Projects\\Services\\ProjectReviewerResolver",
+    "App\\Services\\Projects\\TaskGraph": "Lasabro\\Projects\\Services\\TaskGraph",
+    "App\\Services\\Projects\\TaskReviewApprovalHandler": "Lasabro\\Projects\\Services\\TaskReviewApprovalHandler",
+    "App\\Services\\Projects\\TaskService": "Lasabro\\Projects\\Services\\TaskService",
+    "App\\Services\\Projects\\TaskWorkflow": "Lasabro\\Projects\\Services\\TaskWorkflow",
+    "Database\\Seeders\\ProjectsSeeder": "Lasabro\\Projects\\Database\\Seeders\\ProjectsSeeder"
+  },
+  "host_dependencies": {
+    "App\\Support": [
+      "AppliesListQuery",
+      "BelongsToOrganization",
+      "DepartmentScope",
+      "HasGeneratedCode",
+      "Immutable",
+      "Lookup",
+      "LookupRule"
+    ],
+    "App\\Models": [
+      "ApprovalFlow",
+      "ApprovalRequest",
+      "ApprovalStep",
+      "Client",
+      "Department",
+      "FileAsset",
+      "Language",
+      "LookupType",
+      "LookupValue",
+      "MenuItem",
+      "Organization",
+      "Permission",
+      "Role",
+      "User"
+    ],
+    "App\\Http\\Controllers": [
+      "Controller"
+    ],
+    "App\\Services": [
+      "AuditLogger",
+      "FileAccess",
+      "FileService",
+      "Notifier",
+      "OrganizationContext"
+    ],
+    "App\\Http\\Resources\\Api\\V1": [
+      "FileResource"
+    ],
+    "App\\Services\\Approvals": [
+      "ApprovalEngine",
+      "ApprovalOutcomeHandler"
+    ]
+  },
+  "host_code_naming_plugin": {
+    "app\\Models\\Event.php": [
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "app\\Models\\Invoice.php": [
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "app\\Models\\Meeting.php": [
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "app\\Models\\MeetingResolution.php": [
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "app\\Models\\RateCardLine.php": [
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "app\\Models\\TimeEntry.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "app\\Services\\Billing\\InvoiceService.php": [
+      "Lasabro\\Projects\\Models\\Milestone",
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "app\\Services\\Billing\\ProjectLifecycle.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "app\\Services\\Meetings\\FollowUpService.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Services\\TaskService"
+    ],
+    "app\\Services\\Portal\\PortalAccess.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "app\\Services\\Time\\RateResolver.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\ProjectMember"
+    ],
+    "app\\Services\\Time\\TimeService.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task",
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\BillingAdminController.php": [
+      "Lasabro\\Projects\\Models\\Milestone",
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\InvoiceController.php": [
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\MeetingController.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\MeetingFollowUpController.php": [
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\PortalAdminController.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\PortalController.php": [
+      "Lasabro\\Projects\\Models\\Milestone",
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\ProjectMember"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\RateCardController.php": [
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "app\\Http\\Controllers\\Api\\V1\\TimeController.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task",
+      "Lasabro\\Projects\\Services\\ProjectAccess"
+    ],
+    "database\\seeders\\DatabaseSeeder.php": [
+      "Lasabro\\Projects\\Database\\Seeders\\ProjectsSeeder"
+    ],
+    "tests\\Feature\\BillingTest.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "tests\\Feature\\CodesTest.php": [
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "tests\\Feature\\PolishTest.php": [
+      "Lasabro\\Projects\\Models\\Project"
+    ],
+    "tests\\Feature\\PortalTest.php": [
+      "Lasabro\\Projects\\Models\\Milestone",
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\Task"
+    ],
+    "tests\\Feature\\TimeTrackingTest.php": [
+      "Lasabro\\Projects\\Models\\Project",
+      "Lasabro\\Projects\\Models\\ProjectMember"
+    ],
+    "bootstrap\\providers.php": [
+      "Lasabro\\Projects\\ProjectsServiceProvider"
+    ]
+  }
+}

@@ -6,8 +6,6 @@ use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\InvoiceLineSource;
 use App\Models\LookupValue;
-use App\Models\Milestone;
-use App\Models\Project;
 use App\Models\RateCard;
 use App\Models\RateCardLine;
 use App\Models\TaxRate;
@@ -22,6 +20,8 @@ use App\Services\Time\RateResolver;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Milestone;
+use Lasabro\Projects\Models\Project;
 
 class InvoiceService
 {

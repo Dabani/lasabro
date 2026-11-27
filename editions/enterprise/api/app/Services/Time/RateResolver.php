@@ -2,9 +2,9 @@
 
 namespace App\Services\Time;
 
-use App\Models\Project;
-use App\Models\ProjectMember;
 use App\Models\RateCardLine;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
 
 /** Hourly rate for one person on one task at a date, from the project's rate card. null = no rate (never guessed). Used by invoicing. */
 class RateResolver

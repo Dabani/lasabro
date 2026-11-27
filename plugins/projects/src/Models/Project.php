@@ -1,7 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace Lasabro\Projects\Models;
 
+use App\Models\Client;
+use App\Models\Department;
+use App\Models\LookupValue;
+use App\Models\User;
 use App\Support\BelongsToOrganization;
 use App\Support\DepartmentScope;
 use App\Support\HasGeneratedCode;

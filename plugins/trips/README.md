@@ -2,7 +2,7 @@
 
 Business trips: requests with approval, travelers, rates and per-diems, bookings, advances, expenses, settlement and advance reminders.
 
-> **Dependency notice:** Lasabro.Trips requires **Lasabro.Core** `^1.0`, **Lasabro.Approvals** `^1.0`, **Lasabro.Rules** `^1.0`, **Lasabro.Files** `^1.0`, **Lasabro.Hr** `^1.0`, **Lasabro.Attendance** `^1.0`. It cannot be activated unless Lasabro.Core, Lasabro.Approvals, Lasabro.Rules, Lasabro.Files, Lasabro.Hr, Lasabro.Attendance are installed and active.
+> **Dependency notice:** Lasabro.Trips requires **Lasabro.Core** `^1.0`, **Lasabro.Approvals** `^1.0`, **Lasabro.Rules** `^1.0`, **Lasabro.Files** `^1.0`, **Lasabro.Hr** `^1.0`, **Lasabro.Attendance** `^1.0`, **Lasabro.Projects** `^1.0`. It cannot be activated unless Lasabro.Core, Lasabro.Approvals, Lasabro.Rules, Lasabro.Files, Lasabro.Hr, Lasabro.Attendance, Lasabro.Projects are installed and active.
 
 ## Install
 

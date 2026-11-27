@@ -2,8 +2,6 @@
 
 namespace App\Services\Time;
 
-use App\Models\Project;
-use App\Models\Task;
 use App\Models\TimeEntry;
 use App\Models\TimeEntrySegment;
 use App\Models\Timesheet;
@@ -11,12 +9,14 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Notifier;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Services\SettingsService;
 use App\Support\Html;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /**
  * Persistent server-side timer and manual time. Start / pause / resume / stop are stored as segments with UTC timestamps,

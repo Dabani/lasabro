@@ -6,18 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MeetingRowResource;
 use App\Models\LookupType;
 use App\Models\Meeting;
-use App\Models\Project;
 use App\Models\User;
 use App\Services\Meetings\MeetingAccess;
 use App\Services\Meetings\MeetingNotices;
 use App\Services\Meetings\MeetingService;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Support\AppliesListQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /** Meetings and events: schedule, change, invite, run (Guide module C, 6.1-6.4). Permission and data scope are checked on every route. */
 class MeetingController extends Controller

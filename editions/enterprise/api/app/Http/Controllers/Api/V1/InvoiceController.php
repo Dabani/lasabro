@@ -12,10 +12,10 @@ use App\Services\Billing\InvoiceService;
 use App\Services\Billing\PaymentService;
 use App\Services\Billing\ProjectLifecycle;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Support\AppliesListQuery;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /**
  * Invoice visibility: billing.view_all sees every invoice; otherwise only invoices of projects the user may see (department scope applies).

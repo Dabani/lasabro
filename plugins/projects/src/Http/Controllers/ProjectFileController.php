@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace Lasabro\Projects\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\FileResource;
 use App\Models\FileAsset;
 use App\Models\LookupType;
-use App\Models\Task;
 use App\Services\AuditLogger;
 use App\Services\FileAccess;
 use App\Services\FileService;
-use App\Services\Projects\ProjectAccess;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /**
  * Project and task attachments are Controlled Files (classification, versions, scan, audit) linked by type "project" / "task".

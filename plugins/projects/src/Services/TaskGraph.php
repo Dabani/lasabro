@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Projects;
+namespace Lasabro\Projects\Services;
 
 /** Dependency-cycle detection (pure, unit-tested). edges: list of [taskId, dependsOnTaskId]. */
 class TaskGraph

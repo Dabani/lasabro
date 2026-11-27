@@ -4,8 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\ApprovalRequest;
 use App\Models\Employee;
-use App\Models\Project;
-use App\Models\ProjectMember;
 use App\Models\TimeEntry;
 use App\Models\TimeEntrySegment;
 use App\Models\Timesheet;
@@ -15,6 +13,8 @@ use App\Services\Time\TimeService;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
 use Tests\TestCase;
 
 /** Not executed in the build environment (no Laravel runtime) - run `php artisan test`. Needs Bundles 08-09 helpers. */

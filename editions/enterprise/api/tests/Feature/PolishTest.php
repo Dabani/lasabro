@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Project;
 use App\Models\Timesheet;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Projects\Models\Project;
 use Tests\TestCase;
 
 /** Currency lookup, rich-text sanitising and the SQLite-safe date storage fix. Needs Bundles 08-12 and CopsTestHelpers. */

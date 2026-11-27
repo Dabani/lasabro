@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\V1;
 use Illuminate\Support\Facades\Route;
+use Lasabro\Projects\Http\Controllers as V1;
 
-/* Routes. Required from routes/api.php inside the authenticated "org.context" group (apply-bundle-09.py does it). */
+/* Routes. Loaded by this plugin's routes/api.php inside the authenticated "org.context" group. */
 Route::get('projects', [V1\ProjectController::class, 'index'])->middleware('perm:project.view');
 Route::post('projects', [V1\ProjectController::class, 'store'])->middleware('perm:project.create');
 Route::get('projects/{id}', [V1\ProjectController::class, 'show'])->middleware('perm:project.view');

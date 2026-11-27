@@ -7,10 +7,7 @@ use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\ClientIdentity;
 use App\Models\Invoice;
-use App\Models\Milestone;
-use App\Models\Project;
 use App\Models\ProjectComment;
-use App\Models\Task;
 use App\Models\User;
 use App\Services\FileService;
 use App\Services\OrganizationContext;
@@ -23,6 +20,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Projects\Models\Milestone;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
 use Tests\TestCase;
 
 /** Needs Bundles 08-12. Not executed in the build environment - run `php artisan test`. */

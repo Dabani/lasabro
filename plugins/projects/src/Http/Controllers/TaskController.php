@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace Lasabro\Projects\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Project;
-use App\Models\ProjectMember;
-use App\Models\Task;
-use App\Models\TaskComment;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
-use App\Services\Projects\TaskService;
-use App\Services\Projects\TaskWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Models\TaskComment;
+use Lasabro\Projects\Services\ProjectAccess;
+use Lasabro\Projects\Services\TaskService;
+use Lasabro\Projects\Services\TaskWorkflow;
 
 class TaskController extends Controller
 {

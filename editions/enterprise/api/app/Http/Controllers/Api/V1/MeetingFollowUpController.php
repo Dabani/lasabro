@@ -18,12 +18,12 @@ use App\Services\Meetings\FollowUpRules;
 use App\Services\Meetings\FollowUpService;
 use App\Services\Meetings\MeetingAccess;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Services\SettingsService;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /** Resolutions and action items (Guide 6.7): per-meeting registers, status moves with evidence, conversions, evidence files, follow-up dashboard. */
 class MeetingFollowUpController extends Controller

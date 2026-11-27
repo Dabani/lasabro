@@ -9,8 +9,8 @@ use App\Providers\LasabroHostServiceProvider;
 use App\Providers\MeetingsServiceProvider;
 use App\Providers\PayrollServiceProvider;
 use App\Providers\PortalServiceProvider;
-use App\Providers\ProjectsServiceProvider;
 use App\Providers\TimeServiceProvider;
+use Lasabro\Projects\ProjectsServiceProvider;
 
 return [
     PortalServiceProvider::class,

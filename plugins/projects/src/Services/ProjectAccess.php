@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services\Projects;
+namespace Lasabro\Projects\Services;
 
-use App\Models\Project;
-use App\Models\ProjectMember;
 use App\Models\User;
 use App\Services\OrganizationContext;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
 
 /** One answer to "what may this user do in this project?": manager > member > reviewer > viewer > none. */
 class ProjectAccess

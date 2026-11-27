@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Lasabro\Projects\Database\Seeders;
 
 use App\Models\ApprovalFlow;
 use App\Models\Language;

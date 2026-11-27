@@ -1,10 +1,7 @@
 <?php
 
-namespace App\Services\Projects;
+namespace Lasabro\Projects\Services;
 
-use App\Models\Project;
-use App\Models\Task;
-use App\Models\TaskStatusHistory;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\AuditLogger;
@@ -13,6 +10,9 @@ use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Models\TaskStatusHistory;
 
 class TaskService
 {

@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
-use App\Models\Project;
-use App\Models\Task;
 use App\Models\TimeEntry;
 use App\Models\Timesheet;
 use App\Rules\RichTextMin;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Services\SettingsService;
 use App\Services\Time\TimerMath;
 use App\Services\Time\TimeService;
 use App\Services\Time\TimesheetService;
 use Illuminate\Http\Request;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Services\ProjectAccess;
 
 class TimeController extends Controller
 {

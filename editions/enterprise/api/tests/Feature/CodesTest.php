@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\LegalParameter;
 use App\Models\LookupType;
-use App\Models\Project;
 use App\Models\RuleSet;
 use App\Models\User;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Projects\Models\Project;
 use Tests\TestCase;
 
 /** Identifiers are system-generated, unique, never reused and immutable. Needs Bundles 08-13 and CopsTestHelpers. */

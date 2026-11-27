@@ -4,7 +4,6 @@ namespace Lasabro\Procurement\Services;
 
 use App\Models\ApprovalAction;
 use App\Models\ApprovalRequest;
-use App\Models\Project;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\AuditLogger;
@@ -17,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 use Lasabro\Procurement\Models\PurchaseRequisition;
 use Lasabro\Procurement\Models\PurchaseRequisitionHistory;
 use Lasabro\Procurement\Models\PurchaseRequisitionLine;
+use Lasabro\Projects\Models\Project;
 
 /**
  * Purchase requisitions (Guide 7.4 steps 2-3): the requester states the need, the cost centre and the lines; the budget is checked when the requisition is

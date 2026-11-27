@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Projects;
+namespace Lasabro\Projects\Services;
 
 /** Pure transition rules (unit-tested). Codes come from the task_status lookup. */
 class TaskWorkflow

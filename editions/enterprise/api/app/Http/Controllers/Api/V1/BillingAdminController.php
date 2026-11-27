@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\LookupValue;
-use App\Models\Milestone;
-use App\Models\Project;
 use App\Models\TaxRate;
 use App\Services\AuditLogger;
 use App\Services\Billing\ProjectLifecycle;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Support\Lookup;
 use App\Support\LookupRule;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Models\Milestone;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /** Tax rates (effective-dated, signed off), project billing set-up, and the Delivered / Closed gates. */
 class BillingAdminController extends Controller

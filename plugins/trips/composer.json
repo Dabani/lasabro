@@ -35,7 +35,8 @@
                 "Lasabro.Rules": "^1.0",
                 "Lasabro.Files": "^1.0",
                 "Lasabro.Hr": "^1.0",
-                "Lasabro.Attendance": "^1.0"
+                "Lasabro.Attendance": "^1.0",
+                "Lasabro.Projects": "^1.0"
             },
             "suggests": {},
             "frontends": {},

@@ -9,16 +9,16 @@ use App\Models\MeetingAction;
 use App\Models\MeetingFollowupHistory;
 use App\Models\MeetingInvitation;
 use App\Models\MeetingResolution;
-use App\Models\Project;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Hr\Attendance\AttendanceService;
 use App\Services\Notifier;
-use App\Services\Projects\TaskService;
 use App\Support\Html;
 use App\Support\Lookup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Services\TaskService;
 
 /** Resolutions and action items (Guide 6.7): numbering, status changes with reasons and evidence, conversion to a task or a compliance duty. */
 class FollowUpService

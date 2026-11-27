@@ -1,22 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace Lasabro\Projects\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\V1\ProjectRowResource;
-use App\Models\Milestone;
-use App\Models\Project;
-use App\Models\ProjectMember;
-use App\Models\Task;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
-use App\Services\Projects\ProjectAccess;
 use App\Support\AppliesListQuery;
 use App\Support\Lookup;
 use App\Support\LookupRule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Lasabro\Projects\Http\Resources\ProjectRowResource;
+use Lasabro\Projects\Models\Milestone;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\ProjectMember;
+use Lasabro\Projects\Models\Task;
+use Lasabro\Projects\Services\ProjectAccess;
 
 class ProjectController extends Controller
 {

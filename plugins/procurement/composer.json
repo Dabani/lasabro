@@ -33,7 +33,8 @@
                 "Lasabro.Core": "^1.0",
                 "Lasabro.Approvals": "^1.0",
                 "Lasabro.Rules": "^1.0",
-                "Lasabro.Files": "^1.0"
+                "Lasabro.Files": "^1.0",
+                "Lasabro.Projects": "^1.0"
             },
             "suggests": {},
             "frontends": {},

@@ -9,6 +9,7 @@ use Lasabro\Procurement\Database\Seeders\ProcurementInvoicesSeeder;
 use Lasabro\Procurement\Database\Seeders\ProcurementOrdersSeeder;
 use Lasabro\Procurement\Database\Seeders\ProcurementRfqSeeder;
 use Lasabro\Procurement\Database\Seeders\ProcurementSeeder;
+use Lasabro\Projects\Database\Seeders\ProjectsSeeder;
 use Lasabro\Trips\Database\Seeders\HrTripSeeder;
 
 class DatabaseSeeder extends Seeder

@@ -16,7 +16,7 @@ class LasabroProcurementPluginTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['lasabro.cache_path' => sys_get_temp_dir().'/lasabro-proc-'.bin2hex(random_bytes(4)).'/lasabro.php']);
+        config(['lasabro.cache_path' => sys_get_temp_dir() . '/lasabro-proc-' . bin2hex(random_bytes(4)) . '/lasabro.php']);
         $this->app->forgetInstance(ManifestSource::class);
         $this->app->forgetInstance(PluginManager::class);
         $this->bootCops();   // DatabaseSeeder seeds the procurement lookups, permissions and menu, as before the extraction
@@ -40,7 +40,11 @@ class LasabroProcurementPluginTest extends TestCase
         $this->assertGreaterThan(0, $this->activeMenuCount());
         $permissions = DB::table('permissions')->where('code', 'like', 'procurement.%')->count();
 
-        $this->artisan('lasabro:plugin:activate', ['plugin' => 'Lasabro.Procurement', '--adopt' => true])->assertSuccessful();
+        $this->artisan('lasabro:plugin:activate', [
+            'plugin' => 'Lasabro.Procurement',
+            '--adopt' => true,
+            '--with-dependencies' => true,
+        ])->assertSuccessful();
         $this->assertDatabaseHas('lasabro_plugins', ['code' => 'Lasabro.Procurement', 'is_active' => 1]);
         $this->assertSame($permissions, DB::table('permissions')->where('code', 'like', 'procurement.%')->count());
         $this->assertGreaterThan(0, DB::table('lasabro_plugin_resources')->where('plugin_code', 'Lasabro.Procurement')->where('type', 'seeders')->count());

@@ -7,16 +7,16 @@ use App\Models\Client;
 use App\Models\ClientIdentity;
 use App\Models\FileAsset;
 use App\Models\PortalFileShare;
-use App\Models\Project;
 use App\Models\ProjectComment;
 use App\Services\AuditLogger;
 use App\Services\OrganizationContext;
 use App\Services\Portal\ClientInvitationService;
 use App\Services\Portal\PortalMfa;
-use App\Services\Projects\ProjectAccess;
 use App\Support\Lookup;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Services\ProjectAccess;
 
 /** Staff side of the portal: who has access, what is shared, and the client conversation. Client set-up needs client.manage; project sharing needs project manager. */
 class PortalAdminController extends Controller

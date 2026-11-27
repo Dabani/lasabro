@@ -4,12 +4,12 @@ namespace App\Services\Billing;
 
 use App\Models\ApprovalRequest;
 use App\Models\Invoice;
-use App\Models\Project;
-use App\Models\Task;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\Lookup;
 use Illuminate\Validation\ValidationException;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
 
 /** Delivered / Closed gates (Guide 4.10): no unresolved work to deliver, no unissued invoices to close. */
 class ProjectLifecycle

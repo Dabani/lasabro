@@ -1,0 +1,46 @@
+{
+    "name": "lasabro/projects",
+    "description": "Projects, tasks and Kanban boards, milestones, team and client visibility, and task review with approval.",
+    "type": "lasabro-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Robert MAKUTA",
+            "email": "dabani.rm@gmail.com",
+            "homepage": "https://dabani.github.io"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "lasabro/framework": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lasabro\\Projects\\": "src/",
+            "Lasabro\\Projects\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        },
+        "lasabro": {
+            "id": "Lasabro.Projects",
+            "title": "Projects",
+            "tier": "domain",
+            "provider": "Lasabro\\Projects\\ProjectsServiceProvider",
+            "requires": {
+                "Lasabro.Core": "^1.0",
+                "Lasabro.Approvals": "^1.0",
+                "Lasabro.Clients": "^1.0",
+                "Lasabro.Files": "^1.0"
+            },
+            "suggests": {},
+            "frontends": {},
+            "declares": [
+                "seeders",
+                "menu"
+            ]
+        }
+    }
+}

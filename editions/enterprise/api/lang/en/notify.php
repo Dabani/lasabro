@@ -146,10 +146,6 @@ return [
         'body' => '":title" from :requester has waited more than :hours hours for a decision.',
     ],
     // COPS Phase 1
-    'task_assigned' => [
-        'title' => 'Task assigned: :title',
-        'body' => ':actor assigned you ":title".',
-    ],
     // COPS Phase 2a
     'timer_auto_stopped' => [
         'title' => 'Timer stopped automatically',

@@ -2,7 +2,7 @@
 
 Suppliers, purchase requisitions, requests for quotation, purchase orders, goods receipts and supplier invoices, with approval flows and controlled documents.
 
-> **Dependency notice:** Lasabro.Procurement requires **Lasabro.Core** `^1.0`, **Lasabro.Approvals** `^1.0`, **Lasabro.Rules** `^1.0`, **Lasabro.Files** `^1.0`. It cannot be activated unless Lasabro.Core, Lasabro.Approvals, Lasabro.Rules, Lasabro.Files are installed and active.
+> **Dependency notice:** Lasabro.Procurement requires **Lasabro.Core** `^1.0`, **Lasabro.Approvals** `^1.0`, **Lasabro.Rules** `^1.0`, **Lasabro.Files** `^1.0`, **Lasabro.Projects** `^1.0`. It cannot be activated unless Lasabro.Core, Lasabro.Approvals, Lasabro.Rules, Lasabro.Files, Lasabro.Projects are installed and active.
 
 ## Install
 

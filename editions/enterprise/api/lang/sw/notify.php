@@ -146,10 +146,6 @@ return [
         'body' => '":title" ya :requester imesubiri zaidi ya saa :hours kwa uamuzi.',
     ],
     // COPS Phase 1
-    'task_assigned' => [
-        'title' => 'Umepewa kazi: :title',
-        'body' => ':actor amekupa ":title".',
-    ],
     // COPS Phase 2a
     'timer_auto_stopped' => [
         'title' => 'Kipima muda kimesimamishwa kiotomatiki',

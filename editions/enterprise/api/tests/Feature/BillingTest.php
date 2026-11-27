@@ -6,10 +6,8 @@ use App\Models\ApprovalRequest;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
-use App\Models\Project;
 use App\Models\RateCard;
 use App\Models\RateCardLine;
-use App\Models\Task;
 use App\Models\TaxRate;
 use App\Models\TimeEntry;
 use App\Models\User;
@@ -18,6 +16,8 @@ use App\Services\SettingsService;
 use App\Support\Lookup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Lasabro\Projects\Models\Project;
+use Lasabro\Projects\Models\Task;
 use Tests\TestCase;
 
 /** Needs Bundles 08-11 and the CopsTestHelpers trait. Run: php artisan test */
