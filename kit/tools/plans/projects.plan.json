@@ -91,13 +91,5 @@
   "tests": [
     "tests/Feature/ProjectsTest.php",
     "tests/Unit/ProjectsPureLogicTest.php"
-  ],
-  "host_remove_lines": {
-    "routes/api.php": [
-      "require __DIR__ \\. '/projects\\.php';"
-    ],
-    "bootstrap/providers.php": [
-      "App\\\\Providers\\\\ProjectsServiceProvider::class,"
-    ]
-  }
+  ]
 }
